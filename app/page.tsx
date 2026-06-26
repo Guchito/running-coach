@@ -1,18 +1,24 @@
-import { listRuns, getGoal } from "@/lib/db";
+import { listRuns, listGoals, getPlan } from "@/lib/db";
 import { computeStats, daysUntil, projectGoalTime } from "@/lib/stats";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import { Card, Stat, PageShell, Button, EmptyState } from "@/components/ui";
 import { PaceTrendChart } from "@/components/Charts";
+import { DriveAutoSync } from "@/components/DriveAutoSync";
+import { requireUserId } from "@/lib/auth";
+import type { Goal, RunRow } from "@/lib/types";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default function Dashboard() {
-  const runs = listRuns();
-  const goal = getGoal();
+export default async function Dashboard() {
+  const userId = await requireUserId();
+  const [runs, goals, plan] = await Promise.all([
+    listRuns(userId),
+    listGoals(userId),
+    getPlan(userId),
+  ]);
   const stats = computeStats(runs);
-  const projected = projectGoalTime(runs, goal);
-  const days = daysUntil(goal?.targetDate ?? null);
+  const activeGoals = goals.filter((g) => g.status === "active");
 
   return (
     <PageShell
@@ -20,68 +26,48 @@ export default function Dashboard() {
       subtitle="Your training at a glance."
       action={<Button href="/upload">+ Upload run</Button>}
     >
-      {/* Goal card */}
-      {goal ? (
-        <Card className="p-6 mb-6 bg-linear-to-br from-accent to-indigo-600 text-white border-0">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="text-xs uppercase tracking-wide text-white/70">
-                Current goal
-              </div>
-              <div className="text-2xl font-semibold mt-1">{goal.title}</div>
-              <div className="text-white/80 text-sm mt-1">
-                {goal.raceType}
-                {goal.targetTimeSec
-                  ? ` · target ${formatDuration(goal.targetTimeSec)}`
-                  : ""}
-                {goal.targetDate ? ` · ${goal.targetDate}` : ""}
-              </div>
-            </div>
-            <div className="flex gap-6">
-              {days !== null && (
-                <div className="text-right">
-                  <div className="text-3xl font-bold tabular-nums">
-                    {days >= 0 ? days : "—"}
-                  </div>
-                  <div className="text-xs text-white/70">
-                    {days >= 0 ? "days to go" : "past date"}
-                  </div>
-                </div>
-              )}
-              {projected && goal.targetDistanceM && (
-                <div className="text-right">
-                  <div className="text-3xl font-bold tabular-nums">
-                    {formatDuration(projected)}
-                  </div>
-                  <div className="text-xs text-white/70">
-                    projected ({formatDistance(goal.targetDistanceM)})
-                  </div>
-                </div>
-              )}
-            </div>
+      <DriveAutoSync />
+
+      {/* Goals */}
+      {activeGoals.length > 0 ? (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-medium">Your goals</h2>
+            <Link href="/goals" className="text-sm text-accent">Manage →</Link>
           </div>
-          {projected && goal.targetTimeSec && (
-            <ProjectionBar projected={projected} target={goal.targetTimeSec} />
-          )}
-          <div className="mt-4">
-            <Link
-              href="/goal"
-              className="text-sm text-white/90 underline underline-offset-2"
-            >
-              Edit goal
-            </Link>
+          <div className="grid gap-4 md:grid-cols-2">
+            {activeGoals.map((g) => (
+              <GoalCard key={g.id} goal={g} runs={runs} />
+            ))}
           </div>
-        </Card>
+        </div>
       ) : (
         <Card className="p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="text-lg font-medium">No goal set yet</div>
+            <div className="text-lg font-medium">No goals set yet</div>
             <p className="text-muted text-sm mt-1">
-              Set a target race and date so your coach can build a plan around
-              it.
+              Set one or more target races so your coach can build a plan around them.
             </p>
           </div>
-          <Button href="/goal">Set a goal</Button>
+          <Button href="/goals">Set a goal</Button>
+        </Card>
+      )}
+
+      {/* This week's plan summary */}
+      {plan.weekly && (
+        <Card className="p-5 mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-medium">This week</h2>
+            <Link href="/plan" className="text-sm text-accent">Full plan →</Link>
+          </div>
+          <p className="text-sm text-muted mb-3">{plan.weekly.summary}</p>
+          <div className="flex flex-wrap gap-2">
+            {plan.weekly.days.map((d, i) => (
+              <span key={i} className="text-xs px-2 py-1 rounded-lg bg-black/[0.04] text-muted">
+                <strong className="text-foreground">{d.day}</strong> {d.title}
+              </span>
+            ))}
+          </div>
         </Card>
       )}
 
@@ -170,28 +156,45 @@ export default function Dashboard() {
   );
 }
 
-function ProjectionBar({
-  projected,
-  target,
-}: {
-  projected: number;
-  target: number;
-}) {
-  const onTrack = projected <= target;
-  const deltaSec = Math.abs(projected - target);
+function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
+  const days = daysUntil(goal.targetDate);
+  const projected = projectGoalTime(runs, goal);
+  const onTrack = projected && goal.targetTimeSec ? projected <= goal.targetTimeSec : null;
+
   return (
-    <div className="mt-4 bg-white/15 rounded-lg p-3 text-sm">
-      {onTrack ? (
-        <span>
-          🎯 On track — you&apos;re projected{" "}
-          <strong>{formatDuration(deltaSec)}</strong> faster than your target.
-        </span>
-      ) : (
-        <span>
-          ⏱️ <strong>{formatDuration(deltaSec)}</strong> off target pace. Keep
-          building — your coach can help close the gap.
-        </span>
+    <Card className="p-5 bg-linear-to-br from-accent to-indigo-600 text-white border-0">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-lg font-semibold truncate">{goal.title}</div>
+          <div className="text-white/80 text-sm mt-0.5">
+            {goal.raceType}
+            {goal.targetTimeSec ? ` · ${formatDuration(goal.targetTimeSec)}` : ""}
+            {goal.targetDate ? ` · ${goal.targetDate}` : ""}
+          </div>
+        </div>
+        {days !== null && days >= 0 && (
+          <div className="text-right shrink-0">
+            <div className="text-2xl font-bold tabular-nums leading-none">{days}</div>
+            <div className="text-[11px] text-white/70">days to go</div>
+          </div>
+        )}
+      </div>
+
+      {projected && goal.targetTimeSec && (
+        <div className="mt-4 bg-white/15 rounded-lg p-3 text-sm">
+          {onTrack ? (
+            <span>
+              🎯 On track — projected <strong>{formatDuration(projected)}</strong> (
+              {formatDuration(Math.abs(projected - goal.targetTimeSec))} ahead).
+            </span>
+          ) : (
+            <span>
+              ⏱️ Projected <strong>{formatDuration(projected)}</strong> —{" "}
+              {formatDuration(Math.abs(projected - goal.targetTimeSec))} off target. Keep building.
+            </span>
+          )}
+        </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -2,12 +2,14 @@ import { listRuns } from "@/lib/db";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import { PageShell, Card, Button, EmptyState } from "@/components/ui";
 import { DeleteRunButton } from "@/components/DeleteRunButton";
+import { requireUserId } from "@/lib/auth";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default function RunsPage() {
-  const runs = listRuns();
+export default async function RunsPage() {
+  const userId = await requireUserId();
+  const runs = await listRuns(userId);
 
   return (
     <PageShell

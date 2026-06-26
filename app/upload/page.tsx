@@ -5,18 +5,19 @@ export default function UploadPage() {
   return (
     <PageShell
       title="Upload a run"
-      subtitle="Add a new run or import your history — one CSV at a time."
+      subtitle="Add a new run or import your history — one file at a time."
     >
       <UploadForm />
 
       <Card className="p-5 mt-6 text-sm text-muted">
-        <div className="font-medium text-foreground mb-2">How to export from your iPhone</div>
-        <ol className="list-decimal pl-5 space-y-1">
-          <li>Open your run in the app you used to record it (e.g. the workout export app on your Apple Watch).</li>
-          <li>Export the workout as a <strong>CSV</strong> — you&apos;ll get a file like
-            <span className="font-mono text-xs"> 2026-06-25-…-Outdoor Running.csv</span>.</li>
-          <li>Drop it above. Importing history? Just upload each run&apos;s CSV one by one — they&apos;ll stack up in your history.</li>
-        </ol>
+        <div className="font-medium text-foreground mb-2">Supported files</div>
+        <ul className="list-disc pl-5 space-y-1">
+          <li><strong>.fit</strong> — the standard activity format from HealthFit, Garmin, Strava, etc.
+            HealthFit on your Apple Watch exports these.</li>
+          <li><strong>.csv</strong> — the Apple Watch &ldquo;Outdoor Running&rdquo; semicolon export
+            (<span className="font-mono text-xs">…-Outdoor Running.csv</span>).</li>
+        </ul>
+        <p className="mt-2">Importing history? Upload each run&apos;s file one by one — they stack up in your history.</p>
       </Card>
     </PageShell>
   );

@@ -1,4 +1,4 @@
-import type { RunSummary, Split, SeriesPoint } from "./types";
+import type { RunSummary, Split, LapSplit, SeriesPoint } from "./types";
 
 // Parses Apple Watch "Outdoor Running" CSV exports.
 // Format notes:
@@ -29,7 +29,9 @@ const HEADER_ALIASES: Record<string, string> = {
   "since start (second)": "since",
 };
 
-type Row = {
+// One time-sample of a run. Both the CSV and FIT parsers produce these, then
+// hand them to summarizeRows() for all the metric computation.
+export type Row = {
   iso: string;
   hr: number | null;
   power: number | null;
@@ -40,6 +42,7 @@ type Row = {
   stride: number | null;
   vo: number | null;
   gct: number | null;
+  lap: number | null;
   intensity: string;
   since: number;
 };
@@ -58,7 +61,7 @@ function avg(values: (number | null)[]): number | null {
   return v.reduce((a, b) => a + b, 0) / v.length;
 }
 
-export function parseRunCsv(text: string, refMaxHr = 190): RunSummary {
+export function parseRunCsv(text: string): RunSummary {
   const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
   if (lines.length < 2) throw new Error("CSV appears to be empty.");
 
@@ -94,12 +97,36 @@ export function parseRunCsv(text: string, refMaxHr = 190): RunSummary {
       stride: num(at(cells, "stride")),
       vo: num(at(cells, "vo")),
       gct: num(at(cells, "gct")),
-      intensity: (at(cells, "intensity") ?? "").trim() || "active",
+      lap: num(at(cells, "lap")),
+      intensity: (at(cells, "intensity") ?? "").trim(),
       since,
     });
   }
 
-  if (rows.length === 0) throw new Error("No data rows found in CSV.");
+  return summarizeRows(rows);
+}
+
+// Compute all run metrics from a list of time-samples (format-agnostic).
+export function summarizeRows(rows: Row[]): RunSummary {
+  if (rows.length === 0) throw new Error("No data points found in the run file.");
+
+  // The Lap/Intensity columns are only populated on transition rows. Carry the
+  // last seen values forward (and backfill the leading rows) so every sample
+  // belongs to a lap and an intensity.
+  let curLap: number | null = null;
+  let curInt = "";
+  for (const r of rows) {
+    if (r.lap !== null) curLap = r.lap;
+    if (r.intensity) curInt = r.intensity;
+    r.lap = curLap;
+    r.intensity = curInt;
+  }
+  const firstLap = rows.find((r) => r.lap !== null)?.lap ?? 1;
+  const firstInt = rows.find((r) => r.intensity)?.intensity ?? "active";
+  for (const r of rows) {
+    if (r.lap === null) r.lap = firstLap;
+    if (!r.intensity) r.intensity = firstInt;
+  }
 
   const startedAt = rows.find((r) => r.iso)?.iso ?? new Date(0).toISOString();
   const durationSec = rows[rows.length - 1].since - rows[0].since;
@@ -147,25 +174,22 @@ export function parseRunCsv(text: string, refMaxHr = 190): RunSummary {
   // Splits per kilometer using interpolation across the distance series.
   const splits = computeSplits(rows);
 
+  // Splits per lap/interval as defined in the workout.
+  const laps = computeLaps(rows);
+
   // Intensity (warmup / active / cooldown / recovery) seconds.
   const intensityBreakdown: Record<string, number> = {};
   for (const r of rows) {
     intensityBreakdown[r.intensity] = (intensityBreakdown[r.intensity] ?? 0) + 1;
   }
 
-  // Heart-rate zones (rough, based on % of an estimated max HR).
-  let hrZones: Record<string, number> | null = null;
-  if (avgHr) {
-    hrZones = { "Z1 <60%": 0, "Z2 60-70%": 0, "Z3 70-80%": 0, "Z4 80-90%": 0, "Z5 >90%": 0 };
-    for (const r of rows) {
-      if (r.hr === null) continue;
-      const pct = r.hr / refMaxHr;
-      if (pct < 0.6) hrZones["Z1 <60%"] += 1;
-      else if (pct < 0.7) hrZones["Z2 60-70%"] += 1;
-      else if (pct < 0.8) hrZones["Z3 70-80%"] += 1;
-      else if (pct < 0.9) hrZones["Z4 80-90%"] += 1;
-      else hrZones["Z5 >90%"] += 1;
-    }
+  // Heart-rate histogram: seconds spent at each integer bpm. Stored so we can
+  // recompute zone time against the user's own (editable) HR zones later.
+  const hrHistogram: Record<string, number> = {};
+  for (const r of rows) {
+    if (r.hr === null) continue;
+    const bpm = Math.round(r.hr);
+    hrHistogram[bpm] = (hrHistogram[bpm] ?? 0) + 1;
   }
 
   // Downsample to ~200 points for charts; compute rolling pace from speed.
@@ -190,8 +214,9 @@ export function parseRunCsv(text: string, refMaxHr = 190): RunSummary {
     elevGainM,
     elevLossM,
     splits,
+    laps,
     intensityBreakdown,
-    hrZones,
+    hrHistogram,
     sampleCount: rows.length,
     series,
   };
@@ -258,6 +283,65 @@ function computeSplits(rows: Row[]): Split[] {
   }
 
   return splits;
+}
+
+// Group samples by the Lap column (already carried-forward) to produce the
+// workout's intervals: warmup, work reps, recoveries, cooldown, etc.
+function computeLaps(rows: Row[]): LapSplit[] {
+  const laps: LapSplit[] = [];
+  if (rows.length === 0) return laps;
+
+  // Distance/time at the end of the previous lap, so laps are contiguous and
+  // sum to the run total even where samples are sparse.
+  let prevEndDist = rows.find((r) => r.dist !== null)?.dist ?? 0;
+  let prevEndTime = rows[0].since;
+
+  let i = 0;
+  while (i < rows.length) {
+    const lapNo = rows[i].lap as number;
+    const start = i;
+    while (i < rows.length && rows[i].lap === lapNo) i++;
+    const segment = rows.slice(start, i);
+
+    // End-of-lap cumulative distance/time (last known values in the segment).
+    let endDist = prevEndDist;
+    for (const r of segment) if (r.dist !== null) endDist = r.dist;
+    const endTime = segment[segment.length - 1].since;
+
+    const distanceM = Math.max(0, endDist - prevEndDist);
+    const durationSec = Math.max(0, endTime - prevEndTime);
+
+    const hr = segment.map((r) => r.hr).filter((x): x is number => x !== null);
+    const cad = segment.map((r) => r.cadence).filter((x): x is number => x !== null);
+
+    let elevGain = 0;
+    let prevElev: number | null = null;
+    for (const r of segment) {
+      if (r.elev === null) continue;
+      if (prevElev !== null && r.elev - prevElev > 0.5) elevGain += r.elev - prevElev;
+      prevElev = r.elev;
+    }
+
+    // Pick the most representative intensity label in the segment.
+    const intensity = segment.find((r) => r.intensity)?.intensity ?? "active";
+
+    laps.push({
+      lap: lapNo,
+      intensity,
+      distanceM: Math.round(distanceM),
+      durationSec,
+      paceSecPerKm: distanceM > 0 ? (durationSec / distanceM) * 1000 : 0,
+      avgHr: hr.length ? Math.round(hr.reduce((a, b) => a + b, 0) / hr.length) : null,
+      maxHr: hr.length ? Math.max(...hr) : null,
+      avgCadence: cad.length ? Math.round(cad.reduce((a, b) => a + b, 0) / cad.length) : null,
+      elevGainM: Math.round(elevGain),
+    });
+
+    prevEndDist = endDist;
+    prevEndTime = endTime;
+  }
+
+  return laps;
 }
 
 function downsample(rows: Row[], target: number): SeriesPoint[] {

@@ -1,8 +1,13 @@
-import { getRun } from "@/lib/db";
+import { getRun, getUserById } from "@/lib/db";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import { PageShell, Card, Stat, Button } from "@/components/ui";
-import { RunDetailChart, ElevationChart, SplitsChart } from "@/components/Charts";
+import { RunDetailChart, ElevationChart, CadenceChart } from "@/components/Charts";
+import { SplitsSection } from "@/components/SplitsSection";
+import { HrZonesCard } from "@/components/HrZonesCard";
+import { RunReview } from "@/components/RunReview";
 import { DeleteRunButton } from "@/components/DeleteRunButton";
+import { requireUserId } from "@/lib/auth";
+import { resolveZones } from "@/lib/hr";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -15,11 +20,14 @@ export default async function RunDetail({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ new?: string }>;
 }) {
+  const userId = await requireUserId();
   const { id } = await params;
   const { new: isNew } = await searchParams;
-  const run = getRun(Number(id));
+  const [run, user] = await Promise.all([getRun(userId, Number(id)), getUserById(userId)]);
   if (!run) notFound();
   const s = run.summary;
+  const zones = resolveZones(user?.maxHr ?? null, user?.hrZones ?? null);
+  const hrCustomized = !!(user?.maxHr || user?.hrZones);
 
   const ask = encodeURIComponent(
     `I just uploaded my run "${run.name}" (${formatDistance(run.distanceM)} in ${formatDuration(
@@ -47,12 +55,7 @@ export default async function RunDetail({
         </div>
       }
     >
-      {isNew && (
-        <div className="mb-6 rounded-xl bg-good/10 border border-good/20 text-good px-4 py-3 text-sm flex items-center gap-2">
-          ✅ Run imported and analyzed. Want feedback?{" "}
-          <Link href={`/coach?ask=${ask}`} className="underline font-medium">Ask your coach →</Link>
-        </div>
-      )}
+      {isNew && <RunReview run={run} />}
 
       {/* Headline stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -73,42 +76,38 @@ export default async function RunDetail({
       </Card>
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
-        {/* Splits */}
-        <Card className="p-5">
-          <h2 className="font-medium mb-3">Kilometer splits</h2>
-          <SplitsChart splits={s.splits} />
-          <div className="mt-3 max-h-40 overflow-auto text-sm">
-            <table className="w-full">
-              <tbody className="divide-y divide-border">
-                {s.splits.map((sp) => (
-                  <tr key={sp.km} className="tabular-nums">
-                    <td className="py-1.5 text-muted">Km {sp.km}{sp.distanceM < 1000 ? ` (${sp.distanceM}m)` : ""}</td>
-                    <td className="py-1.5 font-medium">{formatPace(sp.paceSecPerKm)}</td>
-                    <td className="py-1.5 text-right text-muted">{sp.avgHr ? `${sp.avgHr} bpm` : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        {/* Splits — kilometers or workout intervals */}
+        <SplitsSection splits={s.splits} laps={s.laps ?? []} />
 
-        {/* Elevation */}
+        {/* Cadence */}
         <Card className="p-5">
-          <h2 className="font-medium mb-3">Elevation</h2>
-          <ElevationChart series={s.series} />
-          <div className="flex gap-6 mt-3 text-sm">
-            <span className="text-muted">Gain <strong className="text-foreground">+{Math.round(s.elevGainM)} m</strong></span>
-            <span className="text-muted">Loss <strong className="text-foreground">−{Math.round(s.elevLossM)} m</strong></span>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-medium">Cadence</h2>
+            <span className="text-sm text-muted tabular-nums">
+              avg <strong className="text-foreground">{s.avgCadence ? Math.round(s.avgCadence * 2) : "—"} spm</strong>
+              {s.maxCadence ? ` · max ${Math.round(s.maxCadence * 2)}` : ""}
+            </span>
           </div>
+          <CadenceChart series={s.series} />
         </Card>
       </div>
+
+      {/* Elevation */}
+      <Card className="p-5 mb-6">
+        <h2 className="font-medium mb-3">Elevation</h2>
+        <ElevationChart series={s.series} />
+        <div className="flex gap-6 mt-3 text-sm">
+          <span className="text-muted">Gain <strong className="text-foreground">+{Math.round(s.elevGainM)} m</strong></span>
+          <span className="text-muted">Loss <strong className="text-foreground">−{Math.round(s.elevLossM)} m</strong></span>
+        </div>
+      </Card>
 
       {/* Form metrics + effort */}
       <div className="grid md:grid-cols-2 gap-6">
         <Card className="p-5">
           <h2 className="font-medium mb-3">Running form</h2>
           <dl className="grid grid-cols-2 gap-y-3 text-sm">
-            <Metric label="Cadence" value={s.avgCadence ? `${Math.round(s.avgCadence)} spm` : "—"} />
+            <Metric label="Cadence" value={s.avgCadence ? `${Math.round(s.avgCadence * 2)} spm` : "—"} />
             <Metric label="Stride length" value={s.avgStrideMm ? `${(s.avgStrideMm / 1000).toFixed(2)} m` : "—"} />
             <Metric label="Vertical oscillation" value={s.avgVoMm ? `${s.avgVoMm.toFixed(1)} mm` : "—"} />
             <Metric label="Ground contact" value={s.avgGctMs ? `${Math.round(s.avgGctMs)} ms` : "—"} />
@@ -134,20 +133,9 @@ export default async function RunDetail({
                 </div>
               ))}
           </div>
-          {s.hrZones && (
+          {s.avgHr && (
             <div className="mt-4 pt-4 border-t border-border">
-              <div className="text-xs uppercase tracking-wide text-muted mb-2">HR zones (est. max 190)</div>
-              <div className="space-y-1.5">
-                {Object.entries(s.hrZones).map(([z, sec]) => (
-                  <div key={z} className="flex items-center gap-2 text-xs">
-                    <span className="w-20 text-muted">{z}</span>
-                    <div className="flex-1 h-1.5 rounded-full bg-black/[0.05] overflow-hidden">
-                      <div className="h-full bg-rose-500 rounded-full" style={{ width: `${(sec / s.sampleCount) * 100}%` }} />
-                    </div>
-                    <span className="w-12 text-right tabular-nums text-muted">{formatDuration(sec)}</span>
-                  </div>
-                ))}
-              </div>
+              <HrZonesCard histogram={s.hrHistogram} zones={zones} customized={hrCustomized} />
             </div>
           )}
         </Card>

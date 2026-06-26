@@ -9,6 +9,20 @@ export type Split = {
   elevGainM: number;
 };
 
+// A lap/interval as defined in the workout on the watch (warmup, active,
+// recovery, cooldown, etc.). Mirrors the CSV's Lap + Intensity columns.
+export type LapSplit = {
+  lap: number;
+  intensity: string;
+  distanceM: number;
+  durationSec: number;
+  paceSecPerKm: number;
+  avgHr: number | null;
+  maxHr: number | null;
+  avgCadence: number | null;
+  elevGainM: number;
+};
+
 export type SeriesPoint = {
   t: number;             // seconds since start
   distM: number;         // cumulative distance
@@ -38,8 +52,9 @@ export type RunSummary = {
   elevGainM: number;
   elevLossM: number;
   splits: Split[];
+  laps: LapSplit[];           // intervals as set in the workout
   intensityBreakdown: Record<string, number>; // label -> seconds
-  hrZones: Record<string, number> | null;     // zone -> seconds (if HR present)
+  hrHistogram: Record<string, number>;         // bpm -> seconds (for custom HR zones)
   sampleCount: number;
   series: SeriesPoint[];      // downsampled for charting
 };
@@ -60,6 +75,8 @@ export type RunRow = {
   createdAt: string;
 };
 
+export type GoalStatus = "active" | "achieved" | "abandoned";
+
 export type Goal = {
   id: number;
   title: string;          // e.g. "Run a sub-25 5K"
@@ -68,7 +85,66 @@ export type Goal = {
   targetTimeSec: number | null; // goal finish time, if any
   targetDate: string | null;    // ISO date
   notes: string | null;
+  status: GoalStatus;
+  createdAt: string;
   updatedAt: string;
+};
+
+// ---- Training plans ----
+
+export type MacroPhase = {
+  name: string;             // e.g. "Base", "Build", "Peak", "Taper"
+  start: string | null;     // ISO date
+  end: string | null;       // ISO date
+  focus: string;            // what this phase develops
+  weeklyKm: number | null;  // rough target weekly volume
+  notes: string | null;
+};
+
+export type MacroPlan = {
+  summary: string;
+  phases: MacroPhase[];
+  updatedAt: string;
+};
+
+export type PlanDay = {
+  day: string;              // "Mon".."Sun"
+  type: string;             // easy | tempo | intervals | long | rest | cross | race
+  title: string;            // short label
+  detail: string;           // the workout description
+  distanceKm: number | null;
+  done?: boolean;
+};
+
+export type WeeklyPlan = {
+  weekStart: string | null; // ISO date of the week's Monday
+  summary: string;
+  days: PlanDay[];
+  updatedAt: string;
+};
+
+export type Plan = {
+  macro: MacroPlan | null;
+  weekly: WeeklyPlan | null;
+};
+
+// ---- Heart-rate zones ----
+
+export type HrZone = {
+  name: string;   // e.g. "Z2 Easy"
+  min: number;    // inclusive lower bpm
+  max: number;    // inclusive upper bpm
+};
+
+export type User = {
+  id: number;
+  email: string;
+  name: string | null;
+  maxHr: number | null;
+  hrZones: HrZone[] | null;
+  driveFolderId: string | null;
+  driveLastSync: string | null;
+  createdAt: string;
 };
 
 export type ChatMessage = {

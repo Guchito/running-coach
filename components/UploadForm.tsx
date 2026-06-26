@@ -36,8 +36,8 @@ export function UploadForm() {
   function pick(f: File | null) {
     setError(null);
     if (!f) return;
-    if (!f.name.toLowerCase().endsWith(".csv")) {
-      setError("Please choose a .csv file exported from your watch.");
+    if (!/\.(csv|fit)$/i.test(f.name)) {
+      setError("Please choose a .csv or .fit file exported from your watch.");
       return;
     }
     setFile(f);
@@ -72,14 +72,14 @@ export function UploadForm() {
             <div className="font-medium">{file.name}</div>
           ) : (
             <>
-              <div className="font-medium">Drop your run CSV here</div>
-              <div className="text-sm text-muted mt-1">or click to browse · Apple Watch Outdoor Running export</div>
+              <div className="font-medium">Drop your run file here</div>
+              <div className="text-sm text-muted mt-1">or click to browse · <strong>.csv</strong> or <strong>.fit</strong> (Apple Watch, HealthFit, Garmin…)</div>
             </>
           )}
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.fit,text/csv,application/octet-stream"
             className="hidden"
             onChange={(e) => pick(e.target.files?.[0] ?? null)}
           />
