@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f8fa;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --border: #e7e8ec;
+  --accent: #4f46e5;
+  --accent-soft: #eef0fe;
+  --good: #059669;
+  --warn: #d97706;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
+
+/* Markdown-ish styling for coach messages */
+.prose-coach p { margin: 0 0 0.6rem; line-height: 1.6; }
+.prose-coach p:last-child { margin-bottom: 0; }
+.prose-coach ul { margin: 0.3rem 0 0.7rem; padding-left: 1.1rem; list-style: disc; }
+.prose-coach li { margin: 0.15rem 0; line-height: 1.5; }
+.prose-coach strong { font-weight: 600; }
+.prose-coach h1, .prose-coach h2, .prose-coach h3 { font-weight: 600; margin: 0.6rem 0 0.3rem; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+.typing-dot { animation: pulse-dot 1.2s infinite; }
