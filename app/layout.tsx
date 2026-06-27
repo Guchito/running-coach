@@ -8,7 +8,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Stride · AI Running Coach",
+  title: "Gunna · AI Running Coach",
   description: "Upload your runs and train with an AI coach powered by Claude.",
 };
 

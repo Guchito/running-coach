@@ -1,20 +1,45 @@
-import { getUserById } from "@/lib/db";
+import { getUserById, listLthrTests, listBodyMetrics } from "@/lib/db";
 import { PageShell } from "@/components/ui";
 import { HrZonesForm } from "@/components/HrZonesForm";
+import { LthrTestSection } from "@/components/LthrTestSection";
+import { BodyMetricsSection } from "@/components/BodyMetricsSection";
 import { DriveSettings } from "@/components/DriveSettings";
+import { CoachModelForm } from "@/components/CoachModelForm";
 import { requireUserId } from "@/lib/auth";
 import { isDriveConfigured, serviceAccountEmail } from "@/lib/drive";
+import { resolveCoachModel } from "@/lib/coach";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const userId = await requireUserId();
-  const user = await getUserById(userId);
+  const [user, lthrTests, bodyMetrics] = await Promise.all([
+    getUserById(userId),
+    listLthrTests(userId),
+    listBodyMetrics(userId),
+  ]);
 
   return (
     <PageShell title="Settings" subtitle="Personalize how your runs are analyzed and imported.">
-      <h2 className="font-medium mb-3">Heart-rate zones</h2>
-      <HrZonesForm initialMaxHr={user?.maxHr ?? null} initialZones={user?.hrZones ?? null} />
+      <h2 className="font-medium mb-3">Coach model</h2>
+      <CoachModelForm initial={resolveCoachModel(user?.coachModel)} />
+
+      <h2 className="font-medium mb-3 mt-8">Heart-rate zones</h2>
+      <HrZonesForm
+        initialMaxHr={user?.maxHr ?? null}
+        initialLactateThresholdHr={user?.lactateThresholdHr ?? null}
+        initialZones={user?.hrZones ?? null}
+      />
+
+      <h2 className="font-medium mb-3 mt-8">Lactate threshold test</h2>
+      <LthrTestSection
+        initialTests={lthrTests}
+        initialIntervalWeeks={user?.lthrTestIntervalWeeks ?? null}
+        currentLthr={user?.lactateThresholdHr ?? null}
+      />
+
+      <h2 className="font-medium mb-3 mt-8">Resting HR &amp; weight</h2>
+      <BodyMetricsSection initialMetrics={bodyMetrics} />
 
       <h2 className="font-medium mb-3 mt-8">Google Drive auto-import</h2>
       <DriveSettings

@@ -1,4 +1,4 @@
-# Stride — AI Running Coach 🏃
+# Gunna — AI Running Coach 🏃
 
 A personal running coach web app. Upload your Apple Watch run exports (CSV),
 set a goal, and chat with an AI coach (powered by Claude) that sees your goal

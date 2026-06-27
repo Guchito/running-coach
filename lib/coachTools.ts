@@ -4,9 +4,16 @@ import {
   updateGoal,
   deleteGoal,
   getGoalById,
+  setGoalProjection,
   setMacroPlan,
+  setMacroInstructions,
   setWeeklyPlan,
+  getPlan,
+  insertLthrTest,
+  listRuns,
+  listGymSessions,
 } from "./db";
+import { buildRunsContext, buildGymContext } from "./coach";
 import type { MacroPlan, WeeklyPlan } from "./types";
 
 // Tools the coach can call to manage the runner's goals and training plans.
@@ -45,6 +52,22 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "set_goal_projection",
+    description:
+      "Set your realistic PROJECTED finish time for a goal on race day — your honest prediction of what they'll actually run, accounting for the fitness they'll gain from the training between now and the race. This is distinct from their target (what they want) and from the app's 'if they raced today' estimate (current fitness from recent runs). Update it as their fitness and the plan progress. Pass projectedTimeSec as null to clear it.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "number", description: "The goal id (from the GOALS context)" },
+        projectedTimeSec: {
+          type: ["number", "null"],
+          description: "Projected race-day finish time in seconds, or null to clear",
+        },
+      },
+      required: ["id", "projectedTimeSec"],
+    },
+  },
+  {
     name: "set_macro_plan",
     description:
       "Create or replace the long-term MACRO training plan. This must consider ALL of the runner's active goals together (e.g. a half marathon in 4 months AND a marathon in 9 months → a single periodized plan that builds through both). Use training phases (Base, Build, Peak, Taper, Race, Recovery).",
@@ -72,9 +95,26 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "set_plan_instructions",
+    description:
+      "Update the runner's standing PLAN INSTRUCTIONS — their free-text general guidance for how the plan should be built and maintained (e.g. 'no running on Mondays', 'always keep one full rest day', 'prioritise the marathon over the half'). " +
+      "Only call this when the runner explicitly asks you to change their saved instructions. This replaces the existing instructions, so include everything that should remain. Pass an empty string to clear them. These persist across plan rebuilds.",
+    input_schema: {
+      type: "object",
+      properties: {
+        instructions: {
+          type: "string",
+          description: "The full new instructions text (replaces the previous value; empty string clears it)",
+        },
+      },
+      required: ["instructions"],
+    },
+  },
+  {
     name: "set_weekly_plan",
     description:
-      "Create or replace THIS WEEK's training plan: the 7 days with specific workouts. Keep it consistent with the current macro phase and the runner's recent training load.",
+      "Create or replace THIS WEEK's training plan: the 7 days with specific workouts. Keep it consistent with the current macro phase and the runner's recent training load. " +
+      "Days can be runs, rest, cross-training, or STRENGTH/gym sessions (type 'strength'). Schedule the runner's strength work and arrange the runs around it so heavy lifting and hard/long runs don't collide — keep quality run days on fresh legs and put easy or rest days after demanding lower-body sessions.",
     input_schema: {
       type: "object",
       properties: {
@@ -91,9 +131,19 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
               },
               type: {
                 type: "string",
-                enum: ["easy", "tempo", "intervals", "long", "rest", "cross", "race", "recovery"],
+                enum: [
+                  "easy",
+                  "tempo",
+                  "intervals",
+                  "long",
+                  "rest",
+                  "cross",
+                  "strength",
+                  "race",
+                  "recovery",
+                ],
               },
-              title: { type: "string", description: "Short label, e.g. '6×800m intervals'" },
+              title: { type: "string", description: "Short label, e.g. '6×800m intervals' or 'Lower body — squat focus'" },
               detail: { type: "string", description: "The full workout description" },
               distanceKm: { type: "number" },
             },
@@ -102,6 +152,31 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["summary", "days"],
+    },
+  },
+  {
+    name: "log_lthr_test",
+    description:
+      "Record a lactate-threshold heart-rate (LTHR) test result the runner just completed. Saves it to their test history AND adopts it as their current LTHR (the basis for HR zones). " +
+      "Only call this when the runner reports an ACTUAL test result, not a guess. After saving, let them know they can regenerate their HR zones from the new LTHR in Settings.",
+    input_schema: {
+      type: "object",
+      properties: {
+        lthr: { type: "number", description: "Lactate threshold HR in bpm (100-220)" },
+        maxHr: { type: "number", description: "Max HR seen during the test, if known (bpm)" },
+        testedOn: { type: "string", description: "Date of the test, ISO YYYY-MM-DD. Defaults to today." },
+        notes: { type: "string", description: "Optional notes (protocol, conditions, how it felt)" },
+      },
+      required: ["lthr"],
+    },
+  },
+  {
+    name: "get_training_history",
+    description:
+      "Load the runner's FULL recent run and gym history with per-run detail — km splits, intervals, HR, cadence — across more sessions than the default context shows. The default context already includes the most recent run in full detail plus a few summarized prior runs, so call this ONLY when you genuinely need the deeper history: building or substantially revising a training plan, or analyzing trends across many sessions. Do NOT call it just to give feedback on the latest run.",
+    input_schema: {
+      type: "object",
+      properties: {},
     },
   },
 ];
@@ -145,7 +220,23 @@ export async function executeTool(
         data: { ok: true },
       };
     }
+    case "set_goal_projection": {
+      const projectedTimeSec =
+        input.projectedTimeSec === null || input.projectedTimeSec === undefined
+          ? null
+          : Math.round(Number(input.projectedTimeSec));
+      const updated = await setGoalProjection(userId, Number(input.id), projectedTimeSec);
+      if (!updated) return { summary: "Goal not found", data: { error: "not found" } };
+      return {
+        summary: projectedTimeSec
+          ? `Set projected finish for ${updated.title}`
+          : `Cleared projected finish for ${updated.title}`,
+        data: { goal: updated },
+      };
+    }
     case "set_macro_plan": {
+      // Preserve the runner's standing instructions across plan rebuilds.
+      const existing = await getPlan(userId);
       const macro: MacroPlan = {
         summary: String(input.summary),
         phases: (input.phases as MacroPlan["phases"]).map((p) => ({
@@ -156,10 +247,19 @@ export async function executeTool(
           weeklyKm: p.weeklyKm ?? null,
           notes: p.notes ?? null,
         })),
+        instructions: existing.macro?.instructions ?? null,
         updatedAt: nowIso(),
       };
       await setMacroPlan(userId, macro);
       return { summary: "Updated your macro (long-term) plan", data: { ok: true } };
+    }
+    case "set_plan_instructions": {
+      const text = String(input.instructions ?? "").trim();
+      await setMacroInstructions(userId, text || null);
+      return {
+        summary: text ? "Updated your plan instructions" : "Cleared your plan instructions",
+        data: { ok: true },
+      };
     }
     case "set_weekly_plan": {
       const weekly: WeeklyPlan = {
@@ -176,6 +276,34 @@ export async function executeTool(
       };
       await setWeeklyPlan(userId, weekly);
       return { summary: "Updated your weekly plan", data: { ok: true } };
+    }
+    case "log_lthr_test": {
+      const lthr = Math.round(Number(input.lthr));
+      if (!Number.isFinite(lthr) || lthr < 100 || lthr > 220) {
+        return { summary: "LTHR must be between 100 and 220 bpm", data: { error: "invalid lthr" } };
+      }
+      let maxHr: number | null = null;
+      if (input.maxHr != null && String(input.maxHr).trim() !== "") {
+        const m = Math.round(Number(input.maxHr));
+        if (Number.isFinite(m)) maxHr = m;
+      }
+      const today = nowIso().slice(0, 10);
+      const testedOn =
+        typeof input.testedOn === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input.testedOn)
+          ? input.testedOn
+          : today;
+      const notes =
+        typeof input.notes === "string" && input.notes.trim() ? input.notes.trim() : null;
+      const test = await insertLthrTest(userId, { testedOn, lthr, maxHr, notes });
+      return {
+        summary: `Logged LTHR test: ${lthr} bpm on ${testedOn} — now your current LTHR`,
+        data: { test },
+      };
+    }
+    case "get_training_history": {
+      const [runs, gym] = await Promise.all([listRuns(userId), listGymSessions(userId)]);
+      const history = `${buildRunsContext(runs, 14)}\n\n${buildGymContext(gym, 14)}`;
+      return { summary: "Reviewed your full training history", data: { history } };
     }
     default:
       return { summary: `Unknown tool: ${name}`, data: { error: "unknown tool" } };

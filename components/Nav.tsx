@@ -12,7 +12,7 @@ const links = [
   },
   {
     href: "/upload",
-    label: "Upload run",
+    label: "Upload session",
     icon: "M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10",
   },
   {
@@ -86,10 +86,10 @@ export function Nav({ email }: { email: string | null }) {
       <aside className="w-60 shrink-0 border-r border-border bg-card/60 backdrop-blur px-4 py-6 hidden md:flex flex-col gap-1 sticky top-0 h-screen">
         <Link href="/" className="flex items-center gap-2 px-2 mb-6">
           <span className="grid place-items-center w-9 h-9 rounded-xl bg-accent text-white font-bold text-lg">
-            S
+            G
           </span>
           <div className="leading-tight">
-            <div className="font-semibold">Stride</div>
+            <div className="font-semibold">Gunna</div>
             <div className="text-xs text-muted">AI Running Coach</div>
           </div>
         </Link>

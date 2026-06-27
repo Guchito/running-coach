@@ -3,11 +3,15 @@ import { JWT } from "google-auth-library";
 import {
   getUserById,
   insertRun,
+  insertGymSession,
   getImportedFileIds,
+  getImportedGymFileIds,
   getRunStartKeys,
+  getGymStartKeys,
   touchDriveSync,
 } from "./db";
-import { parseRunFile, runNameFromFile } from "./ingest";
+import { parseActivityFile, runNameFromFile, gymNameFromFile } from "./ingest";
+import { guessGymType } from "./gym";
 
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly";
 const THROTTLE_MS = 5 * 60 * 1000; // auto-sync at most this often
@@ -119,7 +123,7 @@ export type SyncResult = {
   configured: boolean;
   folderSet: boolean;
   throttled?: boolean;
-  imported: { id: number; name: string }[];
+  imported: { id: number; name: string; kind: "run" | "gym" }[];
   skipped: number;
   errors: { file: string; error: string }[];
   error?: string;
@@ -133,11 +137,20 @@ export async function importDriveFiles(
   files: DriveFile[],
   downloader: (id: string) => Promise<Buffer> = downloadFile
 ): Promise<Pick<SyncResult, "imported" | "skipped" | "errors">> {
-  const [importedIds, startKeys] = await Promise.all([
+  const [runIds, gymIds, runStartKeys, gymStartKeys] = await Promise.all([
     getImportedFileIds(userId),
+    getImportedGymFileIds(userId),
     getRunStartKeys(userId),
+    getGymStartKeys(userId),
   ]);
-  const result = { imported: [] as { id: number; name: string }[], skipped: 0, errors: [] as { file: string; error: string }[] };
+  // A Drive file should be imported once, whether it landed as a run or a gym
+  // session, so skip if either table already has it.
+  const importedIds = new Set([...runIds, ...gymIds]);
+  const result = {
+    imported: [] as { id: number; name: string; kind: "run" | "gym" }[],
+    skipped: 0,
+    errors: [] as { file: string; error: string }[],
+  };
 
   for (const f of files) {
     if (importedIds.has(f.id)) {
@@ -146,17 +159,35 @@ export async function importDriveFiles(
     }
     try {
       const buf = await downloader(f.id);
-      const summary = parseRunFile(f.name, buf);
-      // Normalize to UTC to match getRunStartKeys (DB times come back as UTC).
-      const key = new Date(summary.startedAt).toISOString().slice(0, 19);
-      if (startKeys.has(key)) {
-        result.skipped++;
-        continue; // same run already exists (e.g. uploaded manually)
+      const parsed = parseActivityFile(f.name, buf);
+      // Normalize to UTC to match the start-key sets (DB times come back as UTC).
+      const key = new Date(parsed.summary.startedAt).toISOString().slice(0, 19);
+
+      if (parsed.kind === "gym") {
+        if (gymStartKeys.has(key)) {
+          result.skipped++;
+          continue;
+        }
+        const name = gymNameFromFile(f.name, parsed.summary.startedAt);
+        const type = guessGymType(parsed.summary.sport, parsed.summary.subSport);
+        const session = await insertGymSession(
+          userId,
+          { name, type, rpe: null, notes: null },
+          parsed.summary,
+          f.id
+        );
+        gymStartKeys.add(key);
+        result.imported.push({ id: session.id, name: session.name, kind: "gym" });
+      } else {
+        if (runStartKeys.has(key)) {
+          result.skipped++;
+          continue; // same run already exists (e.g. uploaded manually)
+        }
+        const name = runNameFromFile(f.name, parsed.summary.startedAt);
+        const run = await insertRun(userId, name, parsed.summary, f.id);
+        runStartKeys.add(key);
+        result.imported.push({ id: run.id, name: run.name, kind: "run" });
       }
-      const name = runNameFromFile(f.name, summary.startedAt);
-      const run = await insertRun(userId, name, summary, f.id);
-      startKeys.add(key);
-      result.imported.push({ id: run.id, name: run.name });
     } catch (e) {
       result.errors.push({ file: f.name, error: e instanceof Error ? e.message : "parse failed" });
     }

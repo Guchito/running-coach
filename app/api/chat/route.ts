@@ -4,11 +4,14 @@ import {
   insertMessage,
   clearMessages,
   listRuns,
+  listGymSessions,
   listGoals,
   getPlan,
   getUserById,
+  getLatestLthrTest,
+  getLatestBodyMetric,
 } from "@/lib/db";
-import { getClient, COACH_MODEL, SYSTEM_PROMPT, buildContextBlock } from "@/lib/coach";
+import { getClient, resolveCoachModel, supportsEffort, SYSTEM_PROMPT, buildContextBlock } from "@/lib/coach";
 import { COACH_TOOLS, executeTool } from "@/lib/coachTools";
 import { getCurrentUserId, unauthorized } from "@/lib/auth";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -68,35 +71,62 @@ export async function POST(req: NextRequest) {
 
       try {
         // Rebuild fresh context each request (goals/plan/runs may have changed).
-        const [goals, plan, runs, user] = await Promise.all([
+        const [goals, plan, runs, gymSessions, user, lastLthrTest, bodyMetric] = await Promise.all([
           listGoals(userId),
           getPlan(userId),
           listRuns(userId),
+          listGymSessions(userId),
           getUserById(userId),
+          getLatestLthrTest(userId),
+          getLatestBodyMetric(userId),
         ]);
         const context = buildContextBlock({
           goals,
           plan,
           runs,
+          gymSessions,
           userName: user?.name,
           maxHr: user?.maxHr,
+          lactateThresholdHr: user?.lactateThresholdHr,
           hrZones: user?.hrZones,
+          lastLthrTestOn: lastLthrTest?.testedOn ?? null,
+          lthrTestIntervalWeeks: user?.lthrTestIntervalWeeks ?? null,
+          bodyMetric,
         });
         const system = `${SYSTEM_PROMPT}\n\n---\nCURRENT CONTEXT (refreshed each message):\n${context}`;
+        const model = resolveCoachModel(user?.coachModel);
 
         // Agentic loop: stream text, run any tools, feed results back, repeat.
         for (let turn = 0; turn < 6; turn++) {
           const ms = client.messages.stream({
-            model: COACH_MODEL,
-            max_tokens: 2000,
-            system,
+            model,
+            // Generous cap: a full weekly + macro plan tool call (7 days of
+            // detail) plus the surrounding reply can run well past a few
+            // thousand tokens. Too low here truncates the tool_use block, so the
+            // plan update never executes. Streaming, so no HTTP-timeout risk.
+            max_tokens: 16000,
+            // Low effort = terser, cheaper replies. Not supported on Haiku.
+            ...(supportsEffort(model) ? { output_config: { effort: "low" as const } } : {}),
+            // Top-level automatic caching: caches everything up to the last
+            // block (the growing conversation history) and moves the breakpoint
+            // forward each turn — so prior messages read from cache too.
+            cache_control: { type: "ephemeral" },
+            // Explicit breakpoint on the big static prefix (tools + system +
+            // context) so it always caches as a unit, re-read at ~10% cost
+            // instead of paying full price to "read everything" each message.
+            system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
             tools: COACH_TOOLS,
             messages,
           });
           ms.on("text", (delta: string) => send(delta));
           const final = await ms.finalMessage();
 
-          if (final.stop_reason !== "tool_use") break;
+          if (final.stop_reason !== "tool_use") {
+            if (final.stop_reason === "max_tokens") {
+              send("\n\n_(My reply was cut off before I finished — ask me to continue.)_");
+            }
+            break;
+          }
 
           // Record the assistant turn (with tool_use blocks) verbatim.
           messages.push({ role: "assistant", content: final.content });

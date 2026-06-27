@@ -22,6 +22,28 @@ export function defaultZones(maxHr: number = DEFAULT_MAX_HR): HrZone[] {
   }));
 }
 
+// Joe Friel's running zones as a percentage of lactate threshold HR (LTHR).
+// LTHR sits at the bottom of Z5 — Z4 Threshold tops out just below it.
+const LTHR_ZONE_DEFS: { name: string; lowPct: number; highPct: number }[] = [
+  { name: "Z1 Recovery", lowPct: 0.65, highPct: 0.85 },
+  { name: "Z2 Easy", lowPct: 0.85, highPct: 0.9 },
+  { name: "Z3 Aerobic", lowPct: 0.9, highPct: 0.95 },
+  { name: "Z4 Threshold", lowPct: 0.95, highPct: 1.0 },
+  { name: "Z5 VO2 Max", lowPct: 1.0, highPct: 1.07 },
+];
+
+// Build zones from a lactate threshold HR using the Friel %LTHR model.
+// The top zone caps at maxHr when it's known and above LTHR, else at ~107% LTHR.
+export function lthrZones(lthr: number, maxHr?: number | null): HrZone[] {
+  const last = LTHR_ZONE_DEFS.length - 1;
+  const topCap = maxHr && maxHr > lthr ? maxHr : Math.round(lthr * LTHR_ZONE_DEFS[last].highPct);
+  return LTHR_ZONE_DEFS.map((z, i) => ({
+    name: z.name,
+    min: Math.round(lthr * z.lowPct),
+    max: i === last ? topCap : Math.round(lthr * z.highPct) - 1,
+  }));
+}
+
 // Resolve the zones to use for a user: their custom zones, else defaults from
 // their max HR, else defaults from the standard estimate.
 export function resolveZones(

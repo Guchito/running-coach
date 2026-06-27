@@ -84,6 +84,9 @@ export type Goal = {
   targetDistanceM: number | null;
   targetTimeSec: number | null; // goal finish time, if any
   targetDate: string | null;    // ISO date
+  // Coach's realistic projected finish on race day, accounting for the training
+  // still to come — distinct from the "if you raced today" estimate from recent runs.
+  projectedTimeSec: number | null;
   notes: string | null;
   status: GoalStatus;
   createdAt: string;
@@ -104,6 +107,7 @@ export type MacroPhase = {
 export type MacroPlan = {
   summary: string;
   phases: MacroPhase[];
+  instructions: string | null;  // user-written guidance the coach must respect; persists across plan rebuilds
   updatedAt: string;
 };
 
@@ -141,9 +145,73 @@ export type User = {
   email: string;
   name: string | null;
   maxHr: number | null;
+  lactateThresholdHr: number | null;
   hrZones: HrZone[] | null;
   driveFolderId: string | null;
   driveLastSync: string | null;
+  coachModel: string | null;  // chosen Claude model for the coach; null = use the default
+  lthrTestIntervalWeeks: number | null; // re-test cadence; null = no schedule
+  createdAt: string;
+};
+
+// A logged lactate-threshold HR test result. The latest one sets the runner's
+// current LTHR (used for zones); the history shows progression over time.
+export type LthrTest = {
+  id: number;
+  testedOn: string; // YYYY-MM-DD
+  lthr: number;
+  maxHr: number | null; // max HR seen during the test, if recorded
+  notes: string | null;
+  createdAt: string;
+};
+
+// A quick daily recovery log: resting HR and/or body weight.
+export type BodyMetric = {
+  id: number;
+  recordedOn: string; // YYYY-MM-DD
+  restingHr: number | null;
+  weightKg: number | null;
+  notes: string | null;
+  createdAt: string;
+};
+
+// ---- Gym / strength sessions ----
+
+export type GymType =
+  | "push"
+  | "pull"
+  | "legs"
+  | "upper"
+  | "lower"
+  | "full_body"
+  | "core"
+  | "cardio"
+  | "other";
+
+// Summary-level data extracted from a gym/strength .fit or .tcx file. Strength
+// workouts have no distance/pace, so we keep what a watch reliably records.
+export type GymSummary = {
+  startedAt: string;
+  durationSec: number;
+  avgHr: number | null;
+  maxHr: number | null;
+  calories: number | null;
+  sport: string | null; // raw FIT/TCX sport, e.g. "training"
+  subSport: string | null; // raw FIT sub-sport, e.g. "strength_training"
+};
+
+export type GymSession = {
+  id: number;
+  name: string;
+  type: GymType;
+  startedAt: string;
+  durationSec: number;
+  rpe: number | null; // perceived intensity, 1-10
+  avgHr: number | null;
+  maxHr: number | null;
+  calories: number | null;
+  notes: string | null;
+  summary: GymSummary;
   createdAt: string;
 };
 

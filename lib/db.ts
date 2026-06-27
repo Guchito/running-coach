@@ -10,6 +10,11 @@ import type {
   MacroPlan,
   WeeklyPlan,
   Plan,
+  GymSession,
+  GymSummary,
+  GymType,
+  LthrTest,
+  BodyMetric,
 } from "./types";
 
 // Single shared pool. On serverless platforms (Vercel) this is created per
@@ -57,9 +62,34 @@ const SCHEMA = `
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
   );
   ALTER TABLE users ADD COLUMN IF NOT EXISTS max_hr INTEGER;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS lactate_threshold_hr INTEGER;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS hr_zones JSONB;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS drive_folder_id TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS drive_last_sync TIMESTAMPTZ;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS coach_model TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS lthr_test_interval_weeks INTEGER;
+
+  CREATE TABLE IF NOT EXISTS lthr_tests (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tested_on   DATE NOT NULL,
+    lthr        INTEGER NOT NULL,
+    max_hr      INTEGER,
+    notes       TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS lthr_tests_user_idx ON lthr_tests(user_id, tested_on DESC);
+
+  CREATE TABLE IF NOT EXISTS body_metrics (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    recorded_on DATE NOT NULL,
+    resting_hr  INTEGER,
+    weight_kg   NUMERIC(5,1),
+    notes       TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS body_metrics_user_idx ON body_metrics(user_id, recorded_on DESC);
 
   CREATE TABLE IF NOT EXISTS runs (
     id            SERIAL PRIMARY KEY,
@@ -96,6 +126,7 @@ const SCHEMA = `
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
   );
+  ALTER TABLE goals ADD COLUMN IF NOT EXISTS projected_time_s DOUBLE PRECISION;
   CREATE INDEX IF NOT EXISTS goals_user_idx ON goals(user_id);
 
   CREATE TABLE IF NOT EXISTS plans (
@@ -113,6 +144,24 @@ const SCHEMA = `
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
   );
   CREATE INDEX IF NOT EXISTS messages_user_idx ON messages(user_id, id);
+
+  CREATE TABLE IF NOT EXISTS gym_sessions (
+    id             SERIAL PRIMARY KEY,
+    user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name           TEXT NOT NULL,
+    type           TEXT NOT NULL,
+    started_at     TIMESTAMPTZ NOT NULL,
+    duration_s     DOUBLE PRECISION NOT NULL,
+    rpe            INTEGER,
+    avg_hr         DOUBLE PRECISION,
+    max_hr         DOUBLE PRECISION,
+    calories       DOUBLE PRECISION,
+    notes          TEXT,
+    summary_json   JSONB NOT NULL,
+    source_file_id TEXT,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS gym_user_started_idx ON gym_sessions(user_id, started_at DESC);
 `;
 
 // Run schema creation once per process.
@@ -147,11 +196,143 @@ function rowToUser(r: Record<string, unknown>): User {
     email: r.email as string,
     name: (r.name as string) ?? null,
     maxHr: r.max_hr === null || r.max_hr === undefined ? null : Number(r.max_hr),
+    lactateThresholdHr:
+      r.lactate_threshold_hr === null || r.lactate_threshold_hr === undefined
+        ? null
+        : Number(r.lactate_threshold_hr),
     hrZones: jsonField<HrZone[]>(r.hr_zones),
     driveFolderId: (r.drive_folder_id as string) ?? null,
     driveLastSync: r.drive_last_sync ? new Date(r.drive_last_sync as string).toISOString() : null,
+    coachModel: (r.coach_model as string) ?? null,
+    lthrTestIntervalWeeks:
+      r.lthr_test_interval_weeks === null || r.lthr_test_interval_weeks === undefined
+        ? null
+        : Number(r.lthr_test_interval_weeks),
     createdAt: new Date(r.created_at as string).toISOString(),
   };
+}
+
+export async function setCoachModel(userId: number, model: string | null): Promise<User> {
+  const rows = await q(`UPDATE users SET coach_model = $2 WHERE id = $1 RETURNING *`, [
+    userId,
+    model,
+  ]);
+  return rowToUser(rows[0]);
+}
+
+export async function setLthrTestInterval(userId: number, weeks: number | null): Promise<User> {
+  const rows = await q(
+    `UPDATE users SET lthr_test_interval_weeks = $2 WHERE id = $1 RETURNING *`,
+    [userId, weeks]
+  );
+  return rowToUser(rows[0]);
+}
+
+// ---------- lactate-threshold tests ----------
+
+function rowToLthrTest(r: Record<string, unknown>): LthrTest {
+  return {
+    id: r.id as number,
+    testedOn: new Date(r.tested_on as string).toISOString().slice(0, 10),
+    lthr: Number(r.lthr),
+    maxHr: r.max_hr === null || r.max_hr === undefined ? null : Number(r.max_hr),
+    notes: (r.notes as string) ?? null,
+    createdAt: new Date(r.created_at as string).toISOString(),
+  };
+}
+
+export async function listLthrTests(userId: number): Promise<LthrTest[]> {
+  const rows = await q(
+    `SELECT * FROM lthr_tests WHERE user_id = $1 ORDER BY tested_on DESC, id DESC`,
+    [userId]
+  );
+  return rows.map(rowToLthrTest);
+}
+
+export async function getLatestLthrTest(userId: number): Promise<LthrTest | null> {
+  const rows = await q(
+    `SELECT * FROM lthr_tests WHERE user_id = $1 ORDER BY tested_on DESC, id DESC LIMIT 1`,
+    [userId]
+  );
+  return rows[0] ? rowToLthrTest(rows[0]) : null;
+}
+
+// Log a test result and adopt it as the runner's current LTHR (and max HR, if
+// the test recorded one). Zones aren't regenerated automatically.
+export async function insertLthrTest(
+  userId: number,
+  input: { testedOn: string; lthr: number; maxHr: number | null; notes: string | null }
+): Promise<LthrTest> {
+  const rows = await q(
+    `INSERT INTO lthr_tests (user_id, tested_on, lthr, max_hr, notes)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [userId, input.testedOn, input.lthr, input.maxHr, input.notes]
+  );
+  await q(
+    `UPDATE users
+       SET lactate_threshold_hr = $2,
+           max_hr = COALESCE($3, max_hr)
+     WHERE id = $1`,
+    [userId, input.lthr, input.maxHr]
+  );
+  return rowToLthrTest(rows[0]);
+}
+
+export async function deleteLthrTest(userId: number, id: number): Promise<boolean> {
+  const rows = await q(
+    `DELETE FROM lthr_tests WHERE id = $1 AND user_id = $2 RETURNING id`,
+    [id, userId]
+  );
+  return rows.length > 0;
+}
+
+// ---------- body metrics (resting HR / weight) ----------
+
+function rowToBodyMetric(r: Record<string, unknown>): BodyMetric {
+  return {
+    id: r.id as number,
+    recordedOn: new Date(r.recorded_on as string).toISOString().slice(0, 10),
+    restingHr: r.resting_hr === null || r.resting_hr === undefined ? null : Number(r.resting_hr),
+    weightKg: r.weight_kg === null || r.weight_kg === undefined ? null : Number(r.weight_kg),
+    notes: (r.notes as string) ?? null,
+    createdAt: new Date(r.created_at as string).toISOString(),
+  };
+}
+
+export async function listBodyMetrics(userId: number, limit = 60): Promise<BodyMetric[]> {
+  const rows = await q(
+    `SELECT * FROM body_metrics WHERE user_id = $1 ORDER BY recorded_on DESC, id DESC LIMIT $2`,
+    [userId, limit]
+  );
+  return rows.map(rowToBodyMetric);
+}
+
+export async function getLatestBodyMetric(userId: number): Promise<BodyMetric | null> {
+  const rows = await q(
+    `SELECT * FROM body_metrics WHERE user_id = $1 ORDER BY recorded_on DESC, id DESC LIMIT 1`,
+    [userId]
+  );
+  return rows[0] ? rowToBodyMetric(rows[0]) : null;
+}
+
+export async function insertBodyMetric(
+  userId: number,
+  input: { recordedOn: string; restingHr: number | null; weightKg: number | null; notes: string | null }
+): Promise<BodyMetric> {
+  const rows = await q(
+    `INSERT INTO body_metrics (user_id, recorded_on, resting_hr, weight_kg, notes)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [userId, input.recordedOn, input.restingHr, input.weightKg, input.notes]
+  );
+  return rowToBodyMetric(rows[0]);
+}
+
+export async function deleteBodyMetric(userId: number, id: number): Promise<boolean> {
+  const rows = await q(
+    `DELETE FROM body_metrics WHERE id = $1 AND user_id = $2 RETURNING id`,
+    [id, userId]
+  );
+  return rows.length > 0;
 }
 
 export async function setDriveFolder(userId: number, folderId: string | null): Promise<User> {
@@ -187,11 +368,12 @@ export async function getRunStartKeys(userId: number): Promise<Set<string>> {
 export async function updateUserHr(
   userId: number,
   maxHr: number | null,
+  lactateThresholdHr: number | null,
   hrZones: HrZone[] | null
 ): Promise<User> {
   const rows = await q(
-    `UPDATE users SET max_hr = $2, hr_zones = $3 WHERE id = $1 RETURNING *`,
-    [userId, maxHr, hrZones ? JSON.stringify(hrZones) : null]
+    `UPDATE users SET max_hr = $2, lactate_threshold_hr = $3, hr_zones = $4 WHERE id = $1 RETURNING *`,
+    [userId, maxHr, lactateThresholdHr, hrZones ? JSON.stringify(hrZones) : null]
   );
   return rowToUser(rows[0]);
 }
@@ -295,6 +477,88 @@ export async function deleteRun(userId: number, id: number): Promise<void> {
   await q(`DELETE FROM runs WHERE id = $1 AND user_id = $2`, [id, userId]);
 }
 
+// ---------- gym / strength sessions ----------
+
+function rowToGymSession(r: Record<string, unknown>): GymSession {
+  return {
+    id: r.id as number,
+    name: r.name as string,
+    type: r.type as GymType,
+    startedAt: new Date(r.started_at as string).toISOString(),
+    durationSec: Number(r.duration_s),
+    rpe: r.rpe === null || r.rpe === undefined ? null : Number(r.rpe),
+    avgHr: r.avg_hr === null || r.avg_hr === undefined ? null : Number(r.avg_hr),
+    maxHr: r.max_hr === null || r.max_hr === undefined ? null : Number(r.max_hr),
+    calories: r.calories === null || r.calories === undefined ? null : Number(r.calories),
+    notes: (r.notes as string) ?? null,
+    summary: jsonField<GymSummary>(r.summary_json) as GymSummary,
+    createdAt: new Date(r.created_at as string).toISOString(),
+  };
+}
+
+export async function insertGymSession(
+  userId: number,
+  fields: { name: string; type: GymType; rpe: number | null; notes: string | null },
+  summary: GymSummary,
+  sourceFileId: string | null = null
+): Promise<GymSession> {
+  const rows = await q(
+    `INSERT INTO gym_sessions (user_id, name, type, started_at, duration_s, rpe,
+       avg_hr, max_hr, calories, notes, summary_json, source_file_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+    [
+      userId,
+      fields.name,
+      fields.type,
+      summary.startedAt,
+      summary.durationSec,
+      fields.rpe,
+      summary.avgHr,
+      summary.maxHr,
+      summary.calories,
+      fields.notes,
+      JSON.stringify(summary),
+      sourceFileId,
+    ]
+  );
+  return rowToGymSession(rows[0]);
+}
+
+export async function listGymSessions(userId: number): Promise<GymSession[]> {
+  const rows = await q(
+    `SELECT * FROM gym_sessions WHERE user_id = $1 ORDER BY started_at DESC`,
+    [userId]
+  );
+  return rows.map(rowToGymSession);
+}
+
+export async function getGymSession(userId: number, id: number): Promise<GymSession | null> {
+  const rows = await q(`SELECT * FROM gym_sessions WHERE id = $1 AND user_id = $2`, [id, userId]);
+  return rows[0] ? rowToGymSession(rows[0]) : null;
+}
+
+export async function deleteGymSession(userId: number, id: number): Promise<void> {
+  await q(`DELETE FROM gym_sessions WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+// Drive file ids already imported as gym sessions (to skip on re-sync).
+export async function getImportedGymFileIds(userId: number): Promise<Set<string>> {
+  const rows = await q<{ source_file_id: string }>(
+    `SELECT source_file_id FROM gym_sessions WHERE user_id = $1 AND source_file_id IS NOT NULL`,
+    [userId]
+  );
+  return new Set(rows.map((r) => r.source_file_id));
+}
+
+// Start times (to the second) of existing gym sessions, for start-time dedupe.
+export async function getGymStartKeys(userId: number): Promise<Set<string>> {
+  const rows = await q<{ started_at: string }>(
+    `SELECT started_at FROM gym_sessions WHERE user_id = $1`,
+    [userId]
+  );
+  return new Set(rows.map((r) => new Date(r.started_at).toISOString().slice(0, 19)));
+}
+
 // ---------- goals (multiple per user) ----------
 
 function rowToGoal(r: Record<string, unknown>): Goal {
@@ -305,6 +569,10 @@ function rowToGoal(r: Record<string, unknown>): Goal {
     targetDistanceM: r.target_distance_m === null ? null : Number(r.target_distance_m),
     targetTimeSec: r.target_time_s === null ? null : Number(r.target_time_s),
     targetDate: (r.target_date as string) ?? null,
+    projectedTimeSec:
+      r.projected_time_s === null || r.projected_time_s === undefined
+        ? null
+        : Number(r.projected_time_s),
     notes: (r.notes as string) ?? null,
     status: (r.status as GoalStatus) ?? "active",
     createdAt: new Date(r.created_at as string).toISOString(),
@@ -392,6 +660,21 @@ export async function deleteGoal(userId: number, id: number): Promise<void> {
   await q(`DELETE FROM goals WHERE id = $1 AND user_id = $2`, [id, userId]);
 }
 
+// The coach's realistic race-day projection — set independently of the goal's
+// target so updating other goal fields never wipes it.
+export async function setGoalProjection(
+  userId: number,
+  id: number,
+  projectedTimeSec: number | null
+): Promise<Goal | null> {
+  const rows = await q(
+    `UPDATE goals SET projected_time_s = $3, updated_at = now()
+     WHERE id = $2 AND user_id = $1 RETURNING *`,
+    [userId, id, projectedTimeSec]
+  );
+  return rows[0] ? rowToGoal(rows[0]) : null;
+}
+
 // ---------- plans ----------
 
 export async function getPlan(userId: number): Promise<Plan> {
@@ -417,6 +700,20 @@ async function upsertPlanField(
 
 export async function setMacroPlan(userId: number, macro: MacroPlan): Promise<void> {
   await upsertPlanField(userId, "macro_json", macro);
+}
+
+// Update only the user's free-text plan instructions, preserving everything else.
+// If no macro plan exists yet, create a minimal stub so the instructions still persist.
+export async function setMacroInstructions(
+  userId: number,
+  instructions: string | null
+): Promise<MacroPlan> {
+  const { macro } = await getPlan(userId);
+  const next: MacroPlan = macro
+    ? { ...macro, instructions }
+    : { summary: "", phases: [], instructions, updatedAt: new Date().toISOString() };
+  await upsertPlanField(userId, "macro_json", next);
+  return next;
 }
 
 export async function setWeeklyPlan(userId: number, weekly: WeeklyPlan): Promise<void> {

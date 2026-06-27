@@ -1,5 +1,7 @@
-import { getPlan, listGoals } from "@/lib/db";
+import { getPlan, listGoals, listRuns, listGymSessions } from "@/lib/db";
 import { PageShell, Card, Button, EmptyState } from "@/components/ui";
+import { PlanInstructions } from "@/components/PlanInstructions";
+import { weeklyAdherence } from "@/lib/adherence";
 import { requireUserId } from "@/lib/auth";
 import Link from "next/link";
 
@@ -13,6 +15,7 @@ const DAY_TYPE_COLOR: Record<string, string> = {
   intervals: "#e11d48",
   race: "#7c3aed",
   cross: "#0ea5e9",
+  strength: "#d97706",
   rest: "#cbd5e1",
 };
 
@@ -20,9 +23,17 @@ const DAYS_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default async function PlanPage() {
   const userId = await requireUserId();
-  const [plan, goals] = await Promise.all([getPlan(userId), listGoals(userId)]);
+  const [plan, goals, runs, gymSessions] = await Promise.all([
+    getPlan(userId),
+    listGoals(userId),
+    listRuns(userId),
+    listGymSessions(userId),
+  ]);
   const activeGoals = goals.filter((g) => g.status === "active");
-  const hasPlan = plan.macro || plan.weekly;
+  const adherence = weeklyAdherence(plan.weekly, runs, gymSessions);
+  const doneByDay = new Map((adherence?.items ?? []).map((it) => [it.day, it]));
+  const hasMacro = !!(plan.macro && (plan.macro.summary.trim() || plan.macro.phases.length));
+  const hasPlan = hasMacro || plan.weekly;
 
   return (
     <PageShell
@@ -30,28 +41,31 @@ export default async function PlanPage() {
       subtitle="Built and maintained by your coach around all your goals."
       action={<Button href="/coach">Talk to coach</Button>}
     >
-      {!hasPlan ? (
-        <EmptyState
-          title="No plan yet"
-          body={
-            activeGoals.length === 0
-              ? "Set a goal first, then ask your coach to build your training plan."
-              : "Ask your coach to build your macro and weekly plan around your goals."
-          }
-          action={
-            activeGoals.length === 0 ? (
-              <Button href="/goals">Set a goal</Button>
-            ) : (
-              <Button href="/coach?ask=Build my macro and weekly training plan around my goals.">
-                Build my plan
-              </Button>
-            )
-          }
-        />
-      ) : (
-        <div className="space-y-6">
+      <div className="space-y-6">
+        <PlanInstructions initial={plan.macro?.instructions ?? null} />
+
+        {!hasPlan ? (
+          <EmptyState
+            title="No plan yet"
+            body={
+              activeGoals.length === 0
+                ? "Set a goal first, then ask your coach to build your training plan."
+                : "Ask your coach to build your macro and weekly plan around your goals."
+            }
+            action={
+              activeGoals.length === 0 ? (
+                <Button href="/goals">Set a goal</Button>
+              ) : (
+                <Button href="/coach?ask=Build my macro and weekly training plan around my goals.">
+                  Build my plan
+                </Button>
+              )
+            }
+          />
+        ) : (
+          <>
           {/* Macro plan */}
-          {plan.macro && (
+          {hasMacro && plan.macro && (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-1">
                 <h2 className="font-semibold text-lg">Macro plan</h2>
@@ -86,9 +100,28 @@ export default async function PlanPage() {
             <Card className="p-6">
               <div className="flex items-center justify-between mb-1">
                 <h2 className="font-semibold text-lg">This week</h2>
-                <span className="text-xs text-muted">
-                  {plan.weekly.weekStart ? `week of ${plan.weekly.weekStart}` : ""}
-                </span>
+                <div className="flex items-center gap-2">
+                  {adherence && adherence.plannedCount > 0 && (
+                    adherence.upcoming ? (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-black/[0.04] text-muted">
+                        Upcoming
+                      </span>
+                    ) : (
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${
+                          adherence.doneCount >= adherence.plannedCount
+                            ? "bg-good/15 text-good"
+                            : "bg-accent-soft text-accent"
+                        }`}
+                      >
+                        {adherence.doneCount}/{adherence.plannedCount} done
+                      </span>
+                    )
+                  )}
+                  <span className="text-xs text-muted">
+                    {plan.weekly.weekStart ? `week of ${plan.weekly.weekStart}` : ""}
+                  </span>
+                </div>
               </div>
               <p className="text-sm text-muted mb-5">{plan.weekly.summary}</p>
 
@@ -105,6 +138,11 @@ export default async function PlanPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold w-8 text-muted">{d.day}</span>
                           <span className="font-medium truncate">{d.title}</span>
+                          {doneByDay.get(d.day)?.done && (
+                            <span className="text-good text-sm shrink-0" title="Completed">
+                              ✓
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-muted mt-0.5">
                           <span className="capitalize">{d.type}</span>
@@ -122,8 +160,9 @@ export default async function PlanPage() {
             Want changes? <Link href="/coach" className="text-accent">Tell your coach</Link> — and
             your plan updates automatically every time you upload a run.
           </p>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </PageShell>
   );
 }

@@ -22,11 +22,11 @@ export function UploadForm() {
       const fd = new FormData();
       fd.append("file", f);
       if (name.trim()) fd.append("name", name.trim());
-      const res = await fetch("/api/runs", { method: "POST", body: fd });
+      const res = await fetch("/api/sessions", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed.");
-      // Go straight to the new run's breakdown.
-      router.push(`/runs/${data.run.id}?new=1`);
+      // Detected as a run or a gym session — go straight to its breakdown.
+      router.push(data.kind === "gym" ? `/gym/${data.id}` : `/runs/${data.id}?new=1`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed.");
       setBusy(false);
@@ -36,8 +36,8 @@ export function UploadForm() {
   function pick(f: File | null) {
     setError(null);
     if (!f) return;
-    if (!/\.(csv|fit)$/i.test(f.name)) {
-      setError("Please choose a .csv or .fit file exported from your watch.");
+    if (!/\.(csv|fit|tcx)$/i.test(f.name)) {
+      setError("Please choose a .csv, .fit or .tcx file exported from your watch.");
       return;
     }
     setFile(f);
@@ -72,14 +72,14 @@ export function UploadForm() {
             <div className="font-medium">{file.name}</div>
           ) : (
             <>
-              <div className="font-medium">Drop your run file here</div>
-              <div className="text-sm text-muted mt-1">or click to browse · <strong>.csv</strong> or <strong>.fit</strong> (Apple Watch, HealthFit, Garmin…)</div>
+              <div className="font-medium">Drop your session file here</div>
+              <div className="text-sm text-muted mt-1">or click to browse · <strong>.csv</strong>, <strong>.fit</strong> or <strong>.tcx</strong> — runs and gym sessions are detected automatically</div>
             </>
           )}
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,.fit,text/csv,application/octet-stream"
+            accept=".csv,.fit,.tcx,text/csv,application/octet-stream"
             className="hidden"
             onChange={(e) => pick(e.target.files?.[0] ?? null)}
           />
@@ -89,11 +89,11 @@ export function UploadForm() {
       {file && (
         <Card className="p-4 space-y-3">
           <label className="block text-sm">
-            <span className="text-muted">Name this run (optional)</span>
+            <span className="text-muted">Name this session (optional)</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Tuesday tempo, Long run, Park loop…"
+              placeholder="e.g. Tuesday tempo, Long run, Leg day…"
               className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </label>

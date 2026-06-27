@@ -3,18 +3,23 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
-import { defaultZones, DEFAULT_MAX_HR, ZONE_COLORS } from "@/lib/hr";
+import { defaultZones, lthrZones, DEFAULT_MAX_HR, ZONE_COLORS } from "@/lib/hr";
 import type { HrZone } from "@/lib/types";
 
 export function HrZonesForm({
   initialMaxHr,
+  initialLactateThresholdHr,
   initialZones,
 }: {
   initialMaxHr: number | null;
+  initialLactateThresholdHr: number | null;
   initialZones: HrZone[] | null;
 }) {
   const router = useRouter();
   const [maxHr, setMaxHr] = useState<string>(initialMaxHr ? String(initialMaxHr) : "");
+  const [lthr, setLthr] = useState<string>(
+    initialLactateThresholdHr ? String(initialLactateThresholdHr) : ""
+  );
   const [zones, setZones] = useState<HrZone[]>(
     initialZones ?? defaultZones(initialMaxHr ?? DEFAULT_MAX_HR)
   );
@@ -22,9 +27,16 @@ export function HrZonesForm({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function regenerate() {
+  function regenerateFromMax() {
     const m = Number(maxHr) || DEFAULT_MAX_HR;
     setZones(defaultZones(m));
+    setSaved(false);
+  }
+
+  function regenerateFromLthr() {
+    const t = Number(lthr);
+    if (!t) return;
+    setZones(lthrZones(t, maxHr ? Number(maxHr) : null));
     setSaved(false);
   }
 
@@ -41,7 +53,11 @@ export function HrZonesForm({
       const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ maxHr: maxHr ? Number(maxHr) : null, hrZones: zones }),
+        body: JSON.stringify({
+          maxHr: maxHr ? Number(maxHr) : null,
+          lactateThresholdHr: lthr ? Number(lthr) : null,
+          hrZones: zones,
+        }),
       });
       if (!res.ok) throw new Error((await res.json()).error || "Could not save.");
       setSaved(true);
@@ -58,7 +74,7 @@ export function HrZonesForm({
 
   return (
     <Card className="p-6 max-w-xl">
-      <div className="flex items-end gap-3 mb-5">
+      <div className="flex items-end gap-3 mb-3">
         <label className="block text-sm flex-1">
           <span className="text-muted">Max heart rate (bpm)</span>
           <input
@@ -74,8 +90,29 @@ export function HrZonesForm({
             className={`mt-1 ${inputCls}`}
           />
         </label>
-        <Button type="button" variant="ghost" onClick={regenerate}>
-          Generate zones
+        <label className="block text-sm flex-1">
+          <span className="text-muted">Lactate threshold HR (bpm)</span>
+          <input
+            value={lthr}
+            onChange={(e) => {
+              setLthr(e.target.value);
+              setSaved(false);
+            }}
+            type="number"
+            min={100}
+            max={220}
+            placeholder="e.g. 170"
+            className={`mt-1 ${inputCls}`}
+          />
+        </label>
+      </div>
+
+      <div className="flex items-center gap-2 mb-5">
+        <Button type="button" variant="ghost" onClick={regenerateFromMax}>
+          Generate from max HR
+        </Button>
+        <Button type="button" variant="ghost" onClick={regenerateFromLthr} disabled={!lthr}>
+          Generate from LTHR (Friel)
         </Button>
       </div>
 
@@ -115,8 +152,9 @@ export function HrZonesForm({
         {saved && <span className="text-sm text-good">✓ Saved</span>}
       </div>
       <p className="text-xs text-muted mt-4">
-        These zones are used to break down time-in-zone on every run. Set your max HR and tweak the
-        boundaries to match your own testing (e.g. a lab or field test).
+        These zones are used to break down time-in-zone on every run. Generate from a percentage of
+        max HR, or from your lactate threshold HR using Joe Friel&apos;s %LTHR model (generally more
+        accurate for trained runners) — then tweak the boundaries to match your own testing.
       </p>
     </Card>
   );

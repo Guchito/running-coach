@@ -15,7 +15,7 @@ type SyncResult = {
   configured: boolean;
   folderSet: boolean;
   throttled?: boolean;
-  imported: { id: number; name: string }[];
+  imported: { id: number; name: string; kind: "run" | "gym" }[];
   skipped: number;
   errors: { file: string; error: string }[];
   error?: string;
@@ -141,17 +141,21 @@ export function DriveSettings({ initial }: { initial: Config }) {
           ) : result.imported.length ? (
             <div>
               <div className="text-good font-medium">
-                ✓ Imported {result.imported.length} new run{result.imported.length === 1 ? "" : "s"}
+                ✓ Imported {result.imported.length} new activit
+                {result.imported.length === 1 ? "y" : "ies"}
               </div>
               <ul className="list-disc pl-5 mt-1 text-muted">
                 {result.imported.map((r) => (
-                  <li key={r.id}>{r.name}</li>
+                  <li key={`${r.kind}-${r.id}`}>
+                    {r.name}
+                    {r.kind === "gym" ? " · gym" : ""}
+                  </li>
                 ))}
               </ul>
             </div>
           ) : (
             <span className="text-muted">
-              No new runs found{result.skipped ? ` (${result.skipped} already imported)` : ""}.
+              No new activities found{result.skipped ? ` (${result.skipped} already imported)` : ""}.
             </span>
           )}
           {result.errors?.length > 0 && (
