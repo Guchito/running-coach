@@ -8,8 +8,18 @@ import { dayKey, type SessionLite } from "@/lib/sessionMeta";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 // Monday-based weekday index (0 = Mon … 6 = Sun).
@@ -27,7 +37,10 @@ function prettyDay(key: string): string {
 }
 
 function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("en", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
@@ -81,7 +94,7 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
     setMonth(mm);
   }
 
-  const modalSessions = modalDay ? byDay.get(modalDay) ?? [] : [];
+  const modalSessions = modalDay ? (byDay.get(modalDay) ?? []) : [];
 
   return (
     <Card className="p-4">
@@ -119,7 +132,9 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
 
       <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted mb-1">
         {WEEKDAYS.map((w) => (
-          <div key={w} className="py-1">{w}</div>
+          <div key={w} className="py-1">
+            {w}
+          </div>
         ))}
       </div>
 
@@ -151,7 +166,9 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
                     <SessionBadge key={s.kind + s.id} s={s} size="md" />
                   ))}
                   {items.length > 2 && (
-                    <span className="text-[10px] text-muted self-center">+{items.length - 2}</span>
+                    <span className="text-[10px] text-muted self-center">
+                      +{items.length - 2}
+                    </span>
                   )}
                 </span>
               )}
@@ -173,9 +190,12 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
           >
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="font-semibold text-lg leading-tight">{prettyDay(modalDay)}</h3>
+                <h3 className="font-semibold text-lg leading-tight">
+                  {prettyDay(modalDay)}
+                </h3>
                 <p className="text-xs text-muted">
-                  {modalSessions.length} session{modalSessions.length === 1 ? "" : "s"}
+                  {modalSessions.length} session
+                  {modalSessions.length === 1 ? "" : "s"}
                 </p>
               </div>
               <button
@@ -192,7 +212,7 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
                 <Link
                   key={s.kind + s.id}
                   href={s.href}
-                  className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-black/[0.02]"
+                  className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-black/2"
                 >
                   <SessionBadge s={s} size="lg" />
                   <div className="min-w-0 flex-1">
@@ -201,7 +221,9 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
                       {s.typeLabel} · {timeOf(s.startedAt)} · {s.meta}
                     </div>
                   </div>
-                  <span className="text-muted shrink-0" aria-hidden>›</span>
+                  <span className="text-muted shrink-0" aria-hidden>
+                    ›
+                  </span>
                 </Link>
               ))}
             </div>

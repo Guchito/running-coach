@@ -75,11 +75,16 @@ export function DriveSettings({ initial }: { initial: Config }) {
     return (
       <Card className="p-6 max-w-xl">
         <p className="text-sm text-muted">
-          Google Drive auto-import isn&apos;t configured on the server yet. Add a service-account key
-          (<span className="font-mono text-xs">GOOGLE_SERVICE_ACCOUNT_JSON</span> or{" "}
-          <span className="font-mono text-xs">GOOGLE_APPLICATION_CREDENTIALS</span>) to{" "}
-          <span className="font-mono text-xs">.env.local</span> and restart — see the README&apos;s
-          &ldquo;Google Drive&rdquo; section. Then refresh this page.
+          Google Drive auto-import isn&apos;t configured on the server yet. Add
+          a service-account key (
+          <span className="font-mono text-xs">GOOGLE_SERVICE_ACCOUNT_JSON</span>{" "}
+          or{" "}
+          <span className="font-mono text-xs">
+            GOOGLE_APPLICATION_CREDENTIALS
+          </span>
+          ) to <span className="font-mono text-xs">.env.local</span> and restart
+          — see the README&apos;s &ldquo;Google Drive&rdquo; section. Then
+          refresh this page.
         </p>
       </Card>
     );
@@ -88,19 +93,23 @@ export function DriveSettings({ initial }: { initial: Config }) {
   return (
     <Card className="p-6 max-w-xl space-y-4">
       <div>
-        <div className="text-sm font-medium mb-1">1. Share your HealthFit folder</div>
+        <div className="text-sm font-medium mb-1">
+          1. Share your HealthFit folder
+        </div>
         <p className="text-sm text-muted">
-          In Google Drive, share the folder that HealthFit syncs to with this service account
-          (Viewer is enough):
+          In Google Drive, share the folder that HealthFit syncs to with this
+          service account (Viewer is enough):
         </p>
         <div className="mt-2 flex items-center gap-2">
-          <code className="flex-1 text-xs bg-black/[0.04] rounded-lg px-3 py-2 break-all">
+          <code className="flex-1 text-xs bg-black/4 rounded-lg px-3 py-2 break-all">
             {initial.serviceAccountEmail}
           </code>
           <Button
             type="button"
             variant="ghost"
-            onClick={() => navigator.clipboard?.writeText(initial.serviceAccountEmail ?? "")}
+            onClick={() =>
+              navigator.clipboard?.writeText(initial.serviceAccountEmail ?? "")
+            }
           >
             Copy
           </Button>
@@ -109,7 +118,9 @@ export function DriveSettings({ initial }: { initial: Config }) {
 
       <div>
         <div className="text-sm font-medium mb-1">2. Point to the folder</div>
-        <p className="text-sm text-muted mb-2">Paste the folder&apos;s share link or its ID.</p>
+        <p className="text-sm text-muted mb-2">
+          Paste the folder&apos;s share link or its ID.
+        </p>
         <div className="flex items-center gap-2">
           <input
             value={folder}
@@ -124,18 +135,25 @@ export function DriveSettings({ initial }: { initial: Config }) {
       </div>
 
       <div className="flex items-center gap-3 pt-2 border-t border-border">
-        <Button type="button" variant="soft" onClick={syncNow} disabled={busy !== null || !savedFolder}>
+        <Button
+          type="button"
+          variant="soft"
+          onClick={syncNow}
+          disabled={busy !== null || !savedFolder}
+        >
           {busy === "sync" ? "Syncing…" : "Sync now"}
         </Button>
         {lastSync && (
-          <span className="text-xs text-muted">Last synced {new Date(lastSync).toLocaleString()}</span>
+          <span className="text-xs text-muted">
+            Last synced {new Date(lastSync).toLocaleString()}
+          </span>
         )}
       </div>
 
       {msg && <div className="text-sm text-muted">{msg}</div>}
 
       {result && (
-        <div className="text-sm rounded-lg bg-black/[0.03] p-3">
+        <div className="text-sm rounded-lg bg-black/3 p-3">
           {result.error ? (
             <span className="text-red-600">⚠️ {result.error}</span>
           ) : result.imported.length ? (
@@ -155,12 +173,14 @@ export function DriveSettings({ initial }: { initial: Config }) {
             </div>
           ) : (
             <span className="text-muted">
-              No new activities found{result.skipped ? ` (${result.skipped} already imported)` : ""}.
+              No new activities found
+              {result.skipped ? ` (${result.skipped} already imported)` : ""}.
             </span>
           )}
           {result.errors?.length > 0 && (
             <div className="text-warn mt-2">
-              {result.errors.length} file(s) couldn&apos;t be read: {result.errors.map((e) => e.file).join(", ")}
+              {result.errors.length} file(s) couldn&apos;t be read:{" "}
+              {result.errors.map((e) => e.file).join(", ")}
             </div>
           )}
         </div>

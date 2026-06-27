@@ -19,7 +19,9 @@ export function HrZonesCard({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <div className="text-xs uppercase tracking-wide text-muted">Heart-rate zones</div>
+        <div className="text-xs uppercase tracking-wide text-muted">
+          Heart-rate zones
+        </div>
         <a href="/settings" className="text-xs text-accent">
           {customized ? "Edit zones" : "Set your zones"}
         </a>
@@ -27,10 +29,13 @@ export function HrZonesCard({
       <div className="space-y-1.5">
         {times.map(({ zone, seconds }, i) => (
           <div key={zone.name} className="flex items-center gap-2 text-xs">
-            <span className="w-24 text-muted truncate" title={`${zone.min}-${zone.max} bpm`}>
+            <span
+              className="w-24 text-muted truncate"
+              title={`${zone.min}-${zone.max} bpm`}
+            >
               {zone.name}
             </span>
-            <div className="flex-1 h-1.5 rounded-full bg-black/[0.05] overflow-hidden">
+            <div className="flex-1 h-1.5 rounded-full bg-black/5 overflow-hidden">
               <div
                 className="h-full rounded-full"
                 style={{
@@ -39,12 +44,16 @@ export function HrZonesCard({
                 }}
               />
             </div>
-            <span className="w-12 text-right tabular-nums text-muted">{formatDuration(seconds)}</span>
+            <span className="w-12 text-right tabular-nums text-muted">
+              {formatDuration(seconds)}
+            </span>
           </div>
         ))}
       </div>
       {!customized && (
-        <p className="text-[11px] text-muted mt-2">Using default zones — set your max HR in Settings.</p>
+        <p className="text-[11px] text-muted mt-2">
+          Using default zones — set your max HR in Settings.
+        </p>
       )}
     </div>
   );

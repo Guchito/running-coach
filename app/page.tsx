@@ -1,7 +1,11 @@
 import { listRuns, listGoals, getPlan } from "@/lib/db";
 import { computeStats, daysUntil, projectGoalTime } from "@/lib/stats";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
-import { trainingLoad, LOAD_STATUS_LABEL, LOAD_STATUS_COLOR } from "@/lib/trainingLoad";
+import {
+  trainingLoad,
+  LOAD_STATUS_LABEL,
+  LOAD_STATUS_COLOR,
+} from "@/lib/trainingLoad";
 import { runningRecords } from "@/lib/prs";
 import { Card, Stat, PageShell, Button, EmptyState } from "@/components/ui";
 import { PaceTrendChart } from "@/components/Charts";
@@ -35,7 +39,9 @@ export default async function Dashboard() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-medium">Your goals</h2>
-            <Link href="/goals" className="text-sm text-accent">Manage →</Link>
+            <Link href="/goals" className="text-sm text-accent">
+              Manage →
+            </Link>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {activeGoals.map((g) => (
@@ -48,7 +54,8 @@ export default async function Dashboard() {
           <div>
             <div className="text-lg font-medium">No goals set yet</div>
             <p className="text-muted text-sm mt-1">
-              Set one or more target races so your coach can build a plan around them.
+              Set one or more target races so your coach can build a plan around
+              them.
             </p>
           </div>
           <Button href="/goals">Set a goal</Button>
@@ -60,12 +67,17 @@ export default async function Dashboard() {
         <Card className="p-5 mb-6">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-medium">This week</h2>
-            <Link href="/plan" className="text-sm text-accent">Full plan →</Link>
+            <Link href="/plan" className="text-sm text-accent">
+              Full plan →
+            </Link>
           </div>
           <p className="text-sm text-muted mb-3">{plan.weekly.summary}</p>
           <div className="flex flex-wrap gap-2">
             {plan.weekly.days.map((d, i) => (
-              <span key={i} className="text-xs px-2 py-1 rounded-lg bg-black/[0.04] text-muted">
+              <span
+                key={i}
+                className="text-xs px-2 py-1 rounded-lg bg-black/4 text-muted"
+              >
                 <strong className="text-foreground">{d.day}</strong> {d.title}
               </span>
             ))}
@@ -193,7 +205,8 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
             </span>
           </div>
           <div className="text-xs text-muted mt-1">
-            {load.acuteKm} km this week vs {load.chronicKm} km/wk avg · sweet spot 0.8–1.3
+            {load.acuteKm} km this week vs {load.chronicKm} km/wk avg · sweet
+            spot 0.8–1.3
           </div>
           <div className="flex items-end gap-1.5 h-16 mt-4">
             {load.weeks.map((w, i) => (
@@ -202,13 +215,16 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
                 className="flex-1 rounded-t"
                 style={{
                   height: `${Math.max(4, (w.km / max) * 100)}%`,
-                  backgroundColor: i === load.weeks.length - 1 ? "#4f46e5" : "#c7d2fe",
+                  backgroundColor:
+                    i === load.weeks.length - 1 ? "#4f46e5" : "#c7d2fe",
                 }}
                 title={`Week of ${w.weekStart}: ${w.km} km`}
               />
             ))}
           </div>
-          <div className="text-[10px] text-muted mt-1 text-right">last 6 weeks → now</div>
+          <div className="text-[10px] text-muted mt-1 text-right">
+            last 6 weeks → now
+          </div>
         </>
       )}
     </Card>
@@ -227,9 +243,14 @@ function RecordsCard({ runs }: { runs: RunRow[] }) {
       ) : (
         <div className="space-y-1.5">
           {efforts.map((e) => (
-            <div key={e.key} className="flex items-center justify-between gap-3 text-sm">
+            <div
+              key={e.key}
+              className="flex items-center justify-between gap-3 text-sm"
+            >
               <span className="text-muted w-28 shrink-0">{e.label}</span>
-              <span className="font-medium tabular-nums">{formatDuration(e.timeSec)}</span>
+              <span className="font-medium tabular-nums">
+                {formatDuration(e.timeSec)}
+              </span>
               <span className="text-xs text-muted tabular-nums w-24 text-right">
                 {formatPace(e.paceSecPerKm)}
               </span>
@@ -241,9 +262,14 @@ function RecordsCard({ runs }: { runs: RunRow[] }) {
                 Predicted (no PR yet)
               </div>
               {predictions.map((p) => (
-                <div key={p.key} className="flex items-center justify-between gap-3 text-sm">
+                <div
+                  key={p.key}
+                  className="flex items-center justify-between gap-3 text-sm"
+                >
                   <span className="text-muted w-28 shrink-0">{p.label}</span>
-                  <span className="tabular-nums text-foreground/70">~{formatDuration(p.timeSec)}</span>
+                  <span className="tabular-nums text-foreground/70">
+                    ~{formatDuration(p.timeSec)}
+                  </span>
                   <span className="w-24 shrink-0" />
                 </div>
               ))}
@@ -270,13 +296,17 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
           <div className="text-lg font-semibold truncate">{goal.title}</div>
           <div className="text-white/80 text-sm mt-0.5">
             {goal.raceType}
-            {goal.targetTimeSec ? ` · ${formatDuration(goal.targetTimeSec)}` : ""}
+            {goal.targetTimeSec
+              ? ` · ${formatDuration(goal.targetTimeSec)}`
+              : ""}
             {goal.targetDate ? ` · ${goal.targetDate}` : ""}
           </div>
         </div>
         {days !== null && days >= 0 && (
           <div className="text-right shrink-0">
-            <div className="text-2xl font-bold tabular-nums leading-none">{days}</div>
+            <div className="text-2xl font-bold tabular-nums leading-none">
+              {days}
+            </div>
             <div className="text-[11px] text-white/70">days to go</div>
           </div>
         )}
@@ -287,13 +317,17 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
           {ifToday && (
             <div className="bg-white/15 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
               <span className="text-white/75">If you raced today</span>
-              <strong className="tabular-nums">{formatDuration(ifToday)}</strong>
+              <strong className="tabular-nums">
+                {formatDuration(ifToday)}
+              </strong>
             </div>
           )}
           {projected ? (
             <div className="bg-white/15 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
               <span className="text-white/75">Projected · race day</span>
-              <strong className="tabular-nums">{formatDuration(projected)}</strong>
+              <strong className="tabular-nums">
+                {formatDuration(projected)}
+              </strong>
             </div>
           ) : (
             <div className="text-xs text-white/60 px-1">
@@ -304,10 +338,10 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
             <div className="text-xs text-white/80 px-1">
               {onTrack
                 ? `🎯 On track for your ${formatDuration(goal.targetTimeSec)} target (${formatDuration(
-                    Math.abs(ref - goal.targetTimeSec)
+                    Math.abs(ref - goal.targetTimeSec),
                   )} to spare).`
                 : `⏱️ ${formatDuration(
-                    Math.abs(ref - goal.targetTimeSec)
+                    Math.abs(ref - goal.targetTimeSec),
                   )} off your ${formatDuration(goal.targetTimeSec)} target — keep building.`}
             </div>
           )}

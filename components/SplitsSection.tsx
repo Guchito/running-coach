@@ -5,7 +5,13 @@ import type { Split, LapSplit } from "@/lib/types";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import { SplitsChart, LapsChart, intensityColor } from "@/components/Charts";
 
-export function SplitsSection({ splits, laps }: { splits: Split[]; laps: LapSplit[] }) {
+export function SplitsSection({
+  splits,
+  laps,
+}: {
+  splits: Split[];
+  laps: LapSplit[];
+}) {
   // Default to intervals when the workout actually has a structure (more than
   // one distinct intensity, e.g. warmup/active/recovery), else kilometers.
   const hasStructure = new Set(laps.map((l) => l.intensity)).size > 1;
@@ -15,7 +21,7 @@ export function SplitsSection({ splits, laps }: { splits: Split[]; laps: LapSpli
     <div className="bg-card border border-border rounded-2xl p-5">
       <div className="flex items-center justify-between mb-3 gap-3">
         <h2 className="font-medium">Splits</h2>
-        <div className="flex bg-black/[0.04] rounded-lg p-0.5 text-sm">
+        <div className="flex bg-black/4 rounded-lg p-0.5 text-sm">
           <button
             onClick={() => setView("km")}
             className={`px-3 py-1 rounded-md transition-colors ${
@@ -47,7 +53,9 @@ export function SplitsSection({ splits, laps }: { splits: Split[]; laps: LapSpli
                       Km {sp.km}
                       {sp.distanceM < 1000 ? ` (${sp.distanceM}m)` : ""}
                     </td>
-                    <td className="py-1.5 font-medium">{formatPace(sp.paceSecPerKm)}</td>
+                    <td className="py-1.5 font-medium">
+                      {formatPace(sp.paceSecPerKm)}
+                    </td>
                     <td className="py-1.5 text-right text-muted">
                       {sp.avgHr ? `${sp.avgHr} bpm` : "—"}
                     </td>
@@ -76,7 +84,9 @@ export function SplitsSection({ splits, laps }: { splits: Split[]; laps: LapSpli
                       >
                         <span
                           className="w-1.5 h-1.5 rounded-full"
-                          style={{ backgroundColor: intensityColor(l.intensity) }}
+                          style={{
+                            backgroundColor: intensityColor(l.intensity),
+                          }}
                         />
                         {l.intensity}
                       </span>
@@ -91,7 +101,9 @@ export function SplitsSection({ splits, laps }: { splits: Split[]; laps: LapSpli
                       {formatDuration(l.durationSec)}
                     </td>
                     <td className="py-2 pr-2 text-muted whitespace-nowrap hidden md:table-cell">
-                      {l.avgCadence ? `${Math.round(l.avgCadence * 2)} spm` : "—"}
+                      {l.avgCadence
+                        ? `${Math.round(l.avgCadence * 2)} spm`
+                        : "—"}
                     </td>
                     <td className="py-2 pr-1 text-right text-muted whitespace-nowrap">
                       {l.avgHr ? `${l.avgHr} bpm` : "—"}
