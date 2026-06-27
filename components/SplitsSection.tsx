@@ -56,6 +56,9 @@ export function SplitsSection({
                     <td className="py-1.5 font-medium">
                       {formatPace(sp.paceSecPerKm)}
                     </td>
+                    <td className="py-1.5 text-muted whitespace-nowrap">
+                      {sp.avgCadence ? `${Math.round(sp.avgCadence * 2)} spm` : "—"}
+                    </td>
                     <td className="py-1.5 text-right text-muted">
                       {sp.avgHr ? `${sp.avgHr} bpm` : "—"}
                     </td>

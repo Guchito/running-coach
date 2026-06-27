@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import type { RunRow, Goal, Plan, HrZone, GymSession, BodyMetric } from "./types";
 import { formatPace, formatDuration, formatDistance } from "./parseRun";
 import { resolveZones } from "./hr";
@@ -7,78 +6,25 @@ import { trainingLoad, LOAD_STATUS_LABEL } from "./trainingLoad";
 import { runningRecords } from "./prs";
 import { weeklyAdherence } from "./adherence";
 
-export const COACH_MODEL = process.env.COACH_MODEL || "claude-opus-4-8";
+// The model registry + guards now live in the import-free lib/coachDefs.ts
+// (single source of truth, client-safe, also used by the provider layer and the
+// bench). Re-exported so existing imports (`@/lib/coach`) keep working.
+export {
+  COACH_MODEL,
+  COACH_MODELS,
+  isCoachModel,
+  resolveCoachModel,
+  providerFor,
+  supportsEffort,
+} from "./coachDefs";
+export type { CoachModelId, CoachProviderId } from "./coachDefs";
 
-// Models the runner can pick from in Settings. Keep ids exact — see Anthropic model catalog.
-export const COACH_MODELS = [
-  {
-    id: "claude-opus-4-8",
-    label: "Claude Opus 4.8",
-    blurb: "Most capable — sharpest plans and coaching judgement. Default.",
-  },
-  {
-    id: "claude-sonnet-4-6",
-    label: "Claude Sonnet 4.6",
-    blurb: "Balanced — fast replies, strong quality, lower cost.",
-  },
-  {
-    id: "claude-haiku-4-5",
-    label: "Claude Haiku 4.5",
-    blurb:
-      "Fastest and cheapest — good for quick chat, but less reliable at editing plans. Use Opus or Sonnet when you want it to build or change your plan.",
-  },
-] as const;
+// (Anthropic client creation now lives in lib/providers/anthropic.ts.)
 
-export type CoachModelId = (typeof COACH_MODELS)[number]["id"];
-
-export function isCoachModel(id: unknown): id is CoachModelId {
-  return typeof id === "string" && COACH_MODELS.some((m) => m.id === id);
-}
-
-// Resolve the model to actually call: the runner's choice if valid, else the default.
-export function resolveCoachModel(model: string | null | undefined): string {
-  return isCoachModel(model) ? model : COACH_MODEL;
-}
-
-// The effort parameter is supported on Opus 4.5+ and Sonnet 4.6, but errors on
-// Haiku 4.5. Lower effort = less preamble and fewer tokens (cheaper).
-export function supportsEffort(model: string): boolean {
-  return model.startsWith("claude-opus-4") || model === "claude-sonnet-4-6";
-}
-
-export function getClient(): Anthropic {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      "ANTHROPIC_API_KEY is not set. Add it to .env.local in the project root."
-    );
-  }
-  return new Anthropic({ apiKey });
-}
-
-export const SYSTEM_PROMPT = `You are an expert running coach embedded in a personal training app. You speak directly to one runner (the user) whose Apple Watch run AND gym/strength data you can see.
-
-Your responsibilities:
-1. ANALYZE every run they upload — pacing, heart-rate effort, cadence, splits, intervals, consistency — and give specific, encouraging, honest feedback that cites their real numbers. Never invent data you weren't given.
-2. MANAGE their goals. They may have several at once (e.g. a half marathon in 4 months and a marathon in 9 months). Use the goal tools to create/update/remove goals. IMPORTANT: before you change the target time or date of an EXISTING goal, discuss it with the runner and get their agreement in the conversation first. Creating a new goal they asked for, or marking one achieved/abandoned, is fine to do directly. When their fitness clearly shifts, proactively raise it ("I think a sub-1:30 half is realistic now — want me to update that goal?") and only change it once they agree.
-   Also keep each goal's PROJECTED finish current with set_goal_projection: your honest prediction of what they'll actually run on race day, accounting for the fitness they'll gain from the remaining training. This differs from their target (what they want) and from the app's "if they raced today" estimate (their current fitness). Set it when you have enough data to judge, and revise it as training progresses. You may set this yourself without asking.
-3. MAINTAIN their training plans with the plan tools:
-   - The MACRO plan is the long-term, periodized plan and MUST account for ALL active goals together (sequence phases so they peak for each race in turn).
-   - The WEEKLY plan is this week's concrete workouts.
-   Keep both current: whenever goals change, or a new run shows their fitness/availability is different from what the plan assumed, update the relevant plan. If a run shows they're ahead of schedule, progress the plan; if behind or fatigued, ease it.
-4. PLAN STRENGTH TRAINING alongside running. The runner uploads gym/strength sessions (with a type like push/pull/legs/full-body and an RPE). Treat strength as part of their overall training load:
-   - Schedule strength sessions explicitly in the WEEKLY plan as days with type "strength" (give each a clear title/detail, e.g. "Lower body — squat focus"). Respect how often they actually train in the gym based on their history.
-   - Arrange runs AROUND that lifting so the two don't collide: avoid hard or long runs the day after a demanding lower-body session, keep easy/recovery or rest after heavy legs, and don't stack a hard run and heavy lifting on the same day unless they ask. Quality run days should land on fresh legs.
-   - Account for the fatigue strength adds when judging whether they're ready to progress running volume/intensity.
-
-MAKING CHANGES — CRITICAL: Goals and plans ONLY change when you call the matching tool. Any time you tell the runner you've created, updated, rescheduled, or adjusted a goal or plan, you MUST actually make that change by calling the tool (upsert_goal, set_goal_projection, set_macro_plan, set_weekly_plan, set_plan_instructions, log_lthr_test) IN THE SAME REPLY. Writing the plan out in prose does NOT save it — without the tool call the runner sees no change at all. So never say "I've updated your plan" unless you are calling the tool in that same turn.
-- To change the weekly plan, call set_weekly_plan with the FULL seven days — it REPLACES the whole week, so include every day (even unchanged ones and rest days), not just the day you're editing. Set weekStart to that week's Monday.
-- Before building or substantially revising the macro or weekly plan (or analyzing trends across many sessions), call get_training_history first to load the runner's full recent run/gym detail — the default context only includes the most recent run in full plus a few summarized older ones. For routine feedback on the latest run, or small tweaks, the default context is enough — don't pull the full history needlessly.
-- When you do call a tool, briefly tell the runner what you changed and why. Don't dump raw JSON.
-
-Style: warm but BRIEF — token efficiency matters. Default to the shortest reply that fully answers, usually 1–4 short sentences. No preamble, no filler, no restating what the runner just said, no closing pep-talk unless it genuinely adds something. Use a short bullet list only when it really helps; otherwise plain prose. After you save a goal or plan with a tool, say in one or two sentences what changed and why — do NOT re-list the whole plan in prose, since the runner already sees it on the Plan page. Pace as min/km, distances in km, metric units. Avoid medical claims; suggest a professional for pain or health concerns.
-
-You are given the runner's goals, current plans, HR zones, run history, and gym/strength history as context, refreshed every message. Treat the most recently uploaded run as the one they most likely want to discuss unless they say otherwise.`;
+// The system prompt now lives in the import-free lib/coachDefs.ts (single source
+// of truth, also used by the model bench). Re-exported here so existing imports
+// (`@/lib/coach`) keep working unchanged.
+export { SYSTEM_PROMPT } from "./coachDefs";
 
 function paceFromTimeDist(timeSec: number | null, distM: number | null): string {
   if (!timeSec || !distM) return "—";

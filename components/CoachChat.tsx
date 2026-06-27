@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Markdown } from "@/components/Markdown";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -19,6 +20,7 @@ export function CoachChat({ hasGoal, hasRuns }: { hasGoal: boolean; hasRuns: boo
   const [loaded, setLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const askedRef = useRef(false);
+  const router = useRouter();
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -61,6 +63,12 @@ export function CoachChat({ hasGoal, hasRuns }: { hasGoal: boolean; hasRuns: boo
           });
           scrollToBottom();
         }
+
+        // The coach edits goals/plans/projections via tools. Each executed tool
+        // streams a "✓ …" action line — when one ran, invalidate the cached
+        // server components so the dashboard / plan / goals pages show the change
+        // (without this, those pages keep serving stale data until a hard reload).
+        if (acc.includes("✓")) router.refresh();
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Something went wrong.";
         setMessages((m) => {
@@ -73,7 +81,7 @@ export function CoachChat({ hasGoal, hasRuns }: { hasGoal: boolean; hasRuns: boo
         scrollToBottom();
       }
     },
-    [sending, scrollToBottom]
+    [sending, scrollToBottom, router]
   );
 
   // Load history, then auto-send any ?ask= prompt once.

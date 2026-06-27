@@ -1,0 +1,2250 @@
+{
+  "generatedAtMs": 1782595263596,
+  "models": {
+    "mistralai/mistral-large-3-675b-instruct-2512": {
+      "scenarios": {
+        "build-plan": {
+          "pass": true,
+          "latencyMs": 16950,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_macro_plan",
+              "pass": true
+            },
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "macro has ≥3 phases",
+              "pass": true
+            },
+            {
+              "label": "weekly has all 7 days",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "get_training_history",
+              "args": {},
+              "raw": "{}"
+            },
+            {
+              "name": "set_macro_plan",
+              "args": {
+                "summary": "14-week plan building from 40km to 55km peak, periodized for sub-1:45 half marathon on 2026-10-04. Phases: Base (volume + strength), Build (threshold + race-specific endurance), Taper (sharpening), Race. Strength maintained 2x/week; runs scheduled to avoid heavy legs the day after lower-body sessions.",
+                "phases": [
+                  {
+                    "name": "Base",
+                    "start": "2026-06-29",
+                    "end": "2026-07-26",
+                    "focus": "Aerobic endurance + general strength. Weekly volume ramps from 40km to 48km. Strength 2x/week (lower/upper).",
+                    "weeklyKm": 44,
+                    "notes": "Long runs 16-18km. Easy runs @ 5:40-6:00/km. One threshold session/week (e.g. 5-6×1km @ 4:45/km)."
+                  },
+                  {
+                    "name": "Build",
+                    "start": "2026-07-27",
+                    "end": "2026-09-13",
+                    "focus": "Race-specific endurance + lactate threshold. Weekly volume 50-55km. Strength 2x/week (lower-body RPE capped at 6 to protect run quality).",
+                    "weeklyKm": 52,
+                    "notes": "Long runs 18-22km with race-pace segments (e.g. 5km @ 4:58/km). Threshold sessions (e.g. 3×3km @ 4:50/km)."
+                  },
+                  {
+                    "name": "Taper",
+                    "start": "2026-09-14",
+                    "end": "2026-10-03",
+                    "focus": "Sharpening + recovery. Volume drops to 30km/week. Strength 1x/week (maintenance, RPE ≤5).",
+                    "weeklyKm": 30,
+                    "notes": "Long run 12-14km. Race-pace work (e.g. 3×2km @ 4:58/km) early in taper."
+                  },
+                  {
+                    "name": "Race",
+                    "start": "2026-10-04",
+                    "end": "2026-10-04",
+                    "focus": "Half marathon — sub-1:45 (4:58/km).",
+                    "weeklyKm": 21.1,
+                    "notes": "Race day!"
+                  },
+                  {
+                    "name": "Recovery",
+                    "start": "2026-10-05",
+                    "end": "2026-10-18",
+                    "focus": "Easy running + mobility. Volume 20-25km/week. Strength 1x/week (light).",
+                    "weeklyKm": 22
+                  }
+                ]
+              },
+              "raw": "{\"summary\": \"14-week plan building from 40km to 55km peak, periodized for sub-1:45 half marathon on 2026-10-04. Phases: Base (volume + strength), Build (threshold + race-specific endurance), Taper (sharpening), Race. Strength maintained 2x/week; runs scheduled to avoid heavy legs the day after lower-body sessions.\", \"phases\": [{\"name\": \"Base\", \"start\": \"2026-06-29\", \"end\": \"2026-07-26\", \"focus\": \"Aerobic endurance + general strength. Weekly volume ramps from 40km to 48km. Strength 2x/week (lower/upper).\", \"weeklyKm\": 44, \"notes\": \"Long runs 16-18km. Easy runs @ 5:40-6:00/km. One threshold session/week (e.g. 5-6×1km @ 4:45/km).\"}, {\"name\": \"Build\", \"start\": \"2026-07-27\", \"end\": \"2026-09-13\", \"focus\": \"Race-specific endurance + lactate threshold. Weekly volume 50-55km. Strength 2x/week (lower-body RPE capped at 6 to protect run quality).\", \"weeklyKm\": 52, \"notes\": \"Long runs 18-22km with race-pace segments (e.g. 5km @ 4:58/km). Threshold sessions (e.g. 3×3km @ 4:50/km).\"}, {\"name\": \"Taper\", \"start\": \"2026-09-14\", \"end\": \"2026-10-03\", \"focus\": \"Sharpening + recovery. Volume drops to 30km/week. Strength 1x/week (maintenance, RPE ≤5).\", \"weeklyKm\": 30, \"notes\": \"Long run 12-14km. Race-pace work (e.g. 3×2km @ 4:58/km) early in taper.\"}, {\"name\": \"Race\", \"start\": \"2026-10-04\", \"end\": \"2026-10-04\", \"focus\": \"Half marathon — sub-1:45 (4:58/km).\", \"weeklyKm\": 21.1, \"notes\": \"Race day!\"}, {\"name\": \"Recovery\", \"start\": \"2026-10-05\", \"end\": \"2026-10-18\", \"focus\": \"Easy running + mobility. Volume 20-25km/week. Strength 1x/week (light).\", \"weeklyKm\": 22}]}"
+            },
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-30",
+                "summary": "Base phase week 1: aerobic endurance + strength. Volume 40km. Long run 16km. Strength 2x (lower/upper).",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "easy",
+                    "title": "Easy run",
+                    "detail": "6km easy @ 5:40-6:00/km. Keep HR in Z2 (139-152 bpm).",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "strength",
+                    "title": "Lower body — squat focus",
+                    "detail": "Squats 4×6 @ RPE 7, Romanian deadlifts 3×8, calf raises 3×12. Core: planks 3×45 sec.",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "recovery",
+                    "title": "Recovery",
+                    "detail": "30 min cross-training (swim/cycle) OR rest. Keep HR <139 bpm.",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "intervals",
+                    "title": "Threshold session",
+                    "detail": "6×1km @ 4:45/km (90 sec recovery jog). HR Z4 (161-170 bpm) by final rep. Warm-up/cool-down 2km.",
+                    "distanceKm": 10
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "strength",
+                    "title": "Upper body + core",
+                    "detail": "Bench press 4×6 @ RPE 6, bent-over rows 3×8, shoulder press 3×8. Core: Russian twists 3×20, leg raises 3×12.",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "easy",
+                    "title": "Easy run",
+                    "detail": "8km easy @ 5:40-6:00/km. HR Z2 (139-152 bpm).",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "long",
+                    "title": "Long run",
+                    "detail": "16km @ 5:50-6:00/km. HR Z2 (139-152 bpm). Walk breaks every 5km to stretch.",
+                    "distanceKm": 16
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-30\", \"summary\": \"Base phase week 1: aerobic endurance + strength. Volume 40km. Long run 16km. Strength 2x (lower/upper).\", \"days\": [{\"day\": \"Mon\", \"type\": \"easy\", \"title\": \"Easy run\", \"detail\": \"6km easy @ 5:40-6:00/km. Keep HR in Z2 (139-152 bpm).\", \"distanceKm\": 6}, {\"day\": \"Tue\", \"type\": \"strength\", \"title\": \"Lower body — squat focus\", \"detail\": \"Squats 4×6 @ RPE 7, Romanian deadlifts 3×8, calf raises 3×12. Core: planks 3×45 sec.\", \"distanceKm\": 0}, {\"day\": \"Wed\", \"type\": \"recovery\", \"title\": \"Recovery\", \"detail\": \"30 min cross-training (swim/cycle) OR rest. Keep HR <139 bpm.\", \"distanceKm\": 0}, {\"day\": \"Thu\", \"type\": \"intervals\", \"title\": \"Threshold session\", \"detail\": \"6×1km @ 4:45/km (90 sec recovery jog). HR Z4 (161-170 bpm) by final rep. Warm-up/cool-down 2km.\", \"distanceKm\": 10}, {\"day\": \"Fri\", \"type\": \"strength\", \"title\": \"Upper body + core\", \"detail\": \"Bench press 4×6 @ RPE 6, bent-over rows 3×8, shoulder press 3×8. Core: Russian twists 3×20, leg raises 3×12.\", \"distanceKm\": 0}, {\"day\": \"Sat\", \"type\": \"easy\", \"title\": \"Easy run\", \"detail\": \"8km easy @ 5:40-6:00/km. HR Z2 (139-152 bpm).\", \"distanceKm\": 8}, {\"day\": \"Sun\", \"type\": \"long\", \"title\": \"Long run\", \"detail\": \"16km @ 5:50-6:00/km. HR Z2 (139-152 bpm). Walk breaks every 5km to stretch.\", \"distanceKm\": 16}]}"
+            },
+            {
+              "name": "set_goal_projection",
+              "args": {
+                "id": 7,
+                "projectedTimeSec": 6240
+              },
+              "raw": "{\"id\": 7, \"projectedTimeSec\": 6240}"
+            },
+            {
+              "name": "set_plan_instructions",
+              "args": {
+                "instructions": "1. Strength train 2x/week (lower/upper). Avoid hard/long runs the day after lower-body sessions (schedule easy/recovery).\n2. Keep weekly volume between 38-55km; prioritize consistency over spikes.\n3. Race-pace work (4:58/km) begins in Build phase (late July).\n4. Taper starts 3 weeks out from race (2026-09-14)."
+              },
+              "raw": "{\"instructions\": \"1. Strength train 2x/week (lower/upper). Avoid hard/long runs the day after lower-body sessions (schedule easy/recovery).\\n2. Keep weekly volume between 38-55km; prioritize consistency over spikes.\\n3. Race-pace work (4:58/km) begins in Build phase (late July).\\n4. Taper starts 3 weeks out from race (2026-09-14).\"}"
+            }
+          ]
+        },
+        "create-goal": {
+          "pass": true,
+          "latencyMs": 3185,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called upsert_goal",
+              "pass": true
+            },
+            {
+              "label": "raceType = 10K",
+              "pass": true
+            },
+            {
+              "label": "targetTimeSec under 3000s",
+              "pass": true
+            },
+            {
+              "label": "targetDate = 2026-11-08",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "upsert_goal",
+              "args": {
+                "title": "Sub-50 10K",
+                "raceType": "10K",
+                "targetDistanceM": 10000,
+                "targetTimeSec": 3000,
+                "targetDate": "2026-11-08",
+                "status": "active"
+              },
+              "raw": "{\"title\": \"Sub-50 10K\", \"raceType\": \"10K\", \"targetDistanceM\": 10000, \"targetTimeSec\": 3000, \"targetDate\": \"2026-11-08\", \"status\": \"active\"}"
+            }
+          ]
+        },
+        "log-lthr": {
+          "pass": true,
+          "latencyMs": 1854,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called log_lthr_test",
+              "pass": true
+            },
+            {
+              "label": "lthr = 171",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "log_lthr_test",
+              "args": {
+                "lthr": 171,
+                "maxHr": 188,
+                "testedOn": "2026-06-27",
+                "notes": "Runner-reported LT test result"
+              },
+              "raw": "{\"lthr\": 171, \"maxHr\": 188, \"testedOn\": \"2026-06-27\", \"notes\": \"Runner-reported LT test result\"}"
+            }
+          ]
+        },
+        "edit-week": {
+          "pass": true,
+          "latencyMs": 5483,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "resent all 7 days (not just edits)",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-22",
+                "summary": "Build week, ~40km. Adjusted to move tempo run to Thursday for better recovery after Tuesday's intervals.",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "rest",
+                    "title": "Rest",
+                    "detail": "Rest day."
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "intervals",
+                    "title": "5×1km @ threshold",
+                    "detail": "5×1km at threshold pace (4:50–5:00/km) with 400m jog recovery between intervals. Warm up and cool down 1–2km.",
+                    "distanceKm": 10
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "easy",
+                    "title": "Easy 6km",
+                    "detail": "Easy run at 5:30–6:00/km. Keep HR in Z2.",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "tempo",
+                    "title": "Tempo 6km",
+                    "detail": "6km tempo at 4:40–4:50/km (threshold pace). Warm up and cool down 1–2km.",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "strength",
+                    "title": "Lower body — squat focus",
+                    "detail": "Lower-body strength session. Focus on squats, 3–4 sets of 5–8 reps. Include accessory work (lunges, leg curls, calf raises). RPE 7."
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "easy",
+                    "title": "Easy 5km",
+                    "detail": "Easy run at 5:30–6:00/km. Keep HR in Z2.",
+                    "distanceKm": 5
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "long",
+                    "title": "Long run 18km",
+                    "detail": "Long run at 5:45–6:15/km. Keep HR in Z2. Focus on endurance and fueling practice.",
+                    "distanceKm": 18
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-22\", \"summary\": \"Build week, ~40km. Adjusted to move tempo run to Thursday for better recovery after Tuesday's intervals.\", \"days\": [{\"day\": \"Mon\", \"type\": \"rest\", \"title\": \"Rest\", \"detail\": \"Rest day.\"}, {\"day\": \"Tue\", \"type\": \"intervals\", \"title\": \"5×1km @ threshold\", \"detail\": \"5×1km at threshold pace (4:50–5:00/km) with 400m jog recovery between intervals. Warm up and cool down 1–2km.\", \"distanceKm\": 10}, {\"day\": \"Wed\", \"type\": \"easy\", \"title\": \"Easy 6km\", \"detail\": \"Easy run at 5:30–6:00/km. Keep HR in Z2.\", \"distanceKm\": 6}, {\"day\": \"Thu\", \"type\": \"tempo\", \"title\": \"Tempo 6km\", \"detail\": \"6km tempo at 4:40–4:50/km (threshold pace). Warm up and cool down 1–2km.\", \"distanceKm\": 8}, {\"day\": \"Fri\", \"type\": \"strength\", \"title\": \"Lower body — squat focus\", \"detail\": \"Lower-body strength session. Focus on squats, 3–4 sets of 5–8 reps. Include accessory work (lunges, leg curls, calf raises). RPE 7.\"}, {\"day\": \"Sat\", \"type\": \"easy\", \"title\": \"Easy 5km\", \"detail\": \"Easy run at 5:30–6:00/km. Keep HR in Z2.\", \"distanceKm\": 5}, {\"day\": \"Sun\", \"type\": \"long\", \"title\": \"Long run 18km\", \"detail\": \"Long run at 5:45–6:15/km. Keep HR in Z2. Focus on endurance and fueling practice.\", \"distanceKm\": 18}]}"
+            }
+          ]
+        },
+        "set-projection": {
+          "pass": true,
+          "latencyMs": 1960,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_goal_projection",
+              "pass": true
+            },
+            {
+              "label": "id = 7",
+              "pass": true
+            },
+            {
+              "label": "projectedTimeSec is a number",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_goal_projection",
+              "args": {
+                "id": 7,
+                "projectedTimeSec": 6150
+              },
+              "raw": "{\"id\": 7, \"projectedTimeSec\": 6150}"
+            }
+          ]
+        },
+        "no-tool": {
+          "pass": true,
+          "latencyMs": 1867,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "made zero tool calls",
+              "pass": true
+            }
+          ],
+          "calls": []
+        }
+      }
+    },
+    "nvidia/nvidia-nemotron-nano-9b-v2": {
+      "scenarios": {
+        "build-plan": {
+          "pass": true,
+          "latencyMs": 81839,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_macro_plan",
+              "pass": true
+            },
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "macro has ≥3 phases",
+              "pass": true
+            },
+            {
+              "label": "weekly has all 7 days",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_macro_plan",
+              "args": {
+                "summary": "Periodized plan to achieve sub-1:45 half marathon by October 4th, 2026. Builds endurance, speed, and race-specific fitness while balancing strength training.",
+                "phases": [
+                  {
+                    "end": "2026-08-15",
+                    "focus": "Endurance base with gradual volume increase",
+                    "name": "Base",
+                    "start": "2026-07-01",
+                    "weeklyKm": 40
+                  },
+                  {
+                    "end": "2026-09-01",
+                    "focus": "Speed development and longer efforts",
+                    "name": "Build",
+                    "start": "2026-08-16",
+                    "weeklyKm": 45
+                  },
+                  {
+                    "end": "2026-10-01",
+                    "focus": "Race-specific work and peak fitness",
+                    "name": "Peak",
+                    "start": "2026-09-02",
+                    "weeklyKm": 50
+                  },
+                  {
+                    "end": "2026-10-03",
+                    "focus": "Recovery and race readiness",
+                    "name": "Taper",
+                    "start": "2026-10-02",
+                    "weeklyKm": 45
+                  }
+                ]
+              },
+              "raw": "{\"summary\": \"Periodized plan to achieve sub-1:45 half marathon by October 4th, 2026. Builds endurance, speed, and race-specific fitness while balancing strength training.\", \"phases\": [{\"end\": \"2026-08-15\", \"focus\": \"Endurance base with gradual volume increase\", \"name\": \"Base\", \"start\": \"2026-07-01\", \"weeklyKm\": 40}, {\"end\": \"2026-09-01\", \"focus\": \"Speed development and longer efforts\", \"name\": \"Build\", \"start\": \"2026-08-16\", \"weeklyKm\": 45}, {\"end\": \"2026-10-01\", \"focus\": \"Race-specific work and peak fitness\", \"name\": \"Peak\", \"start\": \"2026-09-02\", \"weeklyKm\": 50}, {\"end\": \"2026-10-03\", \"focus\": \"Recovery and race readiness\", \"name\": \"Taper\", \"start\": \"2026-10-02\", \"weeklyKm\": 45}]}"
+            },
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-07-01",
+                "summary": "Building endurance and speed for the half marathon in October. Focus on consistent volume and structured progression.",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "detail": "Easy 6km at conversational pace to maintain base fitness",
+                    "title": "Easy Run",
+                    "type": "easy",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Tue",
+                    "detail": "Lower body strength session focusing on squats and lunges (RPE 7-8)",
+                    "title": "Lower Body Strength",
+                    "type": "strength",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Wed",
+                    "detail": "Tempo run of 8km at LTHR pace (150-155 bpm) to build speed endurance",
+                    "title": "Tempo Run",
+                    "type": "tempo",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Thu",
+                    "detail": "Easy 5km recovery run after strength session",
+                    "title": "Easy Recovery",
+                    "type": "easy",
+                    "distanceKm": 5
+                  },
+                  {
+                    "day": "Fri",
+                    "detail": "Long run of 14km at easy pace to build aerobic capacity",
+                    "title": "Long Run",
+                    "type": "long",
+                    "distanceKm": 14
+                  },
+                  {
+                    "day": "Sat",
+                    "detail": "Intervals: 6x800m at 5:30/km with 90s rest between",
+                    "title": "Intervals",
+                    "type": "intervals",
+                    "distanceKm": 4.8
+                  },
+                  {
+                    "day": "Sun",
+                    "detail": "Rest day with light stretching or cross-training (e.g., cycling)",
+                    "title": "Rest",
+                    "type": "rest",
+                    "distanceKm": 0
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-07-01\", \"summary\": \"Building endurance and speed for the half marathon in October. Focus on consistent volume and structured progression.\", \"days\": [{\"day\": \"Mon\", \"detail\": \"Easy 6km at conversational pace to maintain base fitness\", \"title\": \"Easy Run\", \"type\": \"easy\", \"distanceKm\": 6}, {\"day\": \"Tue\", \"detail\": \"Lower body strength session focusing on squats and lunges (RPE 7-8)\", \"title\": \"Lower Body Strength\", \"type\": \"strength\", \"distanceKm\": 0}, {\"day\": \"Wed\", \"detail\": \"Tempo run of 8km at LTHR pace (150-155 bpm) to build speed endurance\", \"title\": \"Tempo Run\", \"type\": \"tempo\", \"distanceKm\": 8}, {\"day\": \"Thu\", \"detail\": \"Easy 5km recovery run after strength session\", \"title\": \"Easy Recovery\", \"type\": \"easy\", \"distanceKm\": 5}, {\"day\": \"Fri\", \"detail\": \"Long run of 14km at easy pace to build aerobic capacity\", \"title\": \"Long Run\", \"type\": \"long\", \"distanceKm\": 14}, {\"day\": \"Sat\", \"detail\": \"Intervals: 6x800m at 5:30/km with 90s rest between\", \"title\": \"Intervals\", \"type\": \"intervals\", \"distanceKm\": 4.8}, {\"day\": \"Sun\", \"detail\": \"Rest day with light stretching or cross-training (e.g., cycling)\", \"title\": \"Rest\", \"type\": \"rest\", \"distanceKm\": 0}]}"
+            }
+          ]
+        },
+        "create-goal": {
+          "pass": true,
+          "latencyMs": 29440,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called upsert_goal",
+              "pass": true
+            },
+            {
+              "label": "raceType = 10K",
+              "pass": true
+            },
+            {
+              "label": "targetTimeSec under 3000s",
+              "pass": true
+            },
+            {
+              "label": "targetDate = 2026-11-08",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "upsert_goal",
+              "args": {
+                "status": "active",
+                "targetDistanceM": 10000,
+                "targetTimeSec": 3000,
+                "raceType": "10K",
+                "targetDate": "2026-11-08",
+                "title": "Sub-50min 10K"
+              },
+              "raw": "{\"status\": \"active\", \"targetDistanceM\": 10000, \"targetTimeSec\": 3000, \"raceType\": \"10K\", \"targetDate\": \"2026-11-08\", \"title\": \"Sub-50min 10K\"}"
+            }
+          ]
+        },
+        "log-lthr": {
+          "pass": true,
+          "latencyMs": 16138,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called log_lthr_test",
+              "pass": true
+            },
+            {
+              "label": "lthr = 171",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "log_lthr_test",
+              "args": {
+                "lthr": 171,
+                "testedOn": "2026-06-27"
+              },
+              "raw": "{\"lthr\": 171, \"testedOn\": \"2026-06-27\"}"
+            }
+          ]
+        },
+        "edit-week": {
+          "pass": true,
+          "latencyMs": 28787,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "resent all 7 days (not just edits)",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-22",
+                "summary": "Build week, ~40km",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "detail": "Rest day",
+                    "title": "Rest",
+                    "type": "rest"
+                  },
+                  {
+                    "day": "Tue",
+                    "detail": "5×1km @ threshold pace",
+                    "title": "Threshold intervals",
+                    "type": "intervals",
+                    "distanceKm": 5
+                  },
+                  {
+                    "day": "Wed",
+                    "detail": "Easy 6km run",
+                    "title": "Easy 6km",
+                    "type": "easy",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Thu",
+                    "detail": "Tempo 6km run",
+                    "title": "Tempo 6km",
+                    "type": "tempo",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Fri",
+                    "detail": "Lower body strength session (squat focus)",
+                    "title": "Lower body — squat focus",
+                    "type": "strength"
+                  },
+                  {
+                    "day": "Sat",
+                    "detail": "Easy 5km run",
+                    "title": "Easy 5km",
+                    "type": "easy",
+                    "distanceKm": 5
+                  },
+                  {
+                    "day": "Sun",
+                    "detail": "Long run 18km",
+                    "title": "Long run",
+                    "type": "long",
+                    "distanceKm": 18
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-22\", \"summary\": \"Build week, ~40km\", \"days\": [{\"day\": \"Mon\", \"detail\": \"Rest day\", \"title\": \"Rest\", \"type\": \"rest\"}, {\"day\": \"Tue\", \"detail\": \"5×1km @ threshold pace\", \"title\": \"Threshold intervals\", \"type\": \"intervals\", \"distanceKm\": 5}, {\"day\": \"Wed\", \"detail\": \"Easy 6km run\", \"title\": \"Easy 6km\", \"type\": \"easy\", \"distanceKm\": 6}, {\"day\": \"Thu\", \"detail\": \"Tempo 6km run\", \"title\": \"Tempo 6km\", \"type\": \"tempo\", \"distanceKm\": 6}, {\"day\": \"Fri\", \"detail\": \"Lower body strength session (squat focus)\", \"title\": \"Lower body — squat focus\", \"type\": \"strength\"}, {\"day\": \"Sat\", \"detail\": \"Easy 5km run\", \"title\": \"Easy 5km\", \"type\": \"easy\", \"distanceKm\": 5}, {\"day\": \"Sun\", \"detail\": \"Long run 18km\", \"title\": \"Long run\", \"type\": \"long\", \"distanceKm\": 18}]}"
+            }
+          ]
+        },
+        "set-projection": {
+          "pass": true,
+          "latencyMs": 46618,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_goal_projection",
+              "pass": true
+            },
+            {
+              "label": "id = 7",
+              "pass": true
+            },
+            {
+              "label": "projectedTimeSec is a number",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_goal_projection",
+              "args": {
+                "projectedTimeSec": 6360,
+                "id": 7
+              },
+              "raw": "{\"projectedTimeSec\": 6360, \"id\": 7}"
+            }
+          ]
+        },
+        "no-tool": {
+          "pass": true,
+          "latencyMs": 16662,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "made zero tool calls",
+              "pass": true
+            }
+          ],
+          "calls": []
+        }
+      }
+    },
+    "qwen/qwen3-next-80b-a3b-instruct": {
+      "scenarios": {
+        "build-plan": {
+          "pass": true,
+          "latencyMs": 14334,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_macro_plan",
+              "pass": true
+            },
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "macro has ≥3 phases",
+              "pass": true
+            },
+            {
+              "label": "weekly has all 7 days",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_macro_plan",
+              "args": {
+                "summary": "16-week plan building aerobic base, then adding tempo and race-pace work to peak for a sub-1:45 half marathon on Oct 4. Strength maintained 2x/week, scheduled to avoid conflict with hard runs.",
+                "phases": [
+                  {
+                    "name": "Base",
+                    "start": "2026-06-30",
+                    "end": "2026-07-27",
+                    "focus": "Increase weekly volume to 50km, maintain easy pace",
+                    "weeklyKm": 45,
+                    "notes": "Focus on consistency, no hard efforts"
+                  },
+                  {
+                    "name": "Build",
+                    "start": "2026-07-28",
+                    "end": "2026-09-01",
+                    "focus": "Introduce tempo runs and intervals, increase intensity",
+                    "weeklyKm": 50,
+                    "notes": "One tempo, one interval session weekly"
+                  },
+                  {
+                    "name": "Peak",
+                    "start": "2026-09-02",
+                    "end": "2026-09-22",
+                    "focus": "Race-pace work, longer tempo runs, max volume",
+                    "weeklyKm": 55,
+                    "notes": "Peak at 58km in week of Sept 15"
+                  },
+                  {
+                    "name": "Taper",
+                    "start": "2026-09-23",
+                    "end": "2026-10-03",
+                    "focus": "Reduce volume, maintain intensity, sharpen",
+                    "weeklyKm": 40,
+                    "notes": "Volume drops 40% over 3 weeks"
+                  },
+                  {
+                    "name": "Race",
+                    "start": "2026-10-04",
+                    "end": "2026-10-04",
+                    "focus": "Half marathon race day",
+                    "weeklyKm": 0,
+                    "notes": ""
+                  },
+                  {
+                    "name": "Recovery",
+                    "start": "2026-10-05",
+                    "end": "2026-10-11",
+                    "focus": "Active recovery, no structured training",
+                    "weeklyKm": 15,
+                    "notes": "Light walking, stretching, easy walks"
+                  }
+                ]
+              },
+              "raw": "{\"summary\": \"16-week plan building aerobic base, then adding tempo and race-pace work to peak for a sub-1:45 half marathon on Oct 4. Strength maintained 2x/week, scheduled to avoid conflict with hard runs.\", \"phases\": [{\"name\": \"Base\", \"start\": \"2026-06-30\", \"end\": \"2026-07-27\", \"focus\": \"Increase weekly volume to 50km, maintain easy pace\", \"weeklyKm\": 45, \"notes\": \"Focus on consistency, no hard efforts\"}, {\"name\": \"Build\", \"start\": \"2026-07-28\", \"end\": \"2026-09-01\", \"focus\": \"Introduce tempo runs and intervals, increase intensity\", \"weeklyKm\": 50, \"notes\": \"One tempo, one interval session weekly\"}, {\"name\": \"Peak\", \"start\": \"2026-09-02\", \"end\": \"2026-09-22\", \"focus\": \"Race-pace work, longer tempo runs, max volume\", \"weeklyKm\": 55, \"notes\": \"Peak at 58km in week of Sept 15\"}, {\"name\": \"Taper\", \"start\": \"2026-09-23\", \"end\": \"2026-10-03\", \"focus\": \"Reduce volume, maintain intensity, sharpen\", \"weeklyKm\": 40, \"notes\": \"Volume drops 40% over 3 weeks\"}, {\"name\": \"Race\", \"start\": \"2026-10-04\", \"end\": \"2026-10-04\", \"focus\": \"Half marathon race day\", \"weeklyKm\": 0, \"notes\": \"\"}, {\"name\": \"Recovery\", \"start\": \"2026-10-05\", \"end\": \"2026-10-11\", \"focus\": \"Active recovery, no structured training\", \"weeklyKm\": 15, \"notes\": \"Light walking, stretching, easy walks\"}]}"
+            },
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-30",
+                "summary": "Maintain volume, add first tempo run. Strength on Tue and Fri.",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "easy",
+                    "title": "Easy run",
+                    "detail": "8km @ 5:40-5:50/km",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "strength",
+                    "title": "Lower body — squat focus",
+                    "detail": "Squats 4x8, lunges 3x12, calf raises 3x20, RPE 7",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "tempo",
+                    "title": "Tempo run",
+                    "detail": "5km warm-up, 4km @ 5:10/km (Z4), 2km cool-down",
+                    "distanceKm": 11
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "easy",
+                    "title": "Easy run",
+                    "detail": "7km @ 5:40-5:50/km",
+                    "distanceKm": 7
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "strength",
+                    "title": "Full body — core focus",
+                    "detail": "Deadlifts 3x6, push-ups 3x15, planks 3x45s, RPE 6",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "rest",
+                    "title": "Rest",
+                    "detail": "Active recovery walk or mobility",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "long",
+                    "title": "Long run",
+                    "detail": "14km @ 5:50-6:00/km",
+                    "distanceKm": 14
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-30\", \"summary\": \"Maintain volume, add first tempo run. Strength on Tue and Fri.\", \"days\": [{\"day\": \"Mon\", \"type\": \"easy\", \"title\": \"Easy run\", \"detail\": \"8km @ 5:40-5:50/km\", \"distanceKm\": 8}, {\"day\": \"Tue\", \"type\": \"strength\", \"title\": \"Lower body — squat focus\", \"detail\": \"Squats 4x8, lunges 3x12, calf raises 3x20, RPE 7\", \"distanceKm\": 0}, {\"day\": \"Wed\", \"type\": \"tempo\", \"title\": \"Tempo run\", \"detail\": \"5km warm-up, 4km @ 5:10/km (Z4), 2km cool-down\", \"distanceKm\": 11}, {\"day\": \"Thu\", \"type\": \"easy\", \"title\": \"Easy run\", \"detail\": \"7km @ 5:40-5:50/km\", \"distanceKm\": 7}, {\"day\": \"Fri\", \"type\": \"strength\", \"title\": \"Full body — core focus\", \"detail\": \"Deadlifts 3x6, push-ups 3x15, planks 3x45s, RPE 6\", \"distanceKm\": 0}, {\"day\": \"Sat\", \"type\": \"rest\", \"title\": \"Rest\", \"detail\": \"Active recovery walk or mobility\", \"distanceKm\": 0}, {\"day\": \"Sun\", \"type\": \"long\", \"title\": \"Long run\", \"detail\": \"14km @ 5:50-6:00/km\", \"distanceKm\": 14}]}"
+            }
+          ]
+        },
+        "create-goal": {
+          "pass": true,
+          "latencyMs": 3320,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called upsert_goal",
+              "pass": true
+            },
+            {
+              "label": "raceType = 10K",
+              "pass": true
+            },
+            {
+              "label": "targetTimeSec under 3000s",
+              "pass": true
+            },
+            {
+              "label": "targetDate = 2026-11-08",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "upsert_goal",
+              "args": {
+                "title": "Sub-50:00 10K",
+                "raceType": "10K",
+                "targetDistanceM": 10000,
+                "targetTimeSec": 3000,
+                "targetDate": "2026-11-08"
+              },
+              "raw": "{\"title\": \"Sub-50:00 10K\", \"raceType\": \"10K\", \"targetDistanceM\": 10000, \"targetTimeSec\": 3000, \"targetDate\": \"2026-11-08\"}"
+            }
+          ]
+        },
+        "log-lthr": {
+          "pass": true,
+          "latencyMs": 1905,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called log_lthr_test",
+              "pass": true
+            },
+            {
+              "label": "lthr = 171",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "log_lthr_test",
+              "args": {
+                "lthr": 171,
+                "maxHr": 188,
+                "testedOn": "2026-06-27"
+              },
+              "raw": "{\"lthr\": 171, \"maxHr\": 188, \"testedOn\": \"2026-06-27\"}"
+            }
+          ]
+        },
+        "edit-week": {
+          "pass": true,
+          "latencyMs": 5324,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "resent all 7 days (not just edits)",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-22",
+                "summary": "Build week, ~40km",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "rest",
+                    "title": "Rest",
+                    "detail": "Rest"
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "intervals",
+                    "title": "5×1km @ threshold",
+                    "detail": "5×1km at threshold pace, 90s jog recovery",
+                    "distanceKm": 10
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "easy",
+                    "title": "Easy 6km",
+                    "detail": "Easy 6km",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "tempo",
+                    "title": "Tempo 6km",
+                    "detail": "Tempo 6km",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "strength",
+                    "title": "Lower body — squat focus",
+                    "detail": "Lower body — squat focus",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "easy",
+                    "title": "Easy 5km",
+                    "detail": "Easy 5km",
+                    "distanceKm": 5
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "long",
+                    "title": "Long run 18km",
+                    "detail": "Long run 18km",
+                    "distanceKm": 18
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-22\", \"summary\": \"Build week, ~40km\", \"days\": [{\"day\": \"Mon\", \"type\": \"rest\", \"title\": \"Rest\", \"detail\": \"Rest\"}, {\"day\": \"Tue\", \"type\": \"intervals\", \"title\": \"5×1km @ threshold\", \"detail\": \"5×1km at threshold pace, 90s jog recovery\", \"distanceKm\": 10}, {\"day\": \"Wed\", \"type\": \"easy\", \"title\": \"Easy 6km\", \"detail\": \"Easy 6km\", \"distanceKm\": 6}, {\"day\": \"Thu\", \"type\": \"tempo\", \"title\": \"Tempo 6km\", \"detail\": \"Tempo 6km\", \"distanceKm\": 8}, {\"day\": \"Fri\", \"type\": \"strength\", \"title\": \"Lower body — squat focus\", \"detail\": \"Lower body — squat focus\", \"distanceKm\": 0}, {\"day\": \"Sat\", \"type\": \"easy\", \"title\": \"Easy 5km\", \"detail\": \"Easy 5km\", \"distanceKm\": 5}, {\"day\": \"Sun\", \"type\": \"long\", \"title\": \"Long run 18km\", \"detail\": \"Long run 18km\", \"distanceKm\": 18}]}"
+            }
+          ]
+        },
+        "set-projection": {
+          "pass": false,
+          "latencyMs": 2151,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_goal_projection",
+              "pass": false
+            },
+            {
+              "label": "id = 7",
+              "pass": false
+            },
+            {
+              "label": "projectedTimeSec is a number",
+              "pass": false
+            }
+          ],
+          "calls": []
+        },
+        "no-tool": {
+          "pass": true,
+          "latencyMs": 1189,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "made zero tool calls",
+              "pass": true
+            }
+          ],
+          "calls": []
+        }
+      }
+    },
+    "nvidia/llama-3.3-nemotron-super-49b-v1": {
+      "scenarios": {
+        "build-plan": {
+          "pass": false,
+          "latencyMs": 54412,
+          "coercedFields": 0,
+          "schemaErrors": [
+            "set_macro_plan.summary: required, missing",
+            "set_macro_plan.phases: required, missing",
+            "set_weekly_plan.summary: required, missing",
+            "set_weekly_plan.days: required, missing"
+          ],
+          "checkResults": [
+            {
+              "label": "called set_macro_plan",
+              "pass": true
+            },
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "macro has ≥3 phases",
+              "pass": false
+            },
+            {
+              "label": "weekly has all 7 days",
+              "pass": false
+            }
+          ],
+          "calls": [
+            {
+              "name": "get_training_history",
+              "args": {},
+              "raw": "{}"
+            },
+            {
+              "name": "set_macro_plan",
+              "args": {},
+              "raw": "{}"
+            },
+            {
+              "name": "set_weekly_plan",
+              "args": {},
+              "raw": "{}"
+            }
+          ]
+        },
+        "create-goal": {
+          "pass": true,
+          "latencyMs": 11403,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called upsert_goal",
+              "pass": true
+            },
+            {
+              "label": "raceType = 10K",
+              "pass": true
+            },
+            {
+              "label": "targetTimeSec under 3000s",
+              "pass": true
+            },
+            {
+              "label": "targetDate = 2026-11-08",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "upsert_goal",
+              "args": {
+                "title": "Sub-50min 10K",
+                "raceType": "10K",
+                "targetDistanceM": 10000,
+                "targetTimeSec": 3000,
+                "targetDate": "2026-11-08"
+              },
+              "raw": "{\"title\": \"Sub-50min 10K\", \"raceType\": \"10K\", \"targetDistanceM\": 10000, \"targetTimeSec\": 3000, \"targetDate\": \"2026-11-08\"}"
+            }
+          ]
+        },
+        "log-lthr": {
+          "pass": true,
+          "latencyMs": 53077,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called log_lthr_test",
+              "pass": true
+            },
+            {
+              "label": "lthr = 171",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "log_lthr_test",
+              "args": {
+                "lthr": 171
+              },
+              "raw": "{\"lthr\": 171}"
+            }
+          ]
+        },
+        "edit-week": {
+          "pass": false,
+          "latencyMs": 17280,
+          "coercedFields": 0,
+          "schemaErrors": [
+            "set_weekly_plan.summary: required, missing",
+            "set_weekly_plan.days: required, missing"
+          ],
+          "checkResults": [
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "resent all 7 days (not just edits)",
+              "pass": false
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_weekly_plan",
+              "args": {},
+              "raw": "{}"
+            }
+          ]
+        },
+        "set-projection": {
+          "pass": true,
+          "latencyMs": 7599,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_goal_projection",
+              "pass": true
+            },
+            {
+              "label": "id = 7",
+              "pass": true
+            },
+            {
+              "label": "projectedTimeSec is a number",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_goal_projection",
+              "args": {
+                "id": 7,
+                "projectedTimeSec": 6300
+              },
+              "raw": "{\"id\": 7, \"projectedTimeSec\": 6300}"
+            }
+          ]
+        },
+        "no-tool": {
+          "pass": true,
+          "latencyMs": 11029,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "made zero tool calls",
+              "pass": true
+            }
+          ],
+          "calls": []
+        }
+      }
+    },
+    "meta/llama-3.3-70b-instruct": {
+      "scenarios": {
+        "build-plan": {
+          "pass": false,
+          "latencyMs": 93592,
+          "coercedFields": 0,
+          "schemaErrors": [
+            "set_macro_plan.phases: expected array, got string",
+            "set_weekly_plan.days: expected array, got string"
+          ],
+          "checkResults": [
+            {
+              "label": "called set_macro_plan",
+              "pass": true
+            },
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "macro has ≥3 phases",
+              "pass": false
+            },
+            {
+              "label": "weekly has all 7 days",
+              "pass": false
+            }
+          ],
+          "calls": [
+            {
+              "name": "get_training_history",
+              "args": {},
+              "raw": "{}"
+            },
+            {
+              "name": "set_macro_plan",
+              "args": {
+                "summary": "Periodized plan for a sub-1:45 half marathon in 14 weeks, with a base phase, a build phase, a peak phase, a taper phase, and a race phase.",
+                "phases": "[{\"name\": \"Base\", \"start\": \"2026-06-27\", \"end\": \"2026-07-24\", \"focus\": \"Building endurance\", \"weeklyKm\": 40, \"notes\": \"Incorporate strength training 2x/week, focus on lower body\"}, {\"name\": \"Build\", \"start\": \"2026-07-25\", \"end\": \"2026-08-21\", \"focus\": \"Increasing intensity\", \"weeklyKm\": 45, \"notes\": \"Introduce interval training, continue strength training\"}, {\"name\": \"Peak\", \"start\": \"2026-08-22\", \"end\": \"2026-09-18\", \"focus\": \"Peaking for the half marathon\", \"weeklyKm\": 50, \"notes\": \"Taper strength training, focus on active recovery\"}, {\"name\": \"Taper\", \"start\": \"2026-09-19\", \"end\": \"2026-10-02\", \"focus\": \"Tapering for the half marathon\", \"weeklyKm\": 30, \"notes\": \"Reduce intensity and volume, focus on rest and recovery\"}, {\"name\": \"Race\", \"start\": \"2026-10-03\", \"end\": \"2026-10-03\", \"focus\": \"Half marathon race\", \"weeklyKm\": 0, \"notes\": \"Rest and recovery\"}]"
+              },
+              "raw": "{\"summary\": \"Periodized plan for a sub-1:45 half marathon in 14 weeks, with a base phase, a build phase, a peak phase, a taper phase, and a race phase.\", \"phases\": \"[{\\\"name\\\": \\\"Base\\\", \\\"start\\\": \\\"2026-06-27\\\", \\\"end\\\": \\\"2026-07-24\\\", \\\"focus\\\": \\\"Building endurance\\\", \\\"weeklyKm\\\": 40, \\\"notes\\\": \\\"Incorporate strength training 2x/week, focus on lower body\\\"}, {\\\"name\\\": \\\"Build\\\", \\\"start\\\": \\\"2026-07-25\\\", \\\"end\\\": \\\"2026-08-21\\\", \\\"focus\\\": \\\"Increasing intensity\\\", \\\"weeklyKm\\\": 45, \\\"notes\\\": \\\"Introduce interval training, continue strength training\\\"}, {\\\"name\\\": \\\"Peak\\\", \\\"start\\\": \\\"2026-08-22\\\", \\\"end\\\": \\\"2026-09-18\\\", \\\"focus\\\": \\\"Peaking for the half marathon\\\", \\\"weeklyKm\\\": 50, \\\"notes\\\": \\\"Taper strength training, focus on active recovery\\\"}, {\\\"name\\\": \\\"Taper\\\", \\\"start\\\": \\\"2026-09-19\\\", \\\"end\\\": \\\"2026-10-02\\\", \\\"focus\\\": \\\"Tapering for the half marathon\\\", \\\"weeklyKm\\\": 30, \\\"notes\\\": \\\"Reduce intensity and volume, focus on rest and recovery\\\"}, {\\\"name\\\": \\\"Race\\\", \\\"start\\\": \\\"2026-10-03\\\", \\\"end\\\": \\\"2026-10-03\\\", \\\"focus\\\": \\\"Half marathon race\\\", \\\"weeklyKm\\\": 0, \\\"notes\\\": \\\"Rest and recovery\\\"}]\"}"
+            },
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-27",
+                "summary": "Base phase week 1: building endurance with easy runs and strength training",
+                "days": "[{\"day\": \"Mon\", \"type\": \"easy\", \"title\": \"Easy 6km\", \"detail\": \"Easy 6km run at conversational pace\", \"distanceKm\": 6}, {\"day\": \"Tue\", \"type\": \"strength\", \"title\": \"Lower body\", \"detail\": \"Squats, lunges, deadlifts\", \"distanceKm\": 0}, {\"day\": \"Wed\", \"type\": \"easy\", \"title\": \"Easy 8km\", \"detail\": \"Easy 8km run at conversational pace\", \"distanceKm\": 8}, {\"day\": \"Thu\", \"type\": \"rest\", \"title\": \"Rest day\", \"detail\": \"No running or strength training\", \"distanceKm\": 0}, {\"day\": \"Fri\", \"type\": \"easy\", \"title\": \"Easy 6km\", \"detail\": \"Easy 6km run at conversational pace\", \"distanceKm\": 6}, {\"day\": \"Sat\", \"type\": \"long\", \"title\": \"Long 16km\", \"detail\": \"Long 16km run at moderate pace\", \"distanceKm\": 16}, {\"day\": \"Sun\", \"type\": \"rest\", \"title\": \"Rest day\", \"detail\": \"No running or strength training\", \"distanceKm\": 0}]"
+              },
+              "raw": "{\"weekStart\": \"2026-06-27\", \"summary\": \"Base phase week 1: building endurance with easy runs and strength training\", \"days\": \"[{\\\"day\\\": \\\"Mon\\\", \\\"type\\\": \\\"easy\\\", \\\"title\\\": \\\"Easy 6km\\\", \\\"detail\\\": \\\"Easy 6km run at conversational pace\\\", \\\"distanceKm\\\": 6}, {\\\"day\\\": \\\"Tue\\\", \\\"type\\\": \\\"strength\\\", \\\"title\\\": \\\"Lower body\\\", \\\"detail\\\": \\\"Squats, lunges, deadlifts\\\", \\\"distanceKm\\\": 0}, {\\\"day\\\": \\\"Wed\\\", \\\"type\\\": \\\"easy\\\", \\\"title\\\": \\\"Easy 8km\\\", \\\"detail\\\": \\\"Easy 8km run at conversational pace\\\", \\\"distanceKm\\\": 8}, {\\\"day\\\": \\\"Thu\\\", \\\"type\\\": \\\"rest\\\", \\\"title\\\": \\\"Rest day\\\", \\\"detail\\\": \\\"No running or strength training\\\", \\\"distanceKm\\\": 0}, {\\\"day\\\": \\\"Fri\\\", \\\"type\\\": \\\"easy\\\", \\\"title\\\": \\\"Easy 6km\\\", \\\"detail\\\": \\\"Easy 6km run at conversational pace\\\", \\\"distanceKm\\\": 6}, {\\\"day\\\": \\\"Sat\\\", \\\"type\\\": \\\"long\\\", \\\"title\\\": \\\"Long 16km\\\", \\\"detail\\\": \\\"Long 16km run at moderate pace\\\", \\\"distanceKm\\\": 16}, {\\\"day\\\": \\\"Sun\\\", \\\"type\\\": \\\"rest\\\", \\\"title\\\": \\\"Rest day\\\", \\\"detail\\\": \\\"No running or strength training\\\", \\\"distanceKm\\\": 0}]\"}"
+            }
+          ]
+        },
+        "create-goal": {
+          "pass": true,
+          "latencyMs": 101659,
+          "coercedFields": 2,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called upsert_goal",
+              "pass": true
+            },
+            {
+              "label": "raceType = 10K",
+              "pass": true
+            },
+            {
+              "label": "targetTimeSec under 3000s",
+              "pass": true
+            },
+            {
+              "label": "targetDate = 2026-11-08",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "upsert_goal",
+              "args": {
+                "title": "Sub-50-minute 10K",
+                "raceType": "10K",
+                "targetDistanceM": 10000,
+                "targetTimeSec": 3000,
+                "targetDate": "2026-11-08",
+                "notes": "",
+                "status": "active"
+              },
+              "raw": "{\"title\": \"Sub-50-minute 10K\", \"raceType\": \"10K\", \"targetDistanceM\": \"10000\", \"targetTimeSec\": \"3000\", \"targetDate\": \"2026-11-08\", \"notes\": \"\", \"status\": \"active\"}"
+            }
+          ]
+        },
+        "log-lthr": {
+          "pass": false,
+          "latencyMs": 4733,
+          "coercedFields": 1,
+          "schemaErrors": [
+            "log_lthr_test.maxHr: expected number, got string"
+          ],
+          "checkResults": [
+            {
+              "label": "called log_lthr_test",
+              "pass": true
+            },
+            {
+              "label": "lthr = 171",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "log_lthr_test",
+              "args": {
+                "lthr": 171,
+                "maxHr": "null",
+                "testedOn": "2026-06-27",
+                "notes": "null"
+              },
+              "raw": "{\"lthr\": \"171\", \"maxHr\": \"null\", \"testedOn\": \"2026-06-27\", \"notes\": \"null\"}"
+            }
+          ]
+        },
+        "edit-week": {
+          "pass": true,
+          "latencyMs": 80427,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "resent all 7 days (not just edits)",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-22",
+                "summary": "Build week, ~40km",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "rest",
+                    "title": "Rest",
+                    "detail": "Rest day",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "intervals",
+                    "title": "5×1km @ threshold",
+                    "detail": "5x1km at threshold pace",
+                    "distanceKm": 10
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "easy",
+                    "title": "Easy 6km",
+                    "detail": "Easy 6km run",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "tempo",
+                    "title": "Tempo 6km",
+                    "detail": "6km tempo run",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "strength",
+                    "title": "Lower body — squat focus",
+                    "detail": "Lower body strength training with a focus on squats",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "easy",
+                    "title": "Easy 5km",
+                    "detail": "Easy 5km run",
+                    "distanceKm": 5
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "long",
+                    "title": "Long run 18km",
+                    "detail": "18km long run",
+                    "distanceKm": 18
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-22\", \"summary\": \"Build week, ~40km\", \"days\": [{\"day\": \"Mon\", \"type\": \"rest\", \"title\": \"Rest\", \"detail\": \"Rest day\", \"distanceKm\": 0}, {\"day\": \"Tue\", \"type\": \"intervals\", \"title\": \"5×1km @ threshold\", \"detail\": \"5x1km at threshold pace\", \"distanceKm\": 10}, {\"day\": \"Wed\", \"type\": \"easy\", \"title\": \"Easy 6km\", \"detail\": \"Easy 6km run\", \"distanceKm\": 6}, {\"day\": \"Thu\", \"type\": \"tempo\", \"title\": \"Tempo 6km\", \"detail\": \"6km tempo run\", \"distanceKm\": 8}, {\"day\": \"Fri\", \"type\": \"strength\", \"title\": \"Lower body — squat focus\", \"detail\": \"Lower body strength training with a focus on squats\", \"distanceKm\": 0}, {\"day\": \"Sat\", \"type\": \"easy\", \"title\": \"Easy 5km\", \"detail\": \"Easy 5km run\", \"distanceKm\": 5}, {\"day\": \"Sun\", \"type\": \"long\", \"title\": \"Long run 18km\", \"detail\": \"18km long run\", \"distanceKm\": 18}]}"
+            }
+          ]
+        },
+        "set-projection": {
+          "pass": true,
+          "latencyMs": 9072,
+          "coercedFields": 2,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_goal_projection",
+              "pass": true
+            },
+            {
+              "label": "id = 7",
+              "pass": true
+            },
+            {
+              "label": "projectedTimeSec is a number",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_goal_projection",
+              "args": {
+                "id": 7,
+                "projectedTimeSec": 6300
+              },
+              "raw": "{\"id\": \"7\", \"projectedTimeSec\": \"6300\"}"
+            }
+          ]
+        },
+        "no-tool": {
+          "pass": true,
+          "latencyMs": 1945,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "made zero tool calls",
+              "pass": true
+            }
+          ],
+          "calls": []
+        }
+      }
+    },
+    "openai/gpt-oss-120b": {
+      "scenarios": {
+        "build-plan": {
+          "pass": false,
+          "latencyMs": 24472,
+          "coercedFields": 0,
+          "schemaErrors": [
+            "set_weekly_plan.days[2].distanceKm: expected number, got null",
+            "set_weekly_plan.days[4].distanceKm: expected number, got null",
+            "set_weekly_plan.days[6].distanceKm: expected number, got null"
+          ],
+          "checkResults": [
+            {
+              "label": "called set_macro_plan",
+              "pass": true
+            },
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "macro has ≥3 phases",
+              "pass": true
+            },
+            {
+              "label": "weekly has all 7 days",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_macro_plan",
+              "args": {
+                "summary": "Periodized plan to peak for a sub‑1:45 half marathon on 2026‑10‑04, balancing gradual mileage increase with strength work.",
+                "phases": [
+                  {
+                    "name": "Base",
+                    "start": "2026-06-27",
+                    "end": "2026-07-30",
+                    "focus": "Build aerobic endurance, establish consistent mileage, maintain strength 2×/week",
+                    "weeklyKm": 45,
+                    "notes": "Increase weekly volume ~5% per week, include strides and short hill work."
+                  },
+                  {
+                    "name": "Build",
+                    "start": "2026-08-01",
+                    "end": "2026-09-04",
+                    "focus": "Add tempo and interval sessions, extend long runs, sharpen at goal pace",
+                    "weeklyKm": 65,
+                    "notes": "1× weekly tempo 20 min Z3, 1× interval session, long run up to 18 km."
+                  },
+                  {
+                    "name": "Peak",
+                    "start": "2026-09-05",
+                    "end": "2026-09-18",
+                    "focus": "Peak volume and race‑specific intensity, longest long run",
+                    "weeklyKm": 75,
+                    "notes": "Long run 20 km with last 5 km at goal pace, race‑pace intervals 3×2 km."
+                  },
+                  {
+                    "name": "Taper",
+                    "start": "2026-09-19",
+                    "end": "2026-09-30",
+                    "focus": "Reduce volume, keep intensity, sharpen",
+                    "weeklyKm": 45,
+                    "notes": "Week 1 volume ~20% down, week 2 ~40% down; maintain short tempo."
+                  },
+                  {
+                    "name": "Race",
+                    "start": "2026-10-04",
+                    "end": "2026-10-04",
+                    "focus": "Half‑marathon race day",
+                    "weeklyKm": 0,
+                    "notes": "Goal pace 4:58 min/km."
+                  },
+                  {
+                    "name": "Recovery",
+                    "start": "2026-10-05",
+                    "end": "2026-10-12",
+                    "focus": "Active recovery, easy runs",
+                    "weeklyKm": 20,
+                    "notes": "Easy runs 5‑8 km, light strength work."
+                  }
+                ]
+              },
+              "raw": "{\"summary\": \"Periodized plan to peak for a sub\\u20111:45 half marathon on 2026\\u201110\\u201104, balancing gradual mileage increase with strength work.\", \"phases\": [{\"name\": \"Base\", \"start\": \"2026-06-27\", \"end\": \"2026-07-30\", \"focus\": \"Build aerobic endurance, establish consistent mileage, maintain strength 2\\u00d7/week\", \"weeklyKm\": 45, \"notes\": \"Increase weekly volume ~5% per week, include strides and short hill work.\"}, {\"name\": \"Build\", \"start\": \"2026-08-01\", \"end\": \"2026-09-04\", \"focus\": \"Add tempo and interval sessions, extend long runs, sharpen at goal pace\", \"weeklyKm\": 65, \"notes\": \"1\\u00d7 weekly tempo 20\\u202fmin Z3, 1\\u00d7 interval session, long run up to 18\\u202fkm.\"}, {\"name\": \"Peak\", \"start\": \"2026-09-05\", \"end\": \"2026-09-18\", \"focus\": \"Peak volume and race\\u2011specific intensity, longest long run\", \"weeklyKm\": 75, \"notes\": \"Long run 20\\u202fkm with last 5\\u202fkm at goal pace, race\\u2011pace intervals 3\\u00d72\\u202fkm.\"}, {\"name\": \"Taper\", \"start\": \"2026-09-19\", \"end\": \"2026-09-30\", \"focus\": \"Reduce volume, keep intensity, sharpen\", \"weeklyKm\": 45, \"notes\": \"Week\\u202f1 volume ~20% down, week\\u202f2 ~40% down; maintain short tempo.\"}, {\"name\": \"Race\", \"start\": \"2026-10-04\", \"end\": \"2026-10-04\", \"focus\": \"Half\\u2011marathon race day\", \"weeklyKm\": 0, \"notes\": \"Goal pace 4:58\\u202fmin/km.\"}, {\"name\": \"Recovery\", \"start\": \"2026-10-05\", \"end\": \"2026-10-12\", \"focus\": \"Active recovery, easy runs\", \"weeklyKm\": 20, \"notes\": \"Easy runs 5\\u20118\\u202fkm, light strength work.\"}]}"
+            },
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-24",
+                "summary": "Base phase – build aerobic base, keep strength 2×/week",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "long",
+                    "title": "16 km long run",
+                    "detail": "Steady aerobic run at 5:55 min/km, Z2 HR 150, focus on consistent pacing.",
+                    "distanceKm": 16
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "easy",
+                    "title": "6 km easy run",
+                    "detail": "Recovery run at ~6:10 min/km, Z2, keep HR low, relaxed effort.",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "strength",
+                    "title": "Lower‑body strength",
+                    "detail": "Squat‑focus session, 3 × 8 reps, RPE 7, core work included.",
+                    "distanceKm": null
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "easy",
+                    "title": "8 km easy run with strides",
+                    "detail": "Run at ~6:00 min/km, Z2, finish with 4 × 100 m strides at fast but controlled pace.",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "strength",
+                    "title": "Upper‑body strength",
+                    "detail": "Pull‑focus (rows, pull‑ups), 3 × 10 reps, RPE 6, light core work.",
+                    "distanceKm": null
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "easy",
+                    "title": "8 km easy run",
+                    "detail": "Easy pace ~5:40 min/km, Z2, HR ~145, relaxed effort.",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "rest",
+                    "title": "Rest / active recovery",
+                    "detail": "Full rest or optional light cross‑training (e.g., 30 min easy bike).",
+                    "distanceKm": null
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-24\", \"summary\": \"Base phase \\u2013 build aerobic base, keep strength 2\\u00d7/week\", \"days\": [{\"day\": \"Mon\", \"type\": \"long\", \"title\": \"16\\u202fkm long run\", \"detail\": \"Steady aerobic run at 5:55\\u202fmin/km, Z2 HR 150, focus on consistent pacing.\", \"distanceKm\": 16}, {\"day\": \"Tue\", \"type\": \"easy\", \"title\": \"6\\u202fkm easy run\", \"detail\": \"Recovery run at ~6:10\\u202fmin/km, Z2, keep HR low, relaxed effort.\", \"distanceKm\": 6}, {\"day\": \"Wed\", \"type\": \"strength\", \"title\": \"Lower\\u2011body strength\", \"detail\": \"Squat\\u2011focus session, 3\\u202f\\u00d7\\u202f8 reps, RPE\\u202f7, core work included.\", \"distanceKm\": null}, {\"day\": \"Thu\", \"type\": \"easy\", \"title\": \"8\\u202fkm easy run with strides\", \"detail\": \"Run at ~6:00\\u202fmin/km, Z2, finish with 4\\u202f\\u00d7\\u202f100\\u202fm strides at fast but controlled pace.\", \"distanceKm\": 8}, {\"day\": \"Fri\", \"type\": \"strength\", \"title\": \"Upper\\u2011body strength\", \"detail\": \"Pull\\u2011focus (rows, pull\\u2011ups), 3\\u202f\\u00d7\\u202f10 reps, RPE\\u202f6, light core work.\", \"distanceKm\": null}, {\"day\": \"Sat\", \"type\": \"easy\", \"title\": \"8\\u202fkm easy run\", \"detail\": \"Easy pace ~5:40\\u202fmin/km, Z2, HR ~145, relaxed effort.\", \"distanceKm\": 8}, {\"day\": \"Sun\", \"type\": \"rest\", \"title\": \"Rest / active recovery\", \"detail\": \"Full rest or optional light cross\\u2011training (e.g., 30\\u202fmin easy bike).\", \"distanceKm\": null}]}"
+            }
+          ]
+        },
+        "create-goal": {
+          "pass": false,
+          "latencyMs": 15108,
+          "coercedFields": 0,
+          "schemaErrors": [
+            "set_macro_plan.phases[4].weeklyKm: expected number, got null"
+          ],
+          "checkResults": [
+            {
+              "label": "called upsert_goal",
+              "pass": true
+            },
+            {
+              "label": "raceType = 10K",
+              "pass": true
+            },
+            {
+              "label": "targetTimeSec under 3000s",
+              "pass": true
+            },
+            {
+              "label": "targetDate = 2026-11-08",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "upsert_goal",
+              "args": {
+                "title": "Sub-50 10K",
+                "raceType": "10K",
+                "targetDistanceM": 10000,
+                "targetTimeSec": 3000,
+                "targetDate": "2026-11-08",
+                "notes": "Goal to run 10K under 50 minutes on 8 Nov 2026.",
+                "status": "active"
+              },
+              "raw": "{\"title\": \"Sub-50 10K\", \"raceType\": \"10K\", \"targetDistanceM\": 10000, \"targetTimeSec\": 3000, \"targetDate\": \"2026-11-08\", \"notes\": \"Goal to run 10K under 50 minutes on 8 Nov 2026.\", \"status\": \"active\"}"
+            },
+            {
+              "name": "set_macro_plan",
+              "args": {
+                "summary": "Progressive 10K specific plan building aerobic base, then speed work, peaking for sub‑50 on 8 Nov.",
+                "phases": [
+                  {
+                    "name": "Base",
+                    "start": "2026-06-27",
+                    "end": "2026-09-15",
+                    "focus": "Build aerobic volume, steady easy runs, introduce light strides",
+                    "weeklyKm": 50,
+                    "notes": "Maintain 2 strength sessions per week, keep acute:chronic ~1.0"
+                  },
+                  {
+                    "name": "Build",
+                    "start": "2026-09-16",
+                    "end": "2026-10-15",
+                    "focus": "Add tempo runs and interval sessions, increase weekly mileage",
+                    "weeklyKm": 60,
+                    "notes": "Strength focus shifts to maintenance, keep one lower‑body day"
+                  },
+                  {
+                    "name": "Peak",
+                    "start": "2026-10-16",
+                    "end": "2026-10-31",
+                    "focus": "Race‑specific pace work, sharpen speed, reduce volume slightly",
+                    "weeklyKm": 65,
+                    "notes": "Last hard interval 2 weeks before race, taper begins after"
+                  },
+                  {
+                    "name": "Taper",
+                    "start": "2026-11-01",
+                    "end": "2026-11-07",
+                    "focus": "Maintain intensity, cut volume, recover for race day",
+                    "weeklyKm": 45,
+                    "notes": "Light strength, focus on mobility"
+                  },
+                  {
+                    "name": "Race",
+                    "start": "2026-11-08",
+                    "focus": "Race day execution",
+                    "weeklyKm": null,
+                    "notes": ""
+                  }
+                ]
+              },
+              "raw": "{\"summary\": \"Progressive 10K specific plan building aerobic base, then speed work, peaking for sub\\u201150 on 8\\u202fNov.\", \"phases\": [{\"name\": \"Base\", \"start\": \"2026-06-27\", \"end\": \"2026-09-15\", \"focus\": \"Build aerobic volume, steady easy runs, introduce light strides\", \"weeklyKm\": 50, \"notes\": \"Maintain 2 strength sessions per week, keep acute:chronic ~1.0\"}, {\"name\": \"Build\", \"start\": \"2026-09-16\", \"end\": \"2026-10-15\", \"focus\": \"Add tempo runs and interval sessions, increase weekly mileage\", \"weeklyKm\": 60, \"notes\": \"Strength focus shifts to maintenance, keep one lower\\u2011body day\"}, {\"name\": \"Peak\", \"start\": \"2026-10-16\", \"end\": \"2026-10-31\", \"focus\": \"Race\\u2011specific pace work, sharpen speed, reduce volume slightly\", \"weeklyKm\": 65, \"notes\": \"Last hard interval 2 weeks before race, taper begins after\"}, {\"name\": \"Taper\", \"start\": \"2026-11-01\", \"end\": \"2026-11-07\", \"focus\": \"Maintain intensity, cut volume, recover for race day\", \"weeklyKm\": 45, \"notes\": \"Light strength, focus on mobility\"}, {\"name\": \"Race\", \"start\": \"2026-11-08\", \"focus\": \"Race day execution\", \"weeklyKm\": null, \"notes\": \"\"}]}"
+            },
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-27",
+                "summary": "Base phase: build volume, easy runs, introduce strides, maintain strength.",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "rest",
+                    "title": "Rest",
+                    "detail": "Full rest after long run, focus on mobility and hydration.",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "easy",
+                    "title": "8 km easy",
+                    "detail": "Steady pace ~5:45/km, stay in HR zone Z2 (139-152 bpm).",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "strength",
+                    "title": "Upper body – push/pull",
+                    "detail": "Full-body circuit focusing on chest, back, shoulders. RPE 6-7, keep legs light.",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "easy",
+                    "title": "8 km easy + strides",
+                    "detail": "Run 8 km at ~5:45/km, finish with 6×100 m strides (fast, relaxed). HR in Z2.",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "easy",
+                    "title": "6 km recovery",
+                    "detail": "Very easy pace ~6:10/km, HR Z1‑Z2, focus on good form.",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "intervals",
+                    "title": "5×1000 m @ 4:45/km",
+                    "detail": "Warm‑up 2 km easy, then 5×1 km at 4:45/km with 2‑min jog recovery, cool‑down 2 km easy. Aim HR Z4 on reps.",
+                    "distanceKm": 10
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "long",
+                    "title": "18 km long run",
+                    "detail": "Steady long run at ~5:55/km, stay in HR zone Z2‑Z3, practice fueling.",
+                    "distanceKm": 18
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-27\", \"summary\": \"Base phase: build volume, easy runs, introduce strides, maintain strength.\", \"days\": [{\"day\": \"Mon\", \"type\": \"rest\", \"title\": \"Rest\", \"detail\": \"Full rest after long run, focus on mobility and hydration.\", \"distanceKm\": 0}, {\"day\": \"Tue\", \"type\": \"easy\", \"title\": \"8 km easy\", \"detail\": \"Steady pace ~5:45/km, stay in HR zone Z2 (139-152 bpm).\", \"distanceKm\": 8}, {\"day\": \"Wed\", \"type\": \"strength\", \"title\": \"Upper body \\u2013 push/pull\", \"detail\": \"Full-body circuit focusing on chest, back, shoulders. RPE 6-7, keep legs light.\", \"distanceKm\": 0}, {\"day\": \"Thu\", \"type\": \"easy\", \"title\": \"8 km easy + strides\", \"detail\": \"Run 8 km at ~5:45/km, finish with 6\\u00d7100 m strides (fast, relaxed). HR in Z2.\", \"distanceKm\": 8}, {\"day\": \"Fri\", \"type\": \"easy\", \"title\": \"6 km recovery\", \"detail\": \"Very easy pace ~6:10/km, HR Z1\\u2011Z2, focus on good form.\", \"distanceKm\": 6}, {\"day\": \"Sat\", \"type\": \"intervals\", \"title\": \"5\\u00d71000 m @ 4:45/km\", \"detail\": \"Warm\\u2011up 2 km easy, then 5\\u00d71 km at 4:45/km with 2\\u2011min jog recovery, cool\\u2011down 2 km easy. Aim HR Z4 on reps.\", \"distanceKm\": 10}, {\"day\": \"Sun\", \"type\": \"long\", \"title\": \"18 km long run\", \"detail\": \"Steady long run at ~5:55/km, stay in HR zone Z2\\u2011Z3, practice fueling.\", \"distanceKm\": 18}]}"
+            }
+          ]
+        },
+        "log-lthr": {
+          "pass": true,
+          "latencyMs": 2043,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called log_lthr_test",
+              "pass": true
+            },
+            {
+              "label": "lthr = 171",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "log_lthr_test",
+              "args": {
+                "lthr": 171,
+                "testedOn": "2026-06-27",
+                "notes": "New lactate threshold test result."
+              },
+              "raw": "{\"lthr\": 171, \"testedOn\": \"2026-06-27\", \"notes\": \"New lactate threshold test result.\"}"
+            }
+          ]
+        },
+        "edit-week": {
+          "pass": false,
+          "latencyMs": 5413,
+          "coercedFields": 0,
+          "schemaErrors": [
+            "set_weekly_plan.days[0].distanceKm: expected number, got null",
+            "set_weekly_plan.days[4].distanceKm: expected number, got null"
+          ],
+          "checkResults": [
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "resent all 7 days (not just edits)",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-22",
+                "summary": "Adjusted mid-week workouts for better recovery",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "rest",
+                    "title": "Rest",
+                    "detail": "Full rest day",
+                    "distanceKm": null
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "intervals",
+                    "title": "5×1km @ threshold",
+                    "detail": "5×1km intervals at threshold pace (~4:45/km) with 2min jog recovery",
+                    "distanceKm": 10
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "easy",
+                    "title": "Easy 6km",
+                    "detail": "6km easy run at ~5:45-6:00/km, keep HR in Z2",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "tempo",
+                    "title": "Tempo 6km",
+                    "detail": "6km tempo run at ~4:45-5:00/km, aim Z3‑Z4",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "strength",
+                    "title": "Lower body — squat focus",
+                    "detail": "Leg strength session, squat focus, RPE 7",
+                    "distanceKm": null
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "easy",
+                    "title": "Easy 5km",
+                    "detail": "5km easy run at ~5:45-6:00/km",
+                    "distanceKm": 5
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "long",
+                    "title": "Long run 18km",
+                    "detail": "18km long run at ~5:55/km, steady effort",
+                    "distanceKm": 18
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-22\", \"summary\": \"Adjusted mid-week workouts for better recovery\", \"days\": [{\"day\": \"Mon\", \"type\": \"rest\", \"title\": \"Rest\", \"detail\": \"Full rest day\", \"distanceKm\": null}, {\"day\": \"Tue\", \"type\": \"intervals\", \"title\": \"5\\u00d71km @ threshold\", \"detail\": \"5\\u00d71km intervals at threshold pace (~4:45/km) with 2min jog recovery\", \"distanceKm\": 10}, {\"day\": \"Wed\", \"type\": \"easy\", \"title\": \"Easy 6km\", \"detail\": \"6km easy run at ~5:45-6:00/km, keep HR in Z2\", \"distanceKm\": 6}, {\"day\": \"Thu\", \"type\": \"tempo\", \"title\": \"Tempo 6km\", \"detail\": \"6km tempo run at ~4:45-5:00/km, aim Z3\\u2011Z4\", \"distanceKm\": 6}, {\"day\": \"Fri\", \"type\": \"strength\", \"title\": \"Lower body \\u2014 squat focus\", \"detail\": \"Leg strength session, squat focus, RPE 7\", \"distanceKm\": null}, {\"day\": \"Sat\", \"type\": \"easy\", \"title\": \"Easy 5km\", \"detail\": \"5km easy run at ~5:45-6:00/km\", \"distanceKm\": 5}, {\"day\": \"Sun\", \"type\": \"long\", \"title\": \"Long run 18km\", \"detail\": \"18km long run at ~5:55/km, steady effort\", \"distanceKm\": 18}]}"
+            }
+          ]
+        },
+        "set-projection": {
+          "pass": true,
+          "latencyMs": 2624,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_goal_projection",
+              "pass": true
+            },
+            {
+              "label": "id = 7",
+              "pass": true
+            },
+            {
+              "label": "projectedTimeSec is a number",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "set_goal_projection",
+              "args": {
+                "id": 7,
+                "projectedTimeSec": 6480
+              },
+              "raw": "{\"id\": 7, \"projectedTimeSec\": 6480}"
+            }
+          ]
+        },
+        "no-tool": {
+          "pass": true,
+          "latencyMs": 1159,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "made zero tool calls",
+              "pass": true
+            }
+          ],
+          "calls": []
+        }
+      }
+    },
+    "meta/llama-4-maverick-17b-128e-instruct": {
+      "scenarios": {
+        "build-plan": {
+          "pass": false,
+          "latencyMs": 609,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_macro_plan",
+              "pass": false
+            },
+            {
+              "label": "called set_weekly_plan",
+              "pass": false
+            },
+            {
+              "label": "macro has ≥3 phases",
+              "pass": false
+            },
+            {
+              "label": "weekly has all 7 days",
+              "pass": false
+            }
+          ],
+          "calls": []
+        },
+        "create-goal": {
+          "pass": false,
+          "latencyMs": 1097,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called upsert_goal",
+              "pass": false
+            },
+            {
+              "label": "raceType = 10K",
+              "pass": false
+            },
+            {
+              "label": "targetTimeSec under 3000s",
+              "pass": false
+            },
+            {
+              "label": "targetDate = 2026-11-08",
+              "pass": false
+            }
+          ],
+          "calls": []
+        },
+        "log-lthr": {
+          "pass": false,
+          "latencyMs": 601,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called log_lthr_test",
+              "pass": false
+            },
+            {
+              "label": "lthr = 171",
+              "pass": false
+            }
+          ],
+          "calls": []
+        },
+        "edit-week": {
+          "pass": false,
+          "latencyMs": 3456,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_weekly_plan",
+              "pass": false
+            },
+            {
+              "label": "resent all 7 days (not just edits)",
+              "pass": false
+            }
+          ],
+          "calls": []
+        },
+        "set-projection": {
+          "pass": false,
+          "latencyMs": 802,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_goal_projection",
+              "pass": false
+            },
+            {
+              "label": "id = 7",
+              "pass": false
+            },
+            {
+              "label": "projectedTimeSec is a number",
+              "pass": false
+            }
+          ],
+          "calls": []
+        },
+        "no-tool": {
+          "pass": true,
+          "latencyMs": 643,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "made zero tool calls",
+              "pass": true
+            }
+          ],
+          "calls": []
+        }
+      }
+    },
+    "deepseek-ai/deepseek-v4-pro": {
+      "scenarios": {
+        "build-plan": {
+          "pass": true,
+          "latencyMs": 60317,
+          "coercedFields": 0,
+          "schemaErrors": [],
+          "checkResults": [
+            {
+              "label": "called set_macro_plan",
+              "pass": true
+            },
+            {
+              "label": "called set_weekly_plan",
+              "pass": true
+            },
+            {
+              "label": "macro has ≥3 phases",
+              "pass": true
+            },
+            {
+              "label": "weekly has all 7 days",
+              "pass": true
+            }
+          ],
+          "calls": [
+            {
+              "name": "get_training_history",
+              "args": {},
+              "raw": "{}"
+            },
+            {
+              "name": "set_macro_plan",
+              "args": {
+                "summary": "14-week half marathon build from ~40km to a peak of 50-55km. Periodized: Base (4 wks) → Build (6 wks) → Peak (2 wks) → Taper (1 wk) → Race. Maintains 2x/week strength training throughout, with runs arranged around gym days to avoid hard/long runs clashing with lower-body fatigue.",
+                "phases": [
+                  {
+                    "name": "Base",
+                    "start": "2026-06-23",
+                    "end": "2026-07-20",
+                    "focus": "Build aerobic endurance and consolidate weekly volume at 40-45km. One threshold session + long run each week.",
+                    "weeklyKm": 42,
+                    "notes": "Long runs 16-18km. Threshold work at ~4:45/km. Keep strength 2x/week."
+                  },
+                  {
+                    "name": "Build",
+                    "start": "2026-07-21",
+                    "end": "2026-08-31",
+                    "focus": "Progress volume to 45-52km. Introduce race-pace work (4:55-5:00/km) and longer threshold blocks. Long runs extend to 18-21km.",
+                    "weeklyKm": 48,
+                    "notes": "Key sessions: race-pace tempo runs, progressive long runs, and continued threshold intervals. Strength shifts to maintenance."
+                  },
+                  {
+                    "name": "Peak",
+                    "start": "2026-09-01",
+                    "end": "2026-09-14",
+                    "focus": "Max volume at 50-55km. Race-specific workouts: long runs with race-pace segments, sharpening intervals. Final big long run of 21km.",
+                    "weeklyKm": 52,
+                    "notes": "Two quality sessions per week. Long run peaks at 21km with race-pace finish. Strength: 1-2 lighter sessions."
+                  },
+                  {
+                    "name": "Taper",
+                    "start": "2026-09-15",
+                    "end": "2026-09-27",
+                    "focus": "Reduce volume ~30-50% while maintaining intensity. Fresh legs for race day.",
+                    "weeklyKm": 30,
+                    "notes": "Keep one short sharp session midweek. Final long run 13-14km. Drop strength to 1x light session."
+                  },
+                  {
+                    "name": "Race",
+                    "start": "2026-09-28",
+                    "end": "2026-10-04",
+                    "focus": "Short easy runs, rest, and race day. Sub-1:45 target at 4:58/km.",
+                    "weeklyKm": 25,
+                    "notes": "Tue: 6km easy with 4×100m strides. Thu: 4km shakeout. Sun Oct 4: RACE DAY."
+                  }
+                ]
+              },
+              "raw": "{\"summary\": \"14-week half marathon build from ~40km to a peak of 50-55km. Periodized: Base (4 wks) → Build (6 wks) → Peak (2 wks) → Taper (1 wk) → Race. Maintains 2x/week strength training throughout, with runs arranged around gym days to avoid hard/long runs clashing with lower-body fatigue.\", \"phases\": [{\"name\": \"Base\", \"start\": \"2026-06-23\", \"end\": \"2026-07-20\", \"focus\": \"Build aerobic endurance and consolidate weekly volume at 40-45km. One threshold session + long run each week.\", \"weeklyKm\": 42, \"notes\": \"Long runs 16-18km. Threshold work at ~4:45/km. Keep strength 2x/week.\"}, {\"name\": \"Build\", \"start\": \"2026-07-21\", \"end\": \"2026-08-31\", \"focus\": \"Progress volume to 45-52km. Introduce race-pace work (4:55-5:00/km) and longer threshold blocks. Long runs extend to 18-21km.\", \"weeklyKm\": 48, \"notes\": \"Key sessions: race-pace tempo runs, progressive long runs, and continued threshold intervals. Strength shifts to maintenance.\"}, {\"name\": \"Peak\", \"start\": \"2026-09-01\", \"end\": \"2026-09-14\", \"focus\": \"Max volume at 50-55km. Race-specific workouts: long runs with race-pace segments, sharpening intervals. Final big long run of 21km.\", \"weeklyKm\": 52, \"notes\": \"Two quality sessions per week. Long run peaks at 21km with race-pace finish. Strength: 1-2 lighter sessions.\"}, {\"name\": \"Taper\", \"start\": \"2026-09-15\", \"end\": \"2026-09-27\", \"focus\": \"Reduce volume ~30-50% while maintaining intensity. Fresh legs for race day.\", \"weeklyKm\": 30, \"notes\": \"Keep one short sharp session midweek. Final long run 13-14km. Drop strength to 1x light session.\"}, {\"name\": \"Race\", \"start\": \"2026-09-28\", \"end\": \"2026-10-04\", \"focus\": \"Short easy runs, rest, and race day. Sub-1:45 target at 4:58/km.\", \"weeklyKm\": 25, \"notes\": \"Tue: 6km easy with 4×100m strides. Thu: 4km shakeout. Sun Oct 4: RACE DAY.\"}]}"
+            },
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-23",
+                "summary": "Base phase week 1 — establish routine at 42km with one threshold session, long run, and two strength days.",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "rest",
+                    "title": "Rest day",
+                    "detail": "Full rest. Let the legs recover from Sunday's long run."
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "easy",
+                    "title": "Easy 8km",
+                    "detail": "8km easy at conversational pace (~5:40-5:50/km). Keep HR in Z2.",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "strength",
+                    "title": "Upper body — push/pull focus",
+                    "detail": "Bench press, rows, overhead press, pull-ups, core work. RPE 7-8. No lower-body loading so you're fresh for Thursday's threshold session."
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "tempo",
+                    "title": "5×1km threshold",
+                    "detail": "Warm up 2km easy, then 5×1km at threshold pace (~4:45/km) with 90s jog recovery. Cool down 2km. Total ~10km.",
+                    "distanceKm": 10
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "easy",
+                    "title": "Recovery 6km",
+                    "detail": "6km very easy recovery run (~5:50-6:00/km). Keep HR low, Z1-Z2. Flush out the legs.",
+                    "distanceKm": 6
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "strength",
+                    "title": "Lower body — squat & hinge focus",
+                    "detail": "Back squats, Romanian deadlifts, lunges, calf raises, core. RPE 7-8. Placed Saturday so Sunday's long run is on fresh legs."
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "long",
+                    "title": "Long run 16km",
+                    "detail": "16km steady at easy-to-moderate effort (~5:45-5:55/km). Keep HR mostly Z2. Practice fuelling if you plan to on race day.",
+                    "distanceKm": 16
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-23\", \"summary\": \"Base phase week 1 — establish routine at 42km with one threshold session, long run, and two strength days.\", \"days\": [{\"day\": \"Mon\", \"type\": \"rest\", \"title\": \"Rest day\", \"detail\": \"Full rest. Let the legs recover from Sunday's long run.\"}, {\"day\": \"Tue\", \"type\": \"easy\", \"title\": \"Easy 8km\", \"detail\": \"8km easy at conversational pace (~5:40-5:50/km). Keep HR in Z2.\", \"distanceKm\": 8}, {\"day\": \"Wed\", \"type\": \"strength\", \"title\": \"Upper body — push/pull focus\", \"detail\": \"Bench press, rows, overhead press, pull-ups, core work. RPE 7-8. No lower-body loading so you're fresh for Thursday's threshold session.\"}, {\"day\": \"Thu\", \"type\": \"tempo\", \"title\": \"5×1km threshold\", \"detail\": \"Warm up 2km easy, then 5×1km at threshold pace (~4:45/km) with 90s jog recovery. Cool down 2km. Total ~10km.\", \"distanceKm\": 10}, {\"day\": \"Fri\", \"type\": \"easy\", \"title\": \"Recovery 6km\", \"detail\": \"6km very easy recovery run (~5:50-6:00/km). Keep HR low, Z1-Z2. Flush out the legs.\", \"distanceKm\": 6}, {\"day\": \"Sat\", \"type\": \"strength\", \"title\": \"Lower body — squat & hinge focus\", \"detail\": \"Back squats, Romanian deadlifts, lunges, calf raises, core. RPE 7-8. Placed Saturday so Sunday's long run is on fresh legs.\"}, {\"day\": \"Sun\", \"type\": \"long\", \"title\": \"Long run 16km\", \"detail\": \"16km steady at easy-to-moderate effort (~5:45-5:55/km). Keep HR mostly Z2. Practice fuelling if you plan to on race day.\", \"distanceKm\": 16}]}"
+            }
+          ]
+        },
+        "create-goal": {
+          "error": "This operation was aborted",
+          "calls": [
+            {
+              "name": "upsert_goal",
+              "args": {
+                "title": "Sub-50 10K",
+                "raceType": "10K",
+                "targetDistanceM": 10000,
+                "targetTimeSec": 3000,
+                "targetDate": "2026-11-08",
+                "status": "active"
+              },
+              "raw": "{\"title\": \"Sub-50 10K\", \"raceType\": \"10K\", \"targetDistanceM\": 10000, \"targetTimeSec\": 3000, \"targetDate\": \"2026-11-08\", \"status\": \"active\"}"
+            },
+            {
+              "name": "get_training_history",
+              "args": {},
+              "raw": "{}"
+            },
+            {
+              "name": "set_macro_plan",
+              "args": {
+                "summary": "19-week 10K plan building from ~38km/week to a peak of ~55km. Three phases: Base (build volume + strength), Build (add race-specific work — VO2max intervals, longer tempos), Peak/Taper (sharpen, then freshen for Nov 8). Strength 2x/week maintained throughout, scheduled around key sessions.",
+                "phases": [
+                  {
+                    "name": "Base",
+                    "start": "2026-06-29",
+                    "end": "2026-08-09",
+                    "focus": "Build aerobic endurance and durability. Increase long run to 18-20km, add a second quality day (strides/hills), grow volume to ~48km.",
+                    "weeklyKm": 44
+                  },
+                  {
+                    "name": "Build",
+                    "start": "2026-08-10",
+                    "end": "2026-10-04",
+                    "focus": "Race-specific work: VO2max intervals (800m-1km repeats at 4:30-4:40/km), longer threshold blocks (3×2km, 20-min tempo), peak volume ~55km.",
+                    "weeklyKm": 52
+                  },
+                  {
+                    "name": "Peak",
+                    "start": "2026-10-05",
+                    "end": "2026-10-25",
+                    "focus": "Sharpen with faster intervals (400m-600m at 4:15-4:25/km), race-pace simulations, maintain threshold. Begin reducing volume.",
+                    "weeklyKm": 48
+                  },
+                  {
+                    "name": "Taper",
+                    "start": "2026-10-26",
+                    "end": "2026-11-07",
+                    "focus": "Reduce volume ~40%, keep intensity but cut reps. Short race-pace tune-up midweek. Fresh legs for race day.",
+                    "weeklyKm": 30
+                  },
+                  {
+                    "name": "Race",
+                    "start": "2026-11-08",
+                    "end": "2026-11-08",
+                    "focus": "Race day — sub-50 10K.",
+                    "weeklyKm": 10
+                  }
+                ]
+              },
+              "raw": "{\"summary\": \"19-week 10K plan building from ~38km/week to a peak of ~55km. Three phases: Base (build volume + strength), Build (add race-specific work — VO2max intervals, longer tempos), Peak/Taper (sharpen, then freshen for Nov 8). Strength 2x/week maintained throughout, scheduled around key sessions.\", \"phases\": [{\"name\": \"Base\", \"start\": \"2026-06-29\", \"end\": \"2026-08-09\", \"focus\": \"Build aerobic endurance and durability. Increase long run to 18-20km, add a second quality day (strides/hills), grow volume to ~48km.\", \"weeklyKm\": 44}, {\"name\": \"Build\", \"start\": \"2026-08-10\", \"end\": \"2026-10-04\", \"focus\": \"Race-specific work: VO2max intervals (800m-1km repeats at 4:30-4:40/km), longer threshold blocks (3×2km, 20-min tempo), peak volume ~55km.\", \"weeklyKm\": 52}, {\"name\": \"Peak\", \"start\": \"2026-10-05\", \"end\": \"2026-10-25\", \"focus\": \"Sharpen with faster intervals (400m-600m at 4:15-4:25/km), race-pace simulations, maintain threshold. Begin reducing volume.\", \"weeklyKm\": 48}, {\"name\": \"Taper\", \"start\": \"2026-10-26\", \"end\": \"2026-11-07\", \"focus\": \"Reduce volume ~40%, keep intensity but cut reps. Short race-pace tune-up midweek. Fresh legs for race day.\", \"weeklyKm\": 30}, {\"name\": \"Race\", \"start\": \"2026-11-08\", \"end\": \"2026-11-08\", \"focus\": \"Race day — sub-50 10K.\", \"weeklyKm\": 10}]}"
+            },
+            {
+              "name": "set_weekly_plan",
+              "args": {
+                "weekStart": "2026-06-29",
+                "summary": "Base phase week 1 — start building volume gently, introduce strides, maintain 2x strength.",
+                "days": [
+                  {
+                    "day": "Mon",
+                    "type": "easy",
+                    "title": "Easy 7km",
+                    "detail": "Easy run at conversational pace (~5:50-6:10/km). Keep HR in Z1-Z2.",
+                    "distanceKm": 7
+                  },
+                  {
+                    "day": "Tue",
+                    "type": "strength",
+                    "title": "Upper body — push/pull focus",
+                    "detail": "Bench press, rows, overhead press, pull-ups, core. RPE 7-8.",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Wed",
+                    "type": "easy",
+                    "title": "Easy 8km + 6×20s strides",
+                    "detail": "Easy 8km at ~5:40-5:50/km. After the run, do 6×20-second strides at ~4:30/km with 60s walking recovery. Strides are relaxed fast running, not all-out.",
+                    "distanceKm": 8
+                  },
+                  {
+                    "day": "Thu",
+                    "type": "tempo",
+                    "title": "Threshold: 5×1km @ 4:45/km",
+                    "detail": "Warm up 2km easy, then 5×1km at threshold pace (~4:45/km) with 90s jog recovery. Cool down 2km. Total ~10km.",
+                    "distanceKm": 10
+                  },
+                  {
+                    "day": "Fri",
+                    "type": "strength",
+                    "title": "Lower body — squat/deadlift focus",
+                    "detail": "Squats, Romanian deadlifts, lunges, calf raises, core. RPE 7-8. Schedule this early enough that Saturday's long run has ~24h recovery.",
+                    "distanceKm": 0
+                  },
+                  {
+                    "day": "Sat",
+                    "type": "long",
+                    "title": "Long run 17km",
+                    "detail": "Steady long run at easy pace (~5:50-6:10/km). Keep HR in Z1-Z2. Focus on time on feet, not pace.",
+                    "distanceKm": 17
+                  },
+                  {
+                    "day": "Sun",
+                    "type": "rest",
+                    "title": "Rest day",
+                    "detail": "Full rest or light walking only.",
+                    "distanceKm": 0
+                  }
+                ]
+              },
+              "raw": "{\"weekStart\": \"2026-06-29\", \"summary\": \"Base phase week 1 — start building volume gently, introduce strides, maintain 2x strength.\", \"days\": [{\"day\": \"Mon\", \"type\": \"easy\", \"title\": \"Easy 7km\", \"detail\": \"Easy run at conversational pace (~5:50-6:10/km). Keep HR in Z1-Z2.\", \"distanceKm\": 7}, {\"day\": \"Tue\", \"type\": \"strength\", \"title\": \"Upper body — push/pull focus\", \"detail\": \"Bench press, rows, overhead press, pull-ups, core. RPE 7-8.\", \"distanceKm\": 0}, {\"day\": \"Wed\", \"type\": \"easy\", \"title\": \"Easy 8km + 6×20s strides\", \"detail\": \"Easy 8km at ~5:40-5:50/km. After the run, do 6×20-second strides at ~4:30/km with 60s walking recovery. Strides are relaxed fast running, not all-out.\", \"distanceKm\": 8}, {\"day\": \"Thu\", \"type\": \"tempo\", \"title\": \"Threshold: 5×1km @ 4:45/km\", \"detail\": \"Warm up 2km easy, then 5×1km at threshold pace (~4:45/km) with 90s jog recovery. Cool down 2km. Total ~10km.\", \"distanceKm\": 10}, {\"day\": \"Fri\", \"type\": \"strength\", \"title\": \"Lower body — squat/deadlift focus\", \"detail\": \"Squats, Romanian deadlifts, lunges, calf raises, core. RPE 7-8. Schedule this early enough that Saturday's long run has ~24h recovery.\", \"distanceKm\": 0}, {\"day\": \"Sat\", \"type\": \"long\", \"title\": \"Long run 17km\", \"detail\": \"Steady long run at easy pace (~5:50-6:10/km). Keep HR in Z1-Z2. Focus on time on feet, not pace.\", \"distanceKm\": 17}, {\"day\": \"Sun\", \"type\": \"rest\", \"title\": \"Rest day\", \"detail\": \"Full rest or light walking only.\", \"distanceKm\": 0}]}"
+            }
+          ]
+        },
+        "log-lthr": {
+          "error": "HTTP 429: {\"status\":429,\"title\":\"Too Many Requests\"}",
+          "calls": []
+        },
+        "edit-week": {
+          "error": "HTTP 429: {\"status\":429,\"title\":\"Too Many Requests\"}",
+          "calls": []
+        },
+        "set-projection": {
+          "error": "HTTP 429: {\"status\":429,\"title\":\"Too Many Requests\"}",
+          "calls": []
+        },
+        "no-tool": {
+          "error": "HTTP 429: {\"status\":429,\"title\":\"Too Many Requests\"}",
+          "calls": []
+        }
+      }
+    }
+  }
+}

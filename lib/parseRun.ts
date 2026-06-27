@@ -227,20 +227,24 @@ function computeSplits(rows: Row[]): Split[] {
   // Build a clean (time, distance) list.
   const pts = rows
     .filter((r) => r.dist !== null)
-    .map((r) => ({ t: r.since, d: r.dist as number, hr: r.hr, elev: r.elev }));
+    .map((r) => ({ t: r.since, d: r.dist as number, hr: r.hr, elev: r.elev, cad: r.cadence }));
   if (pts.length < 2) return splits;
 
   const totalDist = pts[pts.length - 1].d;
   let boundary = 1000;
   let prevBoundaryTime = pts[0].t;
   let segHr: number[] = [];
+  let segCad: number[] = [];
   let segElevGain = 0;
   let prevElev: number | null = pts[0].elev;
+  const avgOrNull = (xs: number[]) =>
+    xs.length ? Math.round(xs.reduce((x, y) => x + y, 0) / xs.length) : null;
 
   for (let i = 1; i < pts.length; i++) {
     const a = pts[i - 1];
     const b = pts[i];
     if (b.hr !== null) segHr.push(b.hr);
+    if (b.cad !== null) segCad.push(b.cad);
     if (prevElev !== null && b.elev !== null) {
       const de = b.elev - prevElev;
       if (de > 0.5) segElevGain += de;
@@ -257,11 +261,13 @@ function computeSplits(rows: Row[]): Split[] {
         distanceM: 1000,
         durationSec,
         paceSecPerKm: durationSec, // 1 km segment => pace == duration
-        avgHr: segHr.length ? Math.round(segHr.reduce((x, y) => x + y, 0) / segHr.length) : null,
+        avgHr: avgOrNull(segHr),
+        avgCadence: avgOrNull(segCad),
         elevGainM: Math.round(segElevGain),
       });
       prevBoundaryTime = tCross;
       segHr = [];
+      segCad = [];
       segElevGain = 0;
       boundary += 1000;
     }
@@ -277,7 +283,8 @@ function computeSplits(rows: Row[]): Split[] {
       distanceM: Math.round(lastDist),
       durationSec,
       paceSecPerKm: lastDist > 0 ? (durationSec / lastDist) * 1000 : 0,
-      avgHr: segHr.length ? Math.round(segHr.reduce((x, y) => x + y, 0) / segHr.length) : null,
+      avgHr: avgOrNull(segHr),
+      avgCadence: avgOrNull(segCad),
       elevGainM: Math.round(segElevGain),
     });
   }
@@ -384,4 +391,25 @@ export function formatDuration(sec: number | null | undefined): string {
 export function formatDistance(m: number | null | undefined): string {
   if (!m || !Number.isFinite(m)) return "—";
   return `${(m / 1000).toFixed(2)} km`;
+}
+
+// Parse a finish time into seconds. Accepts a clock string ("H:MM:SS", "MM:SS")
+// or a bare number/numeric string (already seconds). Returns null for empty or
+// unparseable input (used to clear a value). This keeps the model from having to
+// do H:MM:SS → seconds arithmetic itself (where it tends to drift).
+export function parseRaceTime(input: unknown): number | null {
+  if (input === null || input === undefined) return null;
+  if (typeof input === "number") return Number.isFinite(input) && input > 0 ? Math.round(input) : null;
+  const str = String(input).trim();
+  if (!str) return null;
+  // Bare seconds (no colon), e.g. "8100".
+  if (/^\d+(\.\d+)?$/.test(str)) {
+    const n = Number(str);
+    return n > 0 ? Math.round(n) : null;
+  }
+  const parts = str.split(":").map((p) => p.trim());
+  if (parts.length < 2 || parts.length > 3 || parts.some((p) => !/^\d+$/.test(p))) return null;
+  const nums = parts.map(Number);
+  const sec = parts.length === 3 ? nums[0] * 3600 + nums[1] * 60 + nums[2] : nums[0] * 60 + nums[1];
+  return sec > 0 ? Math.round(sec) : null;
 }

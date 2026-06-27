@@ -135,13 +135,41 @@ export function CadenceChart({ series }: { series: SeriesPoint[] }) {
     <ResponsiveContainer width="100%" height={160}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
         <CartesianGrid stroke={GRID} vertical={false} />
-        <XAxis dataKey="km" fontSize={11} stroke="#9ca3af" tick={{ fill: "#9ca3af" }}
-          tickLine={false} axisLine={false} unit="km" />
-        <YAxis fontSize={11} stroke="#9ca3af" tick={{ fill: "#9ca3af" }} tickLine={false}
-          axisLine={false} width={36} domain={["dataMin - 6", "dataMax + 6"]} />
-        <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #e7e8ec", fontSize: 12 }}
-          formatter={(v) => [`${v} spm`, "Cadence"]} labelFormatter={(l) => `${l} km`} />
-        <Line type="monotone" dataKey="spm" stroke="#0ea5e9" strokeWidth={2} dot={false} connectNulls />
+        <XAxis
+          dataKey="km"
+          fontSize={11}
+          stroke="#9ca3af"
+          tick={{ fill: "#9ca3af" }}
+          tickLine={false}
+          axisLine={false}
+          unit="km"
+        />
+        <YAxis
+          fontSize={11}
+          stroke="#9ca3af"
+          tick={{ fill: "#9ca3af" }}
+          tickLine={false}
+          axisLine={false}
+          width={36}
+          domain={["dataMin - 6", "dataMax + 6"]}
+        />
+        <Tooltip
+          contentStyle={{
+            borderRadius: 10,
+            border: "1px solid #e7e8ec",
+            fontSize: 12,
+          }}
+          formatter={(v) => [`${v} spm`, "Cadence"]}
+          labelFormatter={(l) => `${l} km`}
+        />
+        <Line
+          type="monotone"
+          dataKey="spm"
+          stroke="#0ea5e9"
+          strokeWidth={2}
+          dot={false}
+          connectNulls
+        />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -209,9 +237,12 @@ export function SplitsChart({
 }: {
   splits: { km: number; paceSecPerKm: number }[];
 }) {
+  // Bars encode SPEED (km/h) so a faster split is a TALLER bar, while the axis
+  // and tooltip stay in pace (min/km). speed = 3600 / paceSecPerKm.
   const data = splits.map((s) => ({
     km: `${s.km}`,
     pace: Math.round(s.paceSecPerKm),
+    speed: s.paceSecPerKm > 0 ? 3600 / s.paceSecPerKm : 0,
   }));
   return (
     <ResponsiveContainer width="100%" height={180}>
@@ -226,14 +257,13 @@ export function SplitsChart({
           axisLine={false}
         />
         <YAxis
-          tickFormatter={paceTick}
+          tickFormatter={(v) => paceTick(3600 / v)}
           fontSize={11}
           stroke="#9ca3af"
           tick={{ fill: "#9ca3af" }}
           tickLine={false}
           axisLine={false}
-          reversed
-          domain={["dataMin - 15", "dataMax + 15"]}
+          domain={["dataMin - 0.8", "dataMax + 0.8"]}
           width={44}
         />
         <Tooltip
@@ -242,11 +272,14 @@ export function SplitsChart({
             border: "1px solid #e7e8ec",
             fontSize: 12,
           }}
-          formatter={(v) => [formatPace(v as number), "Pace"]}
+          formatter={(_v, _n, item) => [
+            formatPace((item?.payload as { pace: number }).pace),
+            "Pace",
+          ]}
           labelFormatter={(l) => `Km ${l}`}
           cursor={{ fill: "#f3f4f6" }}
         />
-        <Bar dataKey="pace" fill={ACCENT} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="speed" fill={ACCENT} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -254,12 +287,15 @@ export function SplitsChart({
 
 // ---- Run detail: pace per workout lap, colored by interval type ----
 export function LapsChart({ laps }: { laps: LapSplit[] }) {
+  // Bars encode SPEED (km/h) so a faster lap is a TALLER bar; axis + tooltip
+  // stay in pace (min/km). speed = 3600 / paceSecPerKm.
   const data = laps
     .filter((l) => l.paceSecPerKm > 0)
     .map((l) => ({
       label: `${l.lap}`,
       intensity: l.intensity,
       pace: Math.round(l.paceSecPerKm),
+      speed: 3600 / l.paceSecPerKm,
       distanceM: l.distanceM,
       durationSec: l.durationSec,
       color: intensityColor(l.intensity),
@@ -268,23 +304,46 @@ export function LapsChart({ laps }: { laps: LapSplit[] }) {
     <ResponsiveContainer width="100%" height={200}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
         <CartesianGrid stroke={GRID} vertical={false} />
-        <XAxis dataKey="label" fontSize={11} stroke="#9ca3af" tick={{ fill: "#9ca3af" }}
-          tickLine={false} axisLine={false} />
-        <YAxis tickFormatter={paceTick} fontSize={11} stroke="#9ca3af" tick={{ fill: "#9ca3af" }}
-          tickLine={false} axisLine={false} reversed domain={["dataMin - 15", "dataMax + 20"]} width={44} />
+        <XAxis
+          dataKey="label"
+          fontSize={11}
+          stroke="#9ca3af"
+          tick={{ fill: "#9ca3af" }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          tickFormatter={(v) => paceTick(3600 / v)}
+          fontSize={11}
+          stroke="#9ca3af"
+          tick={{ fill: "#9ca3af" }}
+          tickLine={false}
+          axisLine={false}
+          domain={["dataMin - 0.8", "dataMax + 0.8"]}
+          width={44}
+        />
         <Tooltip
-          contentStyle={{ borderRadius: 10, border: "1px solid #e7e8ec", fontSize: 12 }}
+          contentStyle={{
+            borderRadius: 10,
+            border: "1px solid #e7e8ec",
+            fontSize: 12,
+          }}
           cursor={{ fill: "#f3f4f6" }}
-          formatter={(v, _n, item) => {
-            const p = item?.payload as { intensity: string; distanceM: number; durationSec: number };
+          formatter={(_v, _n, item) => {
+            const p = item?.payload as {
+              intensity: string;
+              pace: number;
+              distanceM: number;
+              durationSec: number;
+            };
             return [
-              `${formatPace(v as number)} · ${formatDistance(p.distanceM)} · ${formatDuration(p.durationSec)}`,
+              `${formatPace(p.pace)} · ${formatDistance(p.distanceM)} · ${formatDuration(p.durationSec)}`,
               p.intensity,
             ];
           }}
           labelFormatter={(l) => `Lap ${l}`}
         />
-        <Bar dataKey="pace" radius={[4, 4, 0, 0]}>
+        <Bar dataKey="speed" radius={[4, 4, 0, 0]}>
           {data.map((d, i) => (
             <Cell key={i} fill={d.color} />
           ))}

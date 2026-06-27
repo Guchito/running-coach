@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
-import { COACH_MODELS } from "@/lib/coach";
+import { COACH_MODELS } from "@/lib/coachDefs";
 
-// Lets the runner choose which Claude model powers the coach.
+// Lets the runner choose which model powers the coach (Claude or a free model).
 export function CoachModelForm({ initial }: { initial: string }) {
   const router = useRouter();
   const [model, setModel] = useState(initial);

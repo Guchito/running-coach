@@ -6,6 +6,7 @@ export type Split = {
   durationSec: number;   // time spent in this split
   paceSecPerKm: number;  // pace for this split
   avgHr: number | null;
+  avgCadence: number | null; // raw watch cadence (count/min); ×2 = steps/min
   elevGainM: number;
 };
 

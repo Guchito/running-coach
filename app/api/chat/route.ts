@@ -11,10 +11,10 @@ import {
   getLatestLthrTest,
   getLatestBodyMetric,
 } from "@/lib/db";
-import { getClient, resolveCoachModel, supportsEffort, SYSTEM_PROMPT, buildContextBlock } from "@/lib/coach";
-import { COACH_TOOLS, executeTool } from "@/lib/coachTools";
+import { resolveCoachModel, SYSTEM_PROMPT, buildContextBlock } from "@/lib/coach";
+import { executeTool } from "@/lib/coachTools";
+import { resolveProvider, type ProviderMessage } from "@/lib/providers";
 import { getCurrentUserId, unauthorized } from "@/lib/auth";
-import type Anthropic from "@anthropic-ai/sdk";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -36,14 +36,6 @@ export async function POST(req: NextRequest) {
   const userId = await getCurrentUserId();
   if (!userId) return unauthorized();
 
-  let client;
-  try {
-    client = getClient();
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Claude is not configured.";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-
   const body = await req.json().catch(() => ({}));
   const userText = (body.message as string | undefined)?.trim();
   if (!userText) {
@@ -54,9 +46,9 @@ export async function POST(req: NextRequest) {
 
   // Build the model conversation from stored plain-text history.
   const history = (await listMessages(userId)).slice(-30);
-  const messages: Anthropic.MessageParam[] = history.map((m) => ({
+  const messages: ProviderMessage[] = history.map((m): ProviderMessage => ({
     role: m.role,
-    content: m.content,
+    text: m.content,
   }));
 
   const encoder = new TextEncoder();
@@ -95,58 +87,30 @@ export async function POST(req: NextRequest) {
         });
         const system = `${SYSTEM_PROMPT}\n\n---\nCURRENT CONTEXT (refreshed each message):\n${context}`;
         const model = resolveCoachModel(user?.coachModel);
+        const provider = resolveProvider(model);
 
         // Agentic loop: stream text, run any tools, feed results back, repeat.
+        // The provider (Claude or a free NVIDIA model) handles its own wire format.
         for (let turn = 0; turn < 6; turn++) {
-          const ms = client.messages.stream({
-            model,
-            // Generous cap: a full weekly + macro plan tool call (7 days of
-            // detail) plus the surrounding reply can run well past a few
-            // thousand tokens. Too low here truncates the tool_use block, so the
-            // plan update never executes. Streaming, so no HTTP-timeout risk.
-            max_tokens: 16000,
-            // Low effort = terser, cheaper replies. Not supported on Haiku.
-            ...(supportsEffort(model) ? { output_config: { effort: "low" as const } } : {}),
-            // Top-level automatic caching: caches everything up to the last
-            // block (the growing conversation history) and moves the breakpoint
-            // forward each turn — so prior messages read from cache too.
-            cache_control: { type: "ephemeral" },
-            // Explicit breakpoint on the big static prefix (tools + system +
-            // context) so it always caches as a unit, re-read at ~10% cost
-            // instead of paying full price to "read everything" each message.
-            system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
-            tools: COACH_TOOLS,
-            messages,
-          });
-          ms.on("text", (delta: string) => send(delta));
-          const final = await ms.finalMessage();
+          const result = await provider.streamTurn({ model, system, messages, onText: send });
 
-          if (final.stop_reason !== "tool_use") {
-            if (final.stop_reason === "max_tokens") {
+          if (result.stopReason !== "tool_use" || result.toolCalls.length === 0) {
+            if (result.stopReason === "max_tokens") {
               send("\n\n_(My reply was cut off before I finished — ask me to continue.)_");
             }
             break;
           }
 
-          // Record the assistant turn (with tool_use blocks) verbatim.
-          messages.push({ role: "assistant", content: final.content });
+          // Record the assistant turn (the text it said + the tool calls it made).
+          messages.push({ role: "assistant", text: result.text, toolCalls: result.toolCalls });
 
-          const toolResults: Anthropic.ToolResultBlockParam[] = [];
-          for (const block of final.content) {
-            if (block.type !== "tool_use") continue;
-            const result = await executeTool(
-              userId,
-              block.name,
-              block.input as Record<string, unknown>
-            );
-            send(`\n\n_✓ ${result.summary}_\n\n`);
-            toolResults.push({
-              type: "tool_result",
-              tool_use_id: block.id,
-              content: JSON.stringify(result.data),
-            });
+          const toolResults = [];
+          for (const tc of result.toolCalls) {
+            const r = await executeTool(userId, tc.name, tc.input);
+            send(`\n\n_✓ ${r.summary}_\n\n`);
+            toolResults.push({ id: tc.id, content: JSON.stringify(r.data) });
           }
-          messages.push({ role: "user", content: toolResults });
+          messages.push({ role: "tool", toolResults });
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Coach failed to respond.";
