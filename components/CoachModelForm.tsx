@@ -6,7 +6,15 @@ import { Card, Button } from "@/components/ui";
 import { COACH_MODELS } from "@/lib/coachDefs";
 
 // Lets the runner choose which model powers the coach (Claude or a free model).
-export function CoachModelForm({ initial }: { initial: string }) {
+// Claude models are paid and require the runner's own Anthropic API key, so they
+// are locked until a key is saved (see the key form below this one in Settings).
+export function CoachModelForm({
+  initial,
+  hasAnthropicKey,
+}: {
+  initial: string;
+  hasAnthropicKey: boolean;
+}) {
   const router = useRouter();
   const [model, setModel] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -36,30 +44,44 @@ export function CoachModelForm({ initial }: { initial: string }) {
   return (
     <Card className="p-6">
       <div className="space-y-3">
-        {COACH_MODELS.map((m) => (
-          <label
-            key={m.id}
-            className={`flex gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${
-              model === m.id ? "border-accent bg-accent-soft" : "border-border hover:bg-black/5"
-            }`}
-          >
-            <input
-              type="radio"
-              name="coach-model"
-              value={m.id}
-              checked={model === m.id}
-              onChange={() => {
-                setModel(m.id);
-                setSaved(false);
-              }}
-              className="mt-1 accent-accent"
-            />
-            <div>
-              <div className="font-medium">{m.label}</div>
-              <div className="text-sm text-muted">{m.blurb}</div>
-            </div>
-          </label>
-        ))}
+        {COACH_MODELS.map((m) => {
+          // Claude models need the runner's own key; lock them until one is set.
+          const locked = m.provider === "anthropic" && !hasAnthropicKey;
+          return (
+            <label
+              key={m.id}
+              className={`flex gap-3 rounded-xl border p-3 transition-colors ${
+                locked
+                  ? "border-border opacity-50 cursor-not-allowed"
+                  : model === m.id
+                  ? "border-accent bg-accent-soft cursor-pointer"
+                  : "border-border hover:bg-black/5 cursor-pointer"
+              }`}
+            >
+              <input
+                type="radio"
+                name="coach-model"
+                value={m.id}
+                checked={model === m.id}
+                disabled={locked}
+                onChange={() => {
+                  setModel(m.id);
+                  setSaved(false);
+                }}
+                className="mt-1 accent-accent"
+              />
+              <div>
+                <div className="font-medium">{m.label}</div>
+                <div className="text-sm text-muted">{m.blurb}</div>
+                {locked && (
+                  <div className="text-sm text-amber-600 mt-1">
+                    Add your Anthropic API key below to unlock this model.
+                  </div>
+                )}
+              </div>
+            </label>
+          );
+        })}
       </div>
 
       {error && <p className="text-sm text-red-600 mt-3">{error}</p>}

@@ -151,6 +151,7 @@ export type User = {
   driveFolderId: string | null;
   driveLastSync: string | null;
   coachModel: string | null;  // chosen Claude model for the coach; null = use the default
+  hasAnthropicKey: boolean;   // whether the runner has stored their own Anthropic API key
   lthrTestIntervalWeeks: number | null; // re-test cadence; null = no schedule
   createdAt: string;
 };

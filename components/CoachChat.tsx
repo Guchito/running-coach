@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Markdown } from "@/components/Markdown";
+import { CoachModelPicker } from "@/components/CoachModelPicker";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -13,7 +14,17 @@ const SUGGESTIONS = [
   "How's my pacing and heart rate looking?",
 ];
 
-export function CoachChat({ hasGoal, hasRuns }: { hasGoal: boolean; hasRuns: boolean }) {
+export function CoachChat({
+  hasGoal,
+  hasRuns,
+  model,
+  hasAnthropicKey,
+}: {
+  hasGoal: boolean;
+  hasRuns: boolean;
+  model: string;
+  hasAnthropicKey: boolean;
+}) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -130,7 +141,9 @@ export function CoachChat({ hasGoal, hasRuns }: { hasGoal: boolean; hasRuns: boo
           <span className="grid place-items-center w-9 h-9 rounded-full bg-accent text-white">🏃</span>
           <div>
             <div className="font-semibold leading-tight">Coach</div>
-            <div className="text-xs text-muted">Powered by Claude · sees your goal & runs</div>
+            <div className="mt-0.5">
+              <CoachModelPicker initialModel={model} hasAnthropicKey={hasAnthropicKey} />
+            </div>
           </div>
         </div>
         {!empty && (

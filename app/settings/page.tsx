@@ -5,6 +5,7 @@ import { LthrTestSection } from "@/components/LthrTestSection";
 import { BodyMetricsSection } from "@/components/BodyMetricsSection";
 import { DriveSettings } from "@/components/DriveSettings";
 import { CoachModelForm } from "@/components/CoachModelForm";
+import { AnthropicKeyForm } from "@/components/AnthropicKeyForm";
 import { requireUserId } from "@/lib/auth";
 import { isDriveConfigured, serviceAccountEmail } from "@/lib/drive";
 import { resolveCoachModel } from "@/lib/coach";
@@ -22,7 +23,13 @@ export default async function SettingsPage() {
   return (
     <PageShell title="Settings" subtitle="Personalize how your runs are analyzed and imported.">
       <h2 className="font-medium mb-3">Coach model</h2>
-      <CoachModelForm initial={resolveCoachModel(user?.coachModel)} />
+      <CoachModelForm
+        initial={resolveCoachModel(user?.coachModel)}
+        hasAnthropicKey={user?.hasAnthropicKey ?? false}
+      />
+
+      <h2 className="font-medium mb-3 mt-8">Your Anthropic API key</h2>
+      <AnthropicKeyForm initialHasKey={user?.hasAnthropicKey ?? false} />
 
       <h2 className="font-medium mb-3 mt-8">Heart-rate zones</h2>
       <HrZonesForm

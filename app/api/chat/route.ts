@@ -10,6 +10,7 @@ import {
   getUserById,
   getLatestLthrTest,
   getLatestBodyMetric,
+  getAnthropicApiKey,
 } from "@/lib/db";
 import { resolveCoachModel, SYSTEM_PROMPT, buildContextBlock } from "@/lib/coach";
 import { executeTool } from "@/lib/coachTools";
@@ -63,15 +64,17 @@ export async function POST(req: NextRequest) {
 
       try {
         // Rebuild fresh context each request (goals/plan/runs may have changed).
-        const [goals, plan, runs, gymSessions, user, lastLthrTest, bodyMetric] = await Promise.all([
-          listGoals(userId),
-          getPlan(userId),
-          listRuns(userId),
-          listGymSessions(userId),
-          getUserById(userId),
-          getLatestLthrTest(userId),
-          getLatestBodyMetric(userId),
-        ]);
+        const [goals, plan, runs, gymSessions, user, lastLthrTest, bodyMetric, anthropicKey] =
+          await Promise.all([
+            listGoals(userId),
+            getPlan(userId),
+            listRuns(userId),
+            listGymSessions(userId),
+            getUserById(userId),
+            getLatestLthrTest(userId),
+            getLatestBodyMetric(userId),
+            getAnthropicApiKey(userId),
+          ]);
         const context = buildContextBlock({
           goals,
           plan,
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest) {
         });
         const system = `${SYSTEM_PROMPT}\n\n---\nCURRENT CONTEXT (refreshed each message):\n${context}`;
         const model = resolveCoachModel(user?.coachModel);
-        const provider = resolveProvider(model);
+        const provider = resolveProvider(model, anthropicKey);
 
         // Agentic loop: stream text, run any tools, feed results back, repeat.
         // The provider (Claude or a free NVIDIA model) handles its own wire format.

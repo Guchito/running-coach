@@ -16,6 +16,7 @@ import type {
   LthrTest,
   BodyMetric,
 } from "./types";
+import { encryptSecret, decryptSecret } from "./secrets";
 
 // Single shared pool. On serverless platforms (Vercel) this is created per
 // instance; point DATABASE_URL at a pooled connection string (e.g. Neon's
@@ -68,6 +69,7 @@ const SCHEMA = `
   ALTER TABLE users ADD COLUMN IF NOT EXISTS drive_last_sync TIMESTAMPTZ;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS coach_model TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS lthr_test_interval_weeks INTEGER;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS anthropic_api_key_enc TEXT;
 
   CREATE TABLE IF NOT EXISTS lthr_tests (
     id          SERIAL PRIMARY KEY,
@@ -204,6 +206,9 @@ function rowToUser(r: Record<string, unknown>): User {
     driveFolderId: (r.drive_folder_id as string) ?? null,
     driveLastSync: r.drive_last_sync ? new Date(r.drive_last_sync as string).toISOString() : null,
     coachModel: (r.coach_model as string) ?? null,
+    // Never expose the key itself on the User object (it can be serialized to the
+    // client); just whether one is stored, so the UI can show "key set".
+    hasAnthropicKey: r.anthropic_api_key_enc != null,
     lthrTestIntervalWeeks:
       r.lthr_test_interval_weeks === null || r.lthr_test_interval_weeks === undefined
         ? null
@@ -218,6 +223,27 @@ export async function setCoachModel(userId: number, model: string | null): Promi
     model,
   ]);
   return rowToUser(rows[0]);
+}
+
+// Store (encrypted) or clear the runner's own Anthropic API key. Pass null to
+// remove it. The plaintext never touches the database — only the AES-GCM blob.
+export async function setAnthropicApiKey(userId: number, plaintext: string | null): Promise<User> {
+  const enc = plaintext ? encryptSecret(plaintext) : null;
+  const rows = await q(`UPDATE users SET anthropic_api_key_enc = $2 WHERE id = $1 RETURNING *`, [
+    userId,
+    enc,
+  ]);
+  return rowToUser(rows[0]);
+}
+
+// Fetch and decrypt the runner's own Anthropic API key for server-side use
+// (the chat route). Returns null if they haven't set one.
+export async function getAnthropicApiKey(userId: number): Promise<string | null> {
+  const rows = await q<{ anthropic_api_key_enc: string | null }>(
+    `SELECT anthropic_api_key_enc FROM users WHERE id = $1`,
+    [userId]
+  );
+  return decryptSecret(rows[0]?.anthropic_api_key_enc);
 }
 
 export async function setLthrTestInterval(userId: number, weeks: number | null): Promise<User> {

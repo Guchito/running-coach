@@ -8,14 +8,17 @@
 // re-export from here.
 import type Anthropic from "@anthropic-ai/sdk";
 
-// The default model when the runner hasn't picked one (their own Claude account).
-export const COACH_MODEL = process.env.COACH_MODEL || "claude-opus-4-8";
+// The default model when the runner hasn't picked one. This is the free NVIDIA
+// model: Claude is paid and requires each runner to add their own API key in
+// Settings, so the out-of-the-box default must be a free option.
+export const COACH_MODEL =
+  process.env.COACH_MODEL || "mistralai/mistral-large-3-675b-instruct-2512";
 
 export type CoachProviderId = "anthropic" | "nvidia";
 
 // Models the runner can pick from in Settings.
-// - anthropic: Claude models, billed to the app's ANTHROPIC_API_KEY (later: the
-//   runner's own key).
+// - anthropic: Claude models (paid). Each runner adds their OWN Anthropic API key
+//   in Settings; requests are billed to that key. Without a key these are unusable.
 // - nvidia: free models on build.nvidia.com via NVIDIA_API_KEY (OpenAI-compatible).
 //   Ids were live-probed + tool-call benchmarked (see /bench) on 2026-06-27.
 export const COACH_MODELS = [
@@ -23,13 +26,13 @@ export const COACH_MODELS = [
     id: "claude-opus-4-8",
     provider: "anthropic",
     label: "Claude Opus 4.8",
-    blurb: "Most capable — sharpest plans and coaching judgement. Default.",
+    blurb: "Most capable — sharpest plans and coaching judgement. Needs your own Anthropic API key (paid).",
   },
   {
     id: "claude-sonnet-4-6",
     provider: "anthropic",
     label: "Claude Sonnet 4.6",
-    blurb: "Balanced — fast replies, strong quality, lower cost.",
+    blurb: "Balanced — fast replies, strong quality, lower cost. Needs your own Anthropic API key (paid).",
   },
   {
     id: "claude-haiku-4-5",
