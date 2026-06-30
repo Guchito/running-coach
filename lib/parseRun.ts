@@ -106,9 +106,69 @@ export function parseRunCsv(text: string): RunSummary {
   return summarizeRows(rows);
 }
 
+// Apple Watch (and some optical/foot-pod sources) intermittently lose step
+// detection mid-run: cadence collapses for a few seconds to ~120-140 spm while
+// speed holds steady. That's physically impossible — the same speed at a far
+// lower cadence would require an abrupt stride-length jump — so these are sensor
+// dropouts, not real form changes. Left in, they drag down the average and
+// per-km cadence and spike the chart. We repair them with a Hampel-style despike:
+// replace each dropout with the local "true" cadence so the series stays
+// continuous and every metric reads the corrected value.
+//
+// A sample is a dropout when, while CLEARLY RUNNING, its cadence falls well
+// below the local baseline but its speed does NOT — a genuine slowdown (easy
+// stretch, recovery jog, walk break) lowers both together, so those are
+// preserved (this is what keeps interval workouts intact). Two robustness
+// choices matter:
+//   - The baseline is an UPPER percentile of the window, not the median: these
+//     dropouts cluster (up to ~12 s at a time), so a plain median gets dragged
+//     down and stops flagging them. The 65th percentile tracks the real cadence.
+//   - It's all ratio-based, so it's correct whether cadence is stored per-leg or
+//     as full steps/min.
+function despikeCadence(rows: Row[]): void {
+  const n = rows.length;
+  const HALF = 30; // ±30 samples (~±30 s at 1 Hz) for the local baseline
+  const PCTL = 0.65; // baseline = 65th-percentile cadence in the window (outlier-resistant)
+  const MOVING = 1.8; // m/s — running, not walking (keeps deliberate walk breaks)
+  const CAD_FRAC = 0.92; // cadence under 92% of the local baseline ...
+  const SPD_FRAC = 0.85; // ... while speed stays at/above 85% of its local median
+
+  const percentile = (xs: number[], p: number): number | null => {
+    if (xs.length === 0) return null;
+    const a = xs.slice().sort((x, y) => x - y);
+    return a[Math.min(a.length - 1, Math.floor(a.length * p))];
+  };
+  const windowPct = (pick: (r: Row) => number | null, i: number, p: number): number | null => {
+    const out: number[] = [];
+    for (let j = Math.max(0, i - HALF); j <= Math.min(n - 1, i + HALF); j++) {
+      const v = pick(rows[j]);
+      if (v !== null) out.push(v);
+    }
+    return percentile(out, p);
+  };
+
+  // Flag against the RAW series first, then repair — so the baselines aren't
+  // eroded by samples already corrected earlier in the same pass.
+  const fixes: { i: number; value: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const r = rows[i];
+    if (r.cadence === null || (r.speed ?? 0) <= MOVING) continue;
+    const cb = windowPct((x) => x.cadence, i, PCTL);
+    const sb = windowPct((x) => x.speed, i, 0.5);
+    if (cb === null || sb === null) continue;
+    if (r.cadence < cb * CAD_FRAC && (r.speed as number) >= sb * SPD_FRAC) {
+      fixes.push({ i, value: Math.round(cb) });
+    }
+  }
+  for (const { i, value } of fixes) rows[i].cadence = value;
+}
+
 // Compute all run metrics from a list of time-samples (format-agnostic).
 export function summarizeRows(rows: Row[]): RunSummary {
   if (rows.length === 0) throw new Error("No data points found in the run file.");
+
+  // Repair Apple-Watch cadence dropouts before any metric reads the series.
+  despikeCadence(rows);
 
   // The Lap/Intensity columns are only populated on transition rows. Carry the
   // last seen values forward (and backfill the leading rows) so every sample

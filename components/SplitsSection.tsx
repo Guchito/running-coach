@@ -12,33 +12,40 @@ export function SplitsSection({
   splits: Split[];
   laps: LapSplit[];
 }) {
-  // Default to intervals when the workout actually has a structure (more than
-  // one distinct intensity, e.g. warmup/active/recovery), else kilometers.
+  // Only offer the Intervals view when the run actually has more than one lap —
+  // a single-lap (or lap-less) run has no interval structure to show.
+  const hasIntervals = laps.length > 1;
+  // Default to intervals when the workout also has structure (more than one
+  // distinct intensity, e.g. warmup/active/recovery), else kilometers.
   const hasStructure = new Set(laps.map((l) => l.intensity)).size > 1;
-  const [view, setView] = useState<"km" | "lap">(hasStructure ? "lap" : "km");
+  const [view, setView] = useState<"km" | "lap">(
+    hasIntervals && hasStructure ? "lap" : "km"
+  );
 
   return (
     <div className="bg-card border border-border rounded-2xl p-5">
       <div className="flex items-center justify-between mb-3 gap-3">
         <h2 className="font-medium">Splits</h2>
-        <div className="flex bg-black/4 rounded-lg p-0.5 text-sm">
-          <button
-            onClick={() => setView("km")}
-            className={`px-3 py-1 rounded-md transition-colors ${
-              view === "km" ? "bg-card shadow-sm font-medium" : "text-muted"
-            }`}
-          >
-            Kilometers
-          </button>
-          <button
-            onClick={() => setView("lap")}
-            className={`px-3 py-1 rounded-md transition-colors ${
-              view === "lap" ? "bg-card shadow-sm font-medium" : "text-muted"
-            }`}
-          >
-            Intervals
-          </button>
-        </div>
+        {hasIntervals && (
+          <div className="flex bg-black/4 rounded-lg p-0.5 text-sm">
+            <button
+              onClick={() => setView("km")}
+              className={`px-3 py-1 rounded-md transition-colors ${
+                view === "km" ? "bg-card shadow-sm font-medium" : "text-muted"
+              }`}
+            >
+              Kilometers
+            </button>
+            <button
+              onClick={() => setView("lap")}
+              className={`px-3 py-1 rounded-md transition-colors ${
+                view === "lap" ? "bg-card shadow-sm font-medium" : "text-muted"
+              }`}
+            >
+              Intervals
+            </button>
+          </div>
+        )}
       </div>
 
       {view === "km" ? (

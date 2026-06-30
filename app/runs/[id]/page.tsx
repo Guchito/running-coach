@@ -1,11 +1,7 @@
 import { getRun, getUserById } from "@/lib/db";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import { PageShell, Card, Stat, Button } from "@/components/ui";
-import {
-  RunDetailChart,
-  ElevationChart,
-  CadenceChart,
-} from "@/components/Charts";
+import { CombinedChart } from "@/components/Charts";
 import { SplitsSection } from "@/components/SplitsSection";
 import { HrZonesCard } from "@/components/HrZonesCard";
 import { RunReview } from "@/components/RunReview";
@@ -83,59 +79,28 @@ export default async function RunDetail({
         />
       </div>
 
-      {/* Pace & HR chart */}
+      {/* All metrics on one chart, each line toggleable */}
       <Card className="p-5 mb-6">
-        <h2 className="font-medium mb-3">Pace & heart rate</h2>
-        <RunDetailChart series={s.series} />
-        <div className="flex gap-4 text-xs text-muted mt-2">
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-0.5 bg-accent inline-block" /> Pace
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-0.5 bg-rose-600 inline-block" /> Heart rate
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <h2 className="font-medium">Metrics</h2>
+          <span className="text-xs text-muted tabular-nums">
+            avg cadence{" "}
+            <strong className="text-foreground">
+              {s.avgCadence ? Math.round(s.avgCadence * 2) : "—"} spm
+            </strong>
+            {" · "}elevation{" "}
+            <strong className="text-foreground">+{Math.round(s.elevGainM)}</strong>
+            {" / "}
+            <strong className="text-foreground">−{Math.round(s.elevLossM)} m</strong>
           </span>
         </div>
+        <CombinedChart series={s.series} />
       </Card>
 
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
-        {/* Splits — kilometers or workout intervals */}
+      {/* Splits — kilometers or workout intervals */}
+      <div className="mb-6">
         <SplitsSection splits={s.splits} laps={s.laps ?? []} />
-
-        {/* Cadence */}
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-medium">Cadence</h2>
-            <span className="text-sm text-muted tabular-nums">
-              avg{" "}
-              <strong className="text-foreground">
-                {s.avgCadence ? Math.round(s.avgCadence * 2) : "—"} spm
-              </strong>
-              {s.maxCadence ? ` · max ${Math.round(s.maxCadence * 2)}` : ""}
-            </span>
-          </div>
-          <CadenceChart series={s.series} />
-        </Card>
       </div>
-
-      {/* Elevation */}
-      <Card className="p-5 mb-6">
-        <h2 className="font-medium mb-3">Elevation</h2>
-        <ElevationChart series={s.series} />
-        <div className="flex gap-6 mt-3 text-sm">
-          <span className="text-muted">
-            Gain{" "}
-            <strong className="text-foreground">
-              +{Math.round(s.elevGainM)} m
-            </strong>
-          </span>
-          <span className="text-muted">
-            Loss{" "}
-            <strong className="text-foreground">
-              −{Math.round(s.elevLossM)} m
-            </strong>
-          </span>
-        </div>
-      </Card>
 
       {/* Form metrics + effort */}
       <div className="grid md:grid-cols-2 gap-6">
