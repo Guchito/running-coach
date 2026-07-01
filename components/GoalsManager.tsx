@@ -3,8 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
-import { formatDuration, formatDistance } from "@/lib/parseRun";
+import { formatDuration, formatDistance, formatDate } from "@/lib/parseRun";
+import { daysUntil } from "@/lib/stats";
 import type { Goal, GoalStatus } from "@/lib/types";
+
+// "in 34 days" / "today" / "12 days ago" for a goal's target date.
+function countdownLabel(dateStr: string | null): string | null {
+  const d = daysUntil(dateStr);
+  if (d == null) return null;
+  if (d === 0) return "today";
+  if (d > 0) return `in ${d} day${d === 1 ? "" : "s"}`;
+  return `${-d} day${d === -1 ? "" : "s"} ago`;
+}
 
 const PRESETS: Record<string, number | null> = {
   "5K": 5000,
@@ -38,11 +48,27 @@ const STATUS_LABEL: Record<GoalStatus, string> = {
   abandoned: "Dropped",
 };
 
-export function GoalsManager({ initial }: { initial: Goal[] }) {
+export type RaceRunOption = {
+  id: number;
+  name: string;
+  startedAt: string;
+  durationSec: number;
+  distanceM: number;
+};
+
+export function GoalsManager({
+  initial,
+  runs = [],
+}: {
+  initial: Goal[];
+  runs?: RaceRunOption[];
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState<Goal | "new" | null>(
     initial.length === 0 ? "new" : null
   );
+  // Goal id whose "which run was the race?" picker is open.
+  const [marking, setMarking] = useState<number | null>(null);
 
   async function remove(g: Goal) {
     if (!confirm(`Delete goal "${g.title}"?`)) return;
@@ -55,6 +81,20 @@ export function GoalsManager({ initial }: { initial: Goal[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...g, status }),
     });
+    router.refresh();
+  }
+  async function markRaced(g: Goal, runId: number) {
+    await fetch(`/api/goals/${g.id}/result`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ runId }),
+    });
+    setMarking(null);
+    router.refresh();
+  }
+  async function clearResult(g: Goal) {
+    if (!confirm(`Remove the recorded race result for "${g.title}"?`)) return;
+    await fetch(`/api/goals/${g.id}/result`, { method: "DELETE" });
     router.refresh();
   }
 
@@ -93,18 +133,31 @@ export function GoalsManager({ initial }: { initial: Goal[] }) {
                   {g.raceType}
                   {g.targetTimeSec ? ` · target ${formatDuration(g.targetTimeSec)}` : ""}
                   {g.targetDistanceM ? ` · ${formatDistance(g.targetDistanceM)}` : ""}
-                  {g.targetDate ? ` · ${g.targetDate}` : ""}
                 </div>
                 {g.notes && <p className="text-sm text-muted mt-2">{g.notes}</p>}
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0 text-sm">
-                <div className="flex gap-3">
-                  <button onClick={() => setEditing(g)} className="text-accent hover:underline">
-                    Edit
-                  </button>
-                  <button onClick={() => remove(g)} className="text-muted hover:text-red-600">
-                    Delete
-                  </button>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm whitespace-nowrap">
+                    {g.targetDate ? (
+                      <>
+                        <span className="font-medium">{formatDate(g.targetDate)}</span>
+                        {countdownLabel(g.targetDate) && (
+                          <span className="text-muted"> · {countdownLabel(g.targetDate)}</span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-muted">No date set</span>
+                    )}
+                  </span>
+                  <div className="flex gap-3">
+                    <button onClick={() => setEditing(g)} className="text-accent hover:underline">
+                      Edit
+                    </button>
+                    <button onClick={() => remove(g)} className="text-muted hover:text-red-600">
+                      Delete
+                    </button>
+                  </div>
                 </div>
                 <select
                   value={g.status}
@@ -117,6 +170,62 @@ export function GoalsManager({ initial }: { initial: Goal[] }) {
                 </select>
               </div>
             </div>
+
+            {/* Race result: shown once a run is confirmed as the race, else a
+                manual "mark as race result" fallback for the coach flow. */}
+            {g.resultTimeSec != null ? (
+              <div className="mt-4 rounded-lg bg-good/10 px-3 py-2 text-sm flex items-center justify-between gap-3">
+                <span>
+                  🏁 Raced {g.racedOn ? formatDate(g.racedOn) : ""} ·{" "}
+                  <strong className="tabular-nums">{formatDuration(g.resultTimeSec)}</strong>
+                  {g.targetTimeSec && (
+                    <span className="text-muted">
+                      {" · "}
+                      {g.resultTimeSec <= g.targetTimeSec
+                        ? `beat target by ${formatDuration(g.targetTimeSec - g.resultTimeSec)}`
+                        : `${formatDuration(g.resultTimeSec - g.targetTimeSec)} off target`}
+                    </span>
+                  )}
+                </span>
+                <button
+                  onClick={() => clearResult(g)}
+                  className="text-muted hover:text-red-600 shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+            ) : marking === g.id ? (
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-muted">Which run was this race?</span>
+                <select
+                  defaultValue=""
+                  onChange={(e) => e.target.value && markRaced(g, Number(e.target.value))}
+                  className="text-sm border border-border rounded-md px-2 py-1 bg-card max-w-full"
+                >
+                  <option value="" disabled>
+                    Pick a run…
+                  </option>
+                  {runs.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {formatDate(r.startedAt)} · {r.name} · {formatDistance(r.distanceM)} ·{" "}
+                      {formatDuration(r.durationSec)}
+                    </option>
+                  ))}
+                </select>
+                <button onClick={() => setMarking(null)} className="text-muted hover:underline">
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              runs.length > 0 && (
+                <button
+                  onClick={() => setMarking(g.id)}
+                  className="mt-4 text-sm text-accent hover:underline"
+                >
+                  Mark as race result
+                </button>
+              )
+            )}
           </Card>
         )
       )}

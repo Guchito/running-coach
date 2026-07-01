@@ -29,16 +29,16 @@ function monIndex(d: Date): number {
 
 function prettyDay(key: string): string {
   const [y, m, d] = key.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en", {
+  return new Date(y, m - 1, d).toLocaleDateString("en-GB", {
     weekday: "long",
-    month: "long",
     day: "numeric",
+    month: "long",
   });
 }
 
 function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en", {
-    hour: "numeric",
+  return new Date(iso).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
     minute: "2-digit",
   });
 }

@@ -129,6 +129,9 @@ const SCHEMA = `
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
   );
   ALTER TABLE goals ADD COLUMN IF NOT EXISTS projected_time_s DOUBLE PRECISION;
+  ALTER TABLE goals ADD COLUMN IF NOT EXISTS result_run_id INTEGER;
+  ALTER TABLE goals ADD COLUMN IF NOT EXISTS result_time_s DOUBLE PRECISION;
+  ALTER TABLE goals ADD COLUMN IF NOT EXISTS raced_on DATE;
   CREATE INDEX IF NOT EXISTS goals_user_idx ON goals(user_id);
 
   CREATE TABLE IF NOT EXISTS plans (
@@ -601,6 +604,11 @@ function rowToGoal(r: Record<string, unknown>): Goal {
         : Number(r.projected_time_s),
     notes: (r.notes as string) ?? null,
     status: (r.status as GoalStatus) ?? "active",
+    resultRunId:
+      r.result_run_id === null || r.result_run_id === undefined ? null : Number(r.result_run_id),
+    resultTimeSec:
+      r.result_time_s === null || r.result_time_s === undefined ? null : Number(r.result_time_s),
+    racedOn: r.raced_on ? new Date(r.raced_on as string).toISOString().slice(0, 10) : null,
     createdAt: new Date(r.created_at as string).toISOString(),
     updatedAt: new Date(r.updated_at as string).toISOString(),
   };
@@ -697,6 +705,39 @@ export async function setGoalProjection(
     `UPDATE goals SET projected_time_s = $3, updated_at = now()
      WHERE id = $2 AND user_id = $1 RETURNING *`,
     [userId, id, projectedTimeSec]
+  );
+  return rows[0] ? rowToGoal(rows[0]) : null;
+}
+
+// Record which uploaded run was this goal's race. Copies the run's finish time
+// and date onto the goal (denormalized, so it survives run deletion) and marks
+// the goal achieved. Returns null if the goal or run isn't the runner's.
+export async function setGoalResult(
+  userId: number,
+  goalId: number,
+  runId: number
+): Promise<Goal | null> {
+  const run = await getRun(userId, runId);
+  if (!run) return null;
+  const racedOn = run.startedAt.slice(0, 10);
+  const rows = await q(
+    `UPDATE goals
+       SET result_run_id = $3, result_time_s = $4, raced_on = $5,
+           status = 'achieved', updated_at = now()
+     WHERE id = $2 AND user_id = $1 RETURNING *`,
+    [userId, goalId, runId, run.durationSec, racedOn]
+  );
+  return rows[0] ? rowToGoal(rows[0]) : null;
+}
+
+// Undo a recorded race result and reactivate the goal.
+export async function clearGoalResult(userId: number, goalId: number): Promise<Goal | null> {
+  const rows = await q(
+    `UPDATE goals
+       SET result_run_id = NULL, result_time_s = NULL, raced_on = NULL,
+           status = 'active', updated_at = now()
+     WHERE id = $2 AND user_id = $1 RETURNING *`,
+    [userId, goalId]
   );
   return rows[0] ? rowToGoal(rows[0]) : null;
 }

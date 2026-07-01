@@ -1,6 +1,6 @@
 import { listRuns, listGoals, getPlan } from "@/lib/db";
 import { computeStats, daysUntil, projectGoalTime } from "@/lib/stats";
-import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
+import { formatPace, formatDuration, formatDistance, formatDate, formatDatesInText } from "@/lib/parseRun";
 import {
   trainingLoad,
   LOAD_STATUS_LABEL,
@@ -24,7 +24,14 @@ export default async function Dashboard() {
     getPlan(userId),
   ]);
   const stats = computeStats(runs);
-  const activeGoals = goals.filter((g) => g.status === "active");
+  // Show active goals plus any raced in the last 30 days, so a fresh race result
+  // stays on the dashboard for a while before it lives only on the Races page.
+  const dashboardGoals = goals.filter((g) => {
+    if (g.status === "active") return true;
+    if (g.resultTimeSec == null) return false;
+    const d = daysUntil(g.racedOn);
+    return d != null && d >= -30;
+  });
 
   return (
     <PageShell
@@ -35,7 +42,7 @@ export default async function Dashboard() {
       <DriveAutoSync />
 
       {/* Goals */}
-      {activeGoals.length > 0 ? (
+      {dashboardGoals.length > 0 ? (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-medium">Your goals</h2>
@@ -44,7 +51,7 @@ export default async function Dashboard() {
             </Link>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {activeGoals.map((g) => (
+            {dashboardGoals.map((g) => (
               <GoalCard key={g.id} goal={g} runs={runs} />
             ))}
           </div>
@@ -150,9 +157,9 @@ export default async function Dashboard() {
                   className="flex items-center justify-between py-3 -mx-2 px-2 rounded-lg hover:bg-black/3"
                 >
                   <div className="min-w-0">
-                    <div className="font-medium truncate">{r.name}</div>
+                    <div className="font-medium truncate">{formatDatesInText(r.name)}</div>
                     <div className="text-xs text-muted">
-                      {r.startedAt.slice(0, 10)}
+                      {formatDate(r.startedAt)}
                     </div>
                   </div>
                   <div className="flex items-center gap-5 text-sm tabular-nums">
@@ -288,6 +295,10 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
   // Judge on-track against the coach's projection when set, else current fitness.
   const ref = projected ?? ifToday;
   const onTrack = ref && goal.targetTimeSec ? ref <= goal.targetTimeSec : null;
+  // Once raced, the card celebrates the actual result instead of projections.
+  const raced = goal.resultTimeSec != null;
+  const beatTarget =
+    raced && goal.targetTimeSec ? goal.resultTimeSec! <= goal.targetTimeSec : null;
 
   return (
     <Card className="p-5 bg-linear-to-br from-accent to-indigo-600 text-white border-0">
@@ -299,10 +310,10 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
             {goal.targetTimeSec
               ? ` · ${formatDuration(goal.targetTimeSec)}`
               : ""}
-            {goal.targetDate ? ` · ${goal.targetDate}` : ""}
+            {goal.targetDate ? ` · ${formatDate(goal.targetDate)}` : ""}
           </div>
         </div>
-        {days !== null && days >= 0 && (
+        {!raced && days !== null && days >= 0 && (
           <div className="text-right shrink-0">
             <div className="text-2xl font-bold tabular-nums leading-none">
               {days}
@@ -312,7 +323,28 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
         )}
       </div>
 
-      {(ifToday || projected || goal.targetTimeSec) && (
+      {raced ? (
+        <div className="mt-4 space-y-2">
+          <div className="bg-white/20 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3">
+            <span className="text-white/80 text-sm">
+              🏁 Raced{goal.racedOn ? ` ${formatDate(goal.racedOn)}` : ""}
+            </span>
+            <strong className="tabular-nums text-lg">{formatDuration(goal.resultTimeSec!)}</strong>
+          </div>
+          {goal.targetTimeSec && (
+            <div className="text-xs text-white/85 px-1">
+              {beatTarget
+                ? `🎉 Beat your ${formatDuration(goal.targetTimeSec)} target by ${formatDuration(
+                    goal.targetTimeSec - goal.resultTimeSec!,
+                  )}.`
+                : `${formatDuration(
+                    goal.resultTimeSec! - goal.targetTimeSec,
+                  )} off your ${formatDuration(goal.targetTimeSec)} target.`}
+            </div>
+          )}
+        </div>
+      ) : (
+        (ifToday || projected || goal.targetTimeSec) && (
         <div className="mt-4 space-y-2">
           {ifToday && (
             <div className="bg-white/15 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
@@ -346,6 +378,7 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
             </div>
           )}
         </div>
+        )
       )}
     </Card>
   );

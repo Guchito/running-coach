@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
 import type { BodyMetric } from "@/lib/types";
+import { formatDate } from "@/lib/parseRun";
 
 const inputCls =
   "rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-accent bg-card tabular-nums";
@@ -128,7 +129,7 @@ export function BodyMetricsSection({ initialMetrics }: { initialMetrics: BodyMet
           <div className="divide-y divide-border border border-border rounded-xl">
             {metrics.map((m) => (
               <div key={m.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
-                <div className="w-24 shrink-0 text-muted">{m.recordedOn}</div>
+                <div className="w-24 shrink-0 text-muted">{formatDate(m.recordedOn)}</div>
                 <div className="flex-1 min-w-0">
                   <span className="font-medium tabular-nums">
                     {m.restingHr != null ? `${m.restingHr} bpm` : ""}

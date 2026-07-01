@@ -1,5 +1,5 @@
 import { getRun, getUserById } from "@/lib/db";
-import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
+import { formatPace, formatDuration, formatDistance, formatDatesInText } from "@/lib/parseRun";
 import { PageShell, Card, Stat, Button } from "@/components/ui";
 import { CombinedChart } from "@/components/Charts";
 import { SplitsSection } from "@/components/SplitsSection";
@@ -43,8 +43,8 @@ export default async function RunDetail({
 
   return (
     <PageShell
-      title={run.name}
-      subtitle={new Date(run.startedAt).toLocaleString("en", {
+      title={formatDatesInText(run.name)}
+      subtitle={new Date(run.startedAt).toLocaleString("en-GB", {
         weekday: "long",
         day: "numeric",
         month: "long",

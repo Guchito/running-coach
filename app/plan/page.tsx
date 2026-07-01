@@ -2,6 +2,7 @@ import { getPlan, listGoals, listRuns, listGymSessions } from "@/lib/db";
 import { PageShell, Card, Button, EmptyState } from "@/components/ui";
 import { PlanInstructions } from "@/components/PlanInstructions";
 import { weeklyAdherence } from "@/lib/adherence";
+import { formatDate } from "@/lib/parseRun";
 import { requireUserId } from "@/lib/auth";
 import Link from "next/link";
 
@@ -73,7 +74,7 @@ export default async function PlanPage() {
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="font-semibold text-lg">Macro plan</h2>
                   <span className="text-xs text-muted">
-                    updated {plan.macro.updatedAt.slice(0, 10)}
+                    updated {formatDate(plan.macro.updatedAt)}
                   </span>
                 </div>
                 <p className="text-sm text-muted mb-5">{plan.macro.summary}</p>

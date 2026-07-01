@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
+import { formatDate, formatDatesInText } from "@/lib/parseRun";
 
 type Config = {
   configured: boolean;
@@ -145,7 +146,11 @@ export function DriveSettings({ initial }: { initial: Config }) {
         </Button>
         {lastSync && (
           <span className="text-xs text-muted">
-            Last synced {new Date(lastSync).toLocaleString()}
+            Last synced {formatDate(lastSync)}{" "}
+            {new Date(lastSync).toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </span>
         )}
       </div>
@@ -165,7 +170,7 @@ export function DriveSettings({ initial }: { initial: Config }) {
               <ul className="list-disc pl-5 mt-1 text-muted">
                 {result.imported.map((r) => (
                   <li key={`${r.kind}-${r.id}`}>
-                    {r.name}
+                    {formatDatesInText(r.name)}
                     {r.kind === "gym" ? " · gym" : ""}
                   </li>
                 ))}

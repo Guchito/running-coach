@@ -53,12 +53,21 @@ const METRICS: {
   color: string;
   unit: string;
   fmt: (v: number) => string;
+  // Padding around the data range for this metric's independent Y scale.
+  domain: [string, string];
+  // Compact axis-tick label (no unit; the colored axis conveys which metric).
+  tick: (v: number) => string;
 }[] = [
-  { key: "pace", label: "Pace", color: ACCENT, unit: "", fmt: (v) => formatPace(v) },
-  { key: "hr", label: "Heart rate", color: RED, unit: "bpm", fmt: (v) => `${v} bpm` },
-  { key: "spm", label: "Cadence", color: SKY, unit: "spm", fmt: (v) => `${v} spm` },
-  { key: "elev", label: "Elevation", color: GREEN, unit: "m", fmt: (v) => `${Math.round(v)} m` },
+  { key: "pace", label: "Pace", color: ACCENT, unit: "", fmt: (v) => formatPace(v), domain: ["dataMin - 20", "dataMax + 20"], tick: (v) => paceTick(v) },
+  { key: "hr", label: "Heart rate", color: RED, unit: "bpm", fmt: (v) => `${v} bpm`, domain: ["dataMin - 10", "dataMax + 10"], tick: (v) => `${Math.round(v)}` },
+  { key: "spm", label: "Cadence", color: SKY, unit: "spm", fmt: (v) => `${v} spm`, domain: ["dataMin - 6", "dataMax + 6"], tick: (v) => `${Math.round(v)}` },
+  { key: "elev", label: "Elevation", color: GREEN, unit: "m", fmt: (v) => `${Math.round(v)} m`, domain: ["dataMin - 5", "dataMax + 5"], tick: (v) => `${Math.round(v)}` },
 ];
+
+// Which metrics claim a visible axis, in priority order, when more than two are
+// on at once. Pace and heart rate win by default; cadence/elevation only get an
+// axis if a higher-priority one is toggled off.
+const AXIS_PRIORITY: MetricKey[] = ["pace", "hr", "spm", "elev"];
 
 export function CombinedChart({ series }: { series: SeriesPoint[] }) {
   const data = series.map((p) => ({
@@ -81,6 +90,14 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
   });
   const toggle = (k: MetricKey) => setVisible((v) => ({ ...v, [k]: !v[k] }));
   const isOn = (k: MetricKey) => visible[k] && available.some((m) => m.key === k);
+
+  // At most two visible axes: the two highest-priority metrics currently on get
+  // one each — first → left, second → right. The rest still scale to their own
+  // hidden axis (values via the tooltip).
+  const axisMetrics = AXIS_PRIORITY.filter(isOn).slice(0, 2);
+  const axisSide: Partial<Record<MetricKey, "left" | "right">> = {};
+  if (axisMetrics[0]) axisSide[axisMetrics[0]] = "left";
+  if (axisMetrics[1]) axisSide[axisMetrics[1]] = "right";
 
   return (
     <div>
@@ -108,7 +125,7 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
       </div>
 
       <ResponsiveContainer width="100%" height={280}>
-        <ComposedChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+        <ComposedChart data={data} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="elevFillCombined" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={GREEN} stopOpacity={0.25} />
@@ -125,11 +142,29 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
             axisLine={false}
             unit="km"
           />
-          {/* Independent hidden axes so each metric scales to its own range. */}
-          <YAxis yAxisId="pace" hide reversed domain={["dataMin - 20", "dataMax + 20"]} />
-          <YAxis yAxisId="hr" hide domain={["dataMin - 10", "dataMax + 10"]} />
-          <YAxis yAxisId="spm" hide domain={["dataMin - 6", "dataMax + 6"]} />
-          <YAxis yAxisId="elev" hide domain={["dataMin - 5", "dataMax + 5"]} />
+          {/* One axis per metric so each scales to its own range. Up to two are
+              shown (color-coded, left/right); the rest stay hidden but still
+              drive their line's scale. */}
+          {METRICS.map((m) => {
+            const side = axisSide[m.key];
+            return (
+              <YAxis
+                key={m.key}
+                yAxisId={m.key}
+                orientation={side === "right" ? "right" : "left"}
+                hide={!side}
+                reversed={m.key === "pace"}
+                domain={m.domain}
+                width={side ? 44 : 0}
+                fontSize={11}
+                stroke={m.color}
+                tick={{ fill: m.color }}
+                tickFormatter={m.tick}
+                tickLine={false}
+                axisLine={false}
+              />
+            );
+          })}
           <Tooltip
             contentStyle={{ borderRadius: 10, border: "1px solid #e7e8ec", fontSize: 12 }}
             labelFormatter={(l) => `${l} km`}
@@ -346,7 +381,10 @@ export function PaceTrendChart({
           tick={{ fill: "#9ca3af" }}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(d) => (d as string).slice(5)}
+          tickFormatter={(d) => {
+            const [, m, day] = (d as string).split("-");
+            return `${day}-${m}`;
+          }}
         />
         <YAxis
           tickFormatter={paceTick}

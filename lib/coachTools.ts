@@ -4,6 +4,7 @@ import {
   deleteGoal,
   getGoalById,
   setGoalProjection,
+  setGoalResult,
   setMacroPlan,
   setMacroInstructions,
   setWeeklyPlan,
@@ -74,6 +75,15 @@ export async function executeTool(
           ? `Set ${updated.title} projection to ${projectedTime}`
           : `Cleared projected finish for ${updated.title}`,
         data: { goal: updated, projectedTimeSec, projectedTime },
+      };
+    }
+    case "set_goal_result": {
+      const updated = await setGoalResult(userId, Number(input.id), Number(input.runId));
+      if (!updated) return { summary: "Goal or run not found", data: { error: "not found" } };
+      const resultTime = updated.resultTimeSec ? formatDuration(updated.resultTimeSec) : null;
+      return {
+        summary: `Recorded ${updated.title} race result: ${resultTime} on ${updated.racedOn}`,
+        data: { goal: updated, resultTime },
       };
     }
     case "set_macro_plan": {

@@ -453,6 +453,24 @@ export function formatDistance(m: number | null | undefined): string {
   return `${(m / 1000).toFixed(2)} km`;
 }
 
+// Day-first display date: "dd-mm-yy". Reformats an ISO / YYYY-MM-DD string by
+// string surgery (no timezone math) so it matches the stored calendar day.
+export function formatDate(input: string | null | undefined): string {
+  if (!input) return "—";
+  const [y, m, d] = input.slice(0, 10).split("-");
+  if (!y || !m || !d) return input;
+  return `${d}-${m}-${y.slice(2)}`;
+}
+
+// Rewrite any ISO date (YYYY-MM-DD) embedded in a display string to dd-mm-yy.
+// Used for session names that had the date baked in at import time.
+export function formatDatesInText(text: string): string {
+  return text.replace(
+    /(\d{4})-(\d{2})-(\d{2})/g,
+    (_m, y, mo, d) => `${d}-${mo}-${y.slice(2)}`
+  );
+}
+
 // Parse a finish time into seconds. Accepts a clock string ("H:MM:SS", "MM:SS")
 // or a bare number/numeric string (already seconds). Returns null for empty or
 // unparseable input (used to clear a value). This keeps the model from having to

@@ -85,6 +85,7 @@ Your responsibilities:
 1. ANALYZE every run they upload — pacing, heart-rate effort, cadence, splits, intervals, consistency — and give specific, encouraging, honest feedback that cites their real numbers. Never invent data you weren't given.
 2. MANAGE their goals. They may have several at once (e.g. a half marathon in 4 months and a marathon in 9 months). Use the goal tools to create/update/remove goals. IMPORTANT: before you change the target time or date of an EXISTING goal, discuss it with the runner and get their agreement in the conversation first. Creating a new goal they asked for, or marking one achieved/abandoned, is fine to do directly. When their fitness clearly shifts, proactively raise it ("I think a sub-1:30 half is realistic now — want me to update that goal?") and only change it once they agree.
    Also keep each goal's PROJECTED finish current with set_goal_projection: your honest prediction of what they'll actually run on race day, accounting for the fitness they'll gain from the remaining training. This differs from their target (what they want) and from the app's "if they raced today" estimate (their current fitness). Set it when you have enough data to judge, and revise it as training progresses. You may set this yourself without asking.
+   RACE DAY: when a newly uploaded run lands on or near a goal's target date and its distance matches that goal's race (e.g. a ~21.1 km run around a half-marathon goal's date), ASK the runner whether that run was the race ("Was this your <race name>?"). If they confirm, call set_goal_result with the goal id and that run's id — this records their real finish time and marks the goal achieved. Never mark a result without their explicit confirmation.
 3. MAINTAIN their training plans with the plan tools:
    - The MACRO plan is the long-term, periodized plan and MUST account for ALL active goals together (sequence phases so they peak for each race in turn).
    - The WEEKLY plan is this week's concrete workouts.
@@ -153,6 +154,23 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["id", "projectedTime"],
+    },
+  },
+  {
+    name: "set_goal_result",
+    description:
+      "Record which uploaded run was a goal's actual race, once the runner CONFIRMS it. This marks the goal achieved and stores their real finish time (taken from the run) as the result. Only call this after the runner agrees that a specific run was that race — never guess. When a freshly uploaded run's date is on or near a goal's target date and the distance matches, ASK the runner 'Was this your <race>?' first, then call this on their yes.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "number", description: "The goal id (from the GOALS context)" },
+        runId: {
+          type: "number",
+          description:
+            "The id of the run that was the race (from the run history context). Its finish time becomes the goal's recorded result.",
+        },
+      },
+      required: ["id", "runId"],
     },
   },
   {

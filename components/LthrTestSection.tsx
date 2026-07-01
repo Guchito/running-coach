@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
 import type { LthrTest } from "@/lib/types";
+import { formatDate } from "@/lib/parseRun";
 
 const inputCls =
   "rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-accent bg-card tabular-nums";
@@ -198,7 +199,7 @@ export function LthrTestSection({
               const delta = older ? t.lthr - older.lthr : null;
               return (
                 <div key={t.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
-                  <div className="w-24 shrink-0 text-muted">{t.testedOn}</div>
+                  <div className="w-24 shrink-0 text-muted">{formatDate(t.testedOn)}</div>
                   <div className="flex-1 min-w-0">
                     <span className="font-medium tabular-nums">{t.lthr} bpm</span>
                     {delta != null && delta !== 0 && (

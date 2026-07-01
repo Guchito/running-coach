@@ -90,6 +90,12 @@ export type Goal = {
   projectedTimeSec: number | null;
   notes: string | null;
   status: GoalStatus;
+  // The actual race result, once the runner confirms which uploaded run was the
+  // race. resultTimeSec/racedOn are denormalized so they survive the run being
+  // deleted; resultRunId links back to the run detail when it still exists.
+  resultRunId: number | null;
+  resultTimeSec: number | null;
+  racedOn: string | null; // ISO date the race was run
   createdAt: string;
   updatedAt: string;
 };

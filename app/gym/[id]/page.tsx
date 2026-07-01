@@ -1,5 +1,5 @@
 import { getGymSession } from "@/lib/db";
-import { formatDuration } from "@/lib/parseRun";
+import { formatDuration, formatDatesInText } from "@/lib/parseRun";
 import { gymTypeLabel } from "@/lib/gym";
 import { PageShell, Card, Stat, Button } from "@/components/ui";
 import { DeleteGymButton } from "@/components/DeleteGymButton";
@@ -22,11 +22,11 @@ export default async function GymSessionPage({
 
   return (
     <PageShell
-      title={session.name}
-      subtitle={`${gymTypeLabel(session.type)} · ${started.toLocaleString("en", {
+      title={formatDatesInText(session.name)}
+      subtitle={`${gymTypeLabel(session.type)} · ${started.toLocaleString("en-GB", {
         weekday: "short",
-        month: "short",
         day: "numeric",
+        month: "short",
         hour: "2-digit",
         minute: "2-digit",
       })}`}

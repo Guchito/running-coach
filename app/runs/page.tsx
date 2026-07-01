@@ -1,5 +1,5 @@
 import { listRuns, listGymSessions } from "@/lib/db";
-import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
+import { formatPace, formatDuration, formatDistance, formatDatesInText } from "@/lib/parseRun";
 import { PageShell, Button, EmptyState } from "@/components/ui";
 import { SessionHistory } from "@/components/SessionHistory";
 import { sessionColor, sessionTypeLabel, type SessionLite } from "@/lib/sessionMeta";
@@ -20,7 +20,7 @@ export default async function RunsPage() {
         type: "run",
         typeLabel: sessionTypeLabel("run"),
         color: sessionColor("run"),
-        name: r.name,
+        name: formatDatesInText(r.name),
         startedAt: r.startedAt,
         href: `/runs/${r.id}`,
         meta: `${formatDistance(r.distanceM)} · ${formatDuration(r.durationSec)} · ${formatPace(
@@ -37,7 +37,7 @@ export default async function RunsPage() {
         type: g.type,
         typeLabel: sessionTypeLabel("gym", g.type),
         color: sessionColor("gym", g.type),
-        name: g.name,
+        name: formatDatesInText(g.name),
         startedAt: g.startedAt,
         href: `/gym/${g.id}`,
         meta: `${formatDuration(g.durationSec)}${g.avgHr ? ` · HR ${Math.round(g.avgHr)}` : ""}${
