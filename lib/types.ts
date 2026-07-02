@@ -160,6 +160,8 @@ export type User = {
   hasAnthropicKey: boolean;   // whether the runner has stored their own Anthropic API key
   lthrTestIntervalWeeks: number | null; // re-test cadence; null = no schedule
   autoNameRuns: boolean;      // let the coach rename runs after analyzing them
+  garminConnected: boolean;   // whether a Garmin Connect session token is stored
+  garminLastSync: string | null;
   createdAt: string;
 };
 

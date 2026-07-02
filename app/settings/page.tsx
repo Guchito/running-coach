@@ -4,6 +4,7 @@ import { HrZonesForm } from "@/components/HrZonesForm";
 import { LthrTestSection } from "@/components/LthrTestSection";
 import { BodyMetricsSection } from "@/components/BodyMetricsSection";
 import { DriveSettings } from "@/components/DriveSettings";
+import { GarminSettings } from "@/components/GarminSettings";
 import { CoachModelForm } from "@/components/CoachModelForm";
 import { AnthropicKeyForm } from "@/components/AnthropicKeyForm";
 import { AutoNameRunsToggle } from "@/components/AutoNameRunsToggle";
@@ -51,6 +52,12 @@ export default async function SettingsPage() {
 
       <h2 className="font-medium mb-3 mt-8">Resting HR &amp; weight</h2>
       <BodyMetricsSection initialMetrics={bodyMetrics} />
+
+      <h2 className="font-medium mb-3 mt-8">Garmin Connect</h2>
+      <GarminSettings
+        connected={user?.garminConnected ?? false}
+        lastSync={user?.garminLastSync ?? null}
+      />
 
       <h2 className="font-medium mb-3 mt-8">Google Drive auto-import</h2>
       <DriveSettings
