@@ -9,7 +9,6 @@ import {
 import { runningRecords } from "@/lib/prs";
 import { Card, Stat, PageShell, Button, EmptyState } from "@/components/ui";
 import { PaceTrendChart } from "@/components/Charts";
-import { DriveAutoSync } from "@/components/DriveAutoSync";
 import { requireUserId } from "@/lib/auth";
 import type { Goal, RunRow } from "@/lib/types";
 import Link from "next/link";
@@ -39,8 +38,6 @@ export default async function Dashboard() {
       subtitle="Your training at a glance."
       action={<Button href="/upload">+ Upload session</Button>}
     >
-      <DriveAutoSync />
-
       {/* Goals */}
       {dashboardGoals.length > 0 ? (
         <div className="mb-6">

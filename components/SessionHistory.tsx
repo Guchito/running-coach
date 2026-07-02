@@ -44,10 +44,19 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
 
   // Distinct session types present, in first-seen order, for the filter chips.
   const types = useMemo(() => {
-    const seen = new Map<string, { key: string; label: string; color: string; kind: "run" | "gym" }>();
+    const seen = new Map<
+      string,
+      { key: string; label: string; color: string; kind: "run" | "gym" }
+    >();
     for (const s of sessions) {
       const key = s.kind === "run" ? "run" : s.type;
-      if (!seen.has(key)) seen.set(key, { key, label: s.typeLabel, color: s.color, kind: s.kind });
+      if (!seen.has(key))
+        seen.set(key, {
+          key,
+          label: s.typeLabel,
+          color: s.color,
+          kind: s.kind,
+        });
     }
     return Array.from(seen.values());
   }, [sessions]);
@@ -83,12 +92,26 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
       {/* Filters */}
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setType("all")} className={chipCls(type === "all")}>
+          <button
+            onClick={() => setType("all")}
+            className={chipCls(type === "all")}
+          >
             All
           </button>
           {types.map((t) => (
-            <button key={t.key} onClick={() => setType(t.key)} className={chipCls(type === t.key)}>
-              <SessionBadge s={{ kind: t.kind, color: t.color, typeLabel: t.label, name: t.label }} />
+            <button
+              key={t.key}
+              onClick={() => setType(t.key)}
+              className={chipCls(type === t.key)}
+            >
+              <SessionBadge
+                s={{
+                  kind: t.kind,
+                  color: t.color,
+                  typeLabel: t.label,
+                  name: t.label,
+                }}
+              />
               {t.label}
             </button>
           ))}
@@ -169,13 +192,18 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
           filtered.map((s) => (
             <div
               key={s.kind + s.id}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-black/[0.02]"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-black/2"
             >
               <SessionBadge s={s} />
-              <Link href={s.href} className="flex-1 min-w-0 flex items-center gap-4">
+              <Link
+                href={s.href}
+                className="flex-1 min-w-0 flex items-center gap-4"
+              >
                 <div className="w-14 text-center shrink-0">
                   <div className="text-xs text-muted">
-                    {new Date(s.startedAt).toLocaleString("en", { month: "short" })}
+                    {new Date(s.startedAt).toLocaleString("en", {
+                      month: "short",
+                    })}
                   </div>
                   <div className="text-lg font-semibold leading-none">
                     {new Date(s.startedAt).getDate()}
@@ -188,7 +216,11 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
                   </div>
                 </div>
               </Link>
-              {s.kind === "run" ? <DeleteRunButton id={s.id} /> : <DeleteGymButton id={s.id} />}
+              {s.kind === "run" ? (
+                <DeleteRunButton id={s.id} />
+              ) : (
+                <DeleteGymButton id={s.id} />
+              )}
             </div>
           ))
         )}

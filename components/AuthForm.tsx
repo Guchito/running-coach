@@ -42,7 +42,8 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     <div className="min-h-screen grid place-items-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 justify-center mb-6">
-          <span className="grid place-items-center w-10 h-10 rounded-xl bg-accent text-white font-bold text-xl">G</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Gunna" className="w-10 h-10 rounded-xl object-contain" />
           <div className="leading-tight">
             <div className="font-semibold text-lg">Gunna</div>
             <div className="text-xs text-muted">AI Running Coach</div>

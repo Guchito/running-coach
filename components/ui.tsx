@@ -42,7 +42,7 @@ export function PageShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="max-w-5xl mx-auto px-5 md:px-8 py-8 pb-24 md:pb-8">
+    <div className="max-w-5xl mx-auto px-5 md:px-8 py-8 pt-20 md:pt-8 pb-24 md:pb-8">
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-semibold">{title}</h1>

@@ -33,9 +33,10 @@ export default async function RunDetail({
   const hrCustomized = !!(user?.maxHr || user?.hrZones);
 
   const ask = encodeURIComponent(
-    `I just uploaded my run "${run.name}" (${formatDistance(run.distanceM)} in ${formatDuration(
+    `Please analyze my run "${run.name}" — ${formatDistance(run.distanceM)} in ${formatDuration(
       run.durationSec,
-    )}, avg ${formatPace(run.avgPaceSecPerKm)}). Give me feedback on it and tell me how it fits my goal.`,
+    )}, avg ${formatPace(run.avgPaceSecPerKm)}. Tell me how it went, update my weekly and macro ` +
+      `plan if it changes anything, and if it was a race or affects my goals, tell me what you'd recommend.`,
   );
 
   const intensityTotal =
@@ -54,9 +55,12 @@ export default async function RunDetail({
       })}
       action={
         <div className="flex items-center gap-3">
-          <DeleteRunButton id={run.id} redirectTo="/runs" />
+          {/* On mobile the delete action moves to the bottom of the page. */}
+          <span className="hidden md:block">
+            <DeleteRunButton id={run.id} redirectTo="/runs" />
+          </span>
           <Button href={`/coach?ask=${ask}`} variant="soft">
-            Ask coach 💬
+            🏃 Analyze this run
           </Button>
         </div>
       }
@@ -168,6 +172,11 @@ export default async function RunDetail({
             </div>
           )}
         </Card>
+      </div>
+
+      {/* Mobile: delete lives at the bottom, out of the way of the primary actions. */}
+      <div className="md:hidden mt-8 pt-4 border-t border-border flex justify-center">
+        <DeleteRunButton id={run.id} redirectTo="/runs" />
       </div>
     </PageShell>
   );

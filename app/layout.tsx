@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
+import { SyncNotifier } from "@/components/SyncNotifier";
 import { getSession } from "@/lib/auth";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -22,6 +23,7 @@ export default async function RootLayout({
         <div className="flex min-h-screen">
           <Nav email={session?.email ?? null} />
           <main className="flex-1 min-w-0">{children}</main>
+          <SyncNotifier authed={!!session?.email} />
         </div>
       </body>
     </html>

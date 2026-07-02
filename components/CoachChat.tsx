@@ -134,7 +134,7 @@ export function CoachChat({
   const empty = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-1rem)] max-w-3xl mx-auto px-4 md:px-6 py-4 pb-20 md:pb-4">
+    <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-1rem)] max-w-3xl mx-auto px-4 md:px-6 pt-16 md:pt-4 pb-20 md:pb-4">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <div className="flex items-center gap-3">

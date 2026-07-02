@@ -2,18 +2,23 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const links = [
   {
     href: "/",
     label: "Dashboard",
     icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6m-6 0v-5a1 1 0 011-1h4a1 1 0 011 1v5",
+    // Reached via the logo in the mobile top bar, so it's dropped from the
+    // crowded bottom bar.
+    hideOnMobile: true,
   },
   {
     href: "/upload",
     label: "Upload session",
     icon: "M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10",
+    // Reached from the Dashboard and History pages instead.
+    hideOnMobile: true,
   },
   {
     href: "/runs",
@@ -51,6 +56,21 @@ export function Nav({ email }: { email: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  // Hide the mobile bars when scrolling down, reveal them when scrolling up.
+  const [barsHidden, setBarsHidden] = useState(false);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    function onScroll() {
+      const y = window.scrollY;
+      if (y < 12) setBarsHidden(false); // always visible near the top
+      else if (y > lastY + 5) setBarsHidden(true); // scrolling down
+      else if (y < lastY - 5) setBarsHidden(false); // scrolling up
+      lastY = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // No app chrome on the auth screens.
   if (pathname === "/login" || pathname === "/signup") return null;
@@ -64,8 +84,27 @@ export function Nav({ email }: { email: string | null }) {
 
   return (
     <>
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-border bg-card flex justify-around py-2">
-        {links.map((l) => {
+      {/* Mobile top bar: the logo is the home/dashboard link, kept visible while
+          scrolling so Dashboard can drop off the crowded bottom bar. */}
+      <header
+        className={`md:hidden fixed top-0 inset-x-0 z-20 h-14 border-b border-border bg-card/90 backdrop-blur flex items-center px-4 transition-transform duration-300 ${
+          barsHidden ? "-translate-y-full" : "translate-y-0"
+        }`}
+      >
+        <Link href="/" className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Home" className="w-8 h-8 rounded-lg object-contain" />
+        </Link>
+      </header>
+
+      <nav
+        className={`md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-border bg-card flex justify-around py-2 transition-transform duration-300 ${
+          barsHidden ? "translate-y-full" : "translate-y-0"
+        }`}
+      >
+        {links
+          .filter((l) => !l.hideOnMobile)
+          .map((l) => {
           const active =
             l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
           return (
@@ -90,9 +129,8 @@ export function Nav({ email }: { email: string | null }) {
       </nav>
       <aside className="w-60 shrink-0 border-r border-border bg-card/60 backdrop-blur px-4 py-6 hidden md:flex flex-col gap-1 sticky top-0 h-screen">
         <Link href="/" className="flex items-center gap-2 px-2 mb-6">
-          <span className="grid place-items-center w-9 h-9 rounded-xl bg-accent text-white font-bold text-lg">
-            G
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Gunna" className="w-9 h-9 rounded-xl object-contain" />
           <div className="leading-tight">
             <div className="font-semibold">Gunna</div>
             <div className="text-xs text-muted">AI Running Coach</div>

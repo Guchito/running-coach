@@ -20,8 +20,8 @@ const PRESETS: Record<string, number | null> = {
   "5K": 5000,
   "10K": 10000,
   "Half Marathon": 21097,
-  "Marathon": 42195,
-  "Custom": null,
+  Marathon: 42195,
+  Custom: null,
 };
 
 function secToHMS(sec: number | null): string {
@@ -29,7 +29,8 @@ function secToHMS(sec: number | null): string {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = Math.round(sec % 60);
-  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  if (h > 0)
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 function hmsToSec(str: string): number | null {
@@ -65,7 +66,7 @@ export function GoalsManager({
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<Goal | "new" | null>(
-    initial.length === 0 ? "new" : null
+    initial.length === 0 ? "new" : null,
   );
   // Goal id whose "which run was the race?" picker is open.
   const [marking, setMarking] = useState<number | null>(null);
@@ -113,7 +114,7 @@ export function GoalsManager({
           />
         ) : (
           <Card key={g.id} className="p-5">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-semibold">{g.title}</h3>
@@ -122,8 +123,8 @@ export function GoalsManager({
                       g.status === "active"
                         ? "bg-accent-soft text-accent"
                         : g.status === "achieved"
-                        ? "bg-good/10 text-good"
-                        : "bg-black/[0.05] text-muted"
+                          ? "bg-good/10 text-good"
+                          : "bg-black/5 text-muted"
                     }`}
                   >
                     {STATUS_LABEL[g.status]}
@@ -131,19 +132,30 @@ export function GoalsManager({
                 </div>
                 <div className="text-sm text-muted mt-1">
                   {g.raceType}
-                  {g.targetTimeSec ? ` · target ${formatDuration(g.targetTimeSec)}` : ""}
-                  {g.targetDistanceM ? ` · ${formatDistance(g.targetDistanceM)}` : ""}
+                  {g.targetTimeSec
+                    ? ` · target ${formatDuration(g.targetTimeSec)}`
+                    : ""}
+                  {g.targetDistanceM
+                    ? ` · ${formatDistance(g.targetDistanceM)}`
+                    : ""}
                 </div>
-                {g.notes && <p className="text-sm text-muted mt-2">{g.notes}</p>}
+                {g.notes && (
+                  <p className="text-sm text-muted mt-2">{g.notes}</p>
+                )}
               </div>
-              <div className="flex flex-col items-end gap-2 shrink-0 text-sm">
-                <div className="flex items-center gap-4">
+              <div className="flex flex-col items-start md:items-end gap-2 shrink-0 text-sm w-full md:w-auto">
+                <div className="flex items-center gap-4 flex-wrap">
                   <span className="text-sm whitespace-nowrap">
                     {g.targetDate ? (
                       <>
-                        <span className="font-medium">{formatDate(g.targetDate)}</span>
+                        <span className="font-medium">
+                          {formatDate(g.targetDate)}
+                        </span>
                         {countdownLabel(g.targetDate) && (
-                          <span className="text-muted"> · {countdownLabel(g.targetDate)}</span>
+                          <span className="text-muted">
+                            {" "}
+                            · {countdownLabel(g.targetDate)}
+                          </span>
                         )}
                       </>
                     ) : (
@@ -151,10 +163,16 @@ export function GoalsManager({
                     )}
                   </span>
                   <div className="flex gap-3">
-                    <button onClick={() => setEditing(g)} className="text-accent hover:underline">
+                    <button
+                      onClick={() => setEditing(g)}
+                      className="text-accent hover:underline"
+                    >
                       Edit
                     </button>
-                    <button onClick={() => remove(g)} className="text-muted hover:text-red-600">
+                    <button
+                      onClick={() => remove(g)}
+                      className="text-muted hover:text-red-600"
+                    >
                       Delete
                     </button>
                   </div>
@@ -177,7 +195,9 @@ export function GoalsManager({
               <div className="mt-4 rounded-lg bg-good/10 px-3 py-2 text-sm flex items-center justify-between gap-3">
                 <span>
                   🏁 Raced {g.racedOn ? formatDate(g.racedOn) : ""} ·{" "}
-                  <strong className="tabular-nums">{formatDuration(g.resultTimeSec)}</strong>
+                  <strong className="tabular-nums">
+                    {formatDuration(g.resultTimeSec)}
+                  </strong>
                   {g.targetTimeSec && (
                     <span className="text-muted">
                       {" · "}
@@ -199,7 +219,9 @@ export function GoalsManager({
                 <span className="text-muted">Which run was this race?</span>
                 <select
                   defaultValue=""
-                  onChange={(e) => e.target.value && markRaced(g, Number(e.target.value))}
+                  onChange={(e) =>
+                    e.target.value && markRaced(g, Number(e.target.value))
+                  }
                   className="text-sm border border-border rounded-md px-2 py-1 bg-card max-w-full"
                 >
                   <option value="" disabled>
@@ -207,12 +229,16 @@ export function GoalsManager({
                   </option>
                   {runs.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {formatDate(r.startedAt)} · {r.name} · {formatDistance(r.distanceM)} ·{" "}
+                      {formatDate(r.startedAt)} · {r.name} ·{" "}
+                      {formatDistance(r.distanceM)} ·{" "}
                       {formatDuration(r.durationSec)}
                     </option>
                   ))}
                 </select>
-                <button onClick={() => setMarking(null)} className="text-muted hover:underline">
+                <button
+                  onClick={() => setMarking(null)}
+                  className="text-muted hover:underline"
+                >
                   Cancel
                 </button>
               </div>
@@ -227,7 +253,7 @@ export function GoalsManager({
               )
             )}
           </Card>
-        )
+        ),
       )}
 
       {editing === "new" ? (
@@ -262,9 +288,11 @@ function GoalForm({
   const [customKm, setCustomKm] = useState(
     initial?.raceType === "Custom" && initial?.targetDistanceM
       ? (initial.targetDistanceM / 1000).toString()
-      : ""
+      : "",
   );
-  const [targetTime, setTargetTime] = useState(secToHMS(initial?.targetTimeSec ?? null));
+  const [targetTime, setTargetTime] = useState(
+    secToHMS(initial?.targetTimeSec ?? null),
+  );
   const [targetDate, setTargetDate] = useState(initial?.targetDate ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [busy, setBusy] = useState(false);
@@ -276,7 +304,11 @@ function GoalForm({
     setError(null);
     setBusy(true);
     const targetDistanceM =
-      raceType === "Custom" ? (customKm ? Number(customKm) * 1000 : null) : PRESETS[raceType];
+      raceType === "Custom"
+        ? customKm
+          ? Number(customKm) * 1000
+          : null
+        : PRESETS[raceType];
     const payload = {
       title: title.trim(),
       raceType,
@@ -287,12 +319,16 @@ function GoalForm({
       status: initial?.status ?? "active",
     };
     try {
-      const res = await fetch(initial ? `/api/goals/${initial.id}` : "/api/goals", {
-        method: initial ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error((await res.json()).error || "Could not save goal.");
+      const res = await fetch(
+        initial ? `/api/goals/${initial.id}` : "/api/goals",
+        {
+          method: initial ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+      if (!res.ok)
+        throw new Error((await res.json()).error || "Could not save goal.");
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save goal.");
@@ -309,46 +345,80 @@ function GoalForm({
         <div className="font-medium">{initial ? "Edit goal" : "New goal"}</div>
         <label className="block text-sm">
           <span className="text-muted">Goal title</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Sub-1:30 Half Marathon" className={inputCls} />
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Sub-1:30 Half Marathon"
+            className={inputCls}
+          />
         </label>
         <div className="grid grid-cols-2 gap-4">
           <label className="block text-sm">
             <span className="text-muted">Race type</span>
-            <select value={raceType} onChange={(e) => setRaceType(e.target.value)} className={inputCls}>
+            <select
+              value={raceType}
+              onChange={(e) => setRaceType(e.target.value)}
+              className={inputCls}
+            >
               {Object.keys(PRESETS).map((k) => (
-                <option key={k} value={k}>{k}</option>
+                <option key={k} value={k}>
+                  {k}
+                </option>
               ))}
             </select>
           </label>
           {raceType === "Custom" && (
             <label className="block text-sm">
               <span className="text-muted">Distance (km)</span>
-              <input value={customKm} onChange={(e) => setCustomKm(e.target.value)}
-                type="number" step="0.1" placeholder="15" className={inputCls} />
+              <input
+                value={customKm}
+                onChange={(e) => setCustomKm(e.target.value)}
+                type="number"
+                step="0.1"
+                placeholder="15"
+                className={inputCls}
+              />
             </label>
           )}
         </div>
         <div className="grid grid-cols-2 gap-4">
           <label className="block text-sm">
             <span className="text-muted">Target time (optional)</span>
-            <input value={targetTime} onChange={(e) => setTargetTime(e.target.value)}
-              placeholder="mm:ss or h:mm:ss" className={inputCls} />
+            <input
+              value={targetTime}
+              onChange={(e) => setTargetTime(e.target.value)}
+              placeholder="mm:ss or h:mm:ss"
+              className={inputCls}
+            />
           </label>
           <label className="block text-sm">
             <span className="text-muted">Target date (optional)</span>
-            <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className={inputCls} />
+            <input
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              className={inputCls}
+            />
           </label>
         </div>
         <label className="block text-sm">
           <span className="text-muted">Notes for your coach (optional)</span>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-            placeholder="e.g. Coming back from injury, can train 4 days/week…" className={inputCls} />
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            placeholder="e.g. Coming back from injury, can train 4 days/week…"
+            className={inputCls}
+          />
         </label>
         {error && <div className="text-sm text-red-600">{error}</div>}
         <div className="flex items-center gap-2">
-          <Button disabled={busy}>{busy ? "Saving…" : initial ? "Save changes" : "Add goal"}</Button>
-          <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button disabled={busy}>
+            {busy ? "Saving…" : initial ? "Save changes" : "Add goal"}
+          </Button>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
         </div>
       </form>
     </Card>
