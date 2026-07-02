@@ -8,7 +8,7 @@ import {
 } from "@/lib/trainingLoad";
 import { runningRecords } from "@/lib/prs";
 import { Card, Stat, PageShell, Button, EmptyState } from "@/components/ui";
-import { PaceTrendChart } from "@/components/Charts";
+import { PaceTrendChart, DistanceTrendChart } from "@/components/Charts";
 import { requireUserId } from "@/lib/auth";
 import type { Goal, RunRow } from "@/lib/types";
 import Link from "next/link";
@@ -136,6 +136,15 @@ export default async function Dashboard() {
               </span>
             </div>
             <PaceTrendChart trend={stats.trend} />
+          </Card>
+
+          {/* Distance trend */}
+          <Card className="p-5 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-medium">Distance trend</h2>
+              <span className="text-xs text-muted">distance per run</span>
+            </div>
+            <DistanceTrendChart trend={stats.trend} />
           </Card>
 
           {/* Recent runs */}

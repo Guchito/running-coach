@@ -16,7 +16,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { SeriesPoint, LapSplit } from "@/lib/types";
-import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
+import { formatPace, formatDuration, formatDistance, formatDate } from "@/lib/parseRun";
 
 const ACCENT = "#4f46e5";
 const RED = "#e11d48";
@@ -354,12 +354,42 @@ export function LapsChart({ laps }: { laps: LapSplit[] }) {
   );
 }
 
-// ---- Dashboard: pace trend across runs ----
-export function PaceTrendChart({
-  trend,
+// ---- Dashboard: pace & distance trends across runs ----
+type TrendPoint = { date: string; km: number; paceSecPerKm: number };
+
+// Day-month tick for the trend X axes (data key is a YYYY-MM-DD string).
+function dayMonthTick(d: string): string {
+  const [, m, day] = d.split("-");
+  return `${day}-${m}`;
+}
+
+// Shared tooltip: always shows BOTH the run's pace and its distance, whichever
+// metric the chart plots. `active`/`payload`/`label` come from Recharts.
+function TrendTooltip({
+  active,
+  payload,
+  label,
 }: {
-  trend: { date: string; km: number; paceSecPerKm: number }[];
+  active?: boolean;
+  payload?: { payload: TrendPoint }[];
+  label?: string;
 }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  return (
+    <div className="rounded-[10px] border border-border bg-card text-xs px-2.5 py-2 shadow-sm">
+      <div className="font-medium mb-1">{formatDate(label ?? "")}</div>
+      <div className="text-muted">
+        Avg pace: <span className="text-foreground tabular-nums">{formatPace(p.paceSecPerKm)}</span>
+      </div>
+      <div className="text-muted">
+        Distance: <span className="text-foreground tabular-nums">{p.km.toFixed(2)} km</span>
+      </div>
+    </div>
+  );
+}
+
+export function PaceTrendChart({ trend }: { trend: TrendPoint[] }) {
   if (trend.length < 2) {
     return (
       <div className="h-55 grid place-items-center text-sm text-muted">
@@ -381,10 +411,7 @@ export function PaceTrendChart({
           tick={{ fill: "#9ca3af" }}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(d) => {
-            const [, m, day] = (d as string).split("-");
-            return `${day}-${m}`;
-          }}
+          tickFormatter={dayMonthTick}
         />
         <YAxis
           tickFormatter={paceTick}
@@ -397,25 +424,57 @@ export function PaceTrendChart({
           domain={["dataMin - 20", "dataMax + 20"]}
           width={44}
         />
-        <Tooltip
-          contentStyle={{
-            borderRadius: 10,
-            border: "1px solid #e7e8ec",
-            fontSize: 12,
-          }}
-          formatter={(v, n) =>
-            n === "paceSecPerKm"
-              ? [formatPace(v as number), "Avg pace"]
-              : [v, n]
-          }
-          labelFormatter={(l) => l}
-        />
+        <Tooltip content={<TrendTooltip />} />
         <Line
           type="monotone"
           dataKey="paceSecPerKm"
           stroke={ACCENT}
           strokeWidth={2}
           dot={{ r: 3, fill: ACCENT }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function DistanceTrendChart({ trend }: { trend: TrendPoint[] }) {
+  if (trend.length < 2) {
+    return (
+      <div className="h-55 grid place-items-center text-sm text-muted">
+        Upload at least two runs to see your distance trend.
+      </div>
+    );
+  }
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <LineChart data={trend} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+        <CartesianGrid stroke={GRID} vertical={false} />
+        <XAxis
+          dataKey="date"
+          fontSize={11}
+          stroke="#9ca3af"
+          tick={{ fill: "#9ca3af" }}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={dayMonthTick}
+        />
+        <YAxis
+          tickFormatter={(v) => `${v}`}
+          fontSize={11}
+          stroke="#9ca3af"
+          tick={{ fill: "#9ca3af" }}
+          tickLine={false}
+          axisLine={false}
+          domain={[(min: number) => Math.max(0, Math.floor(min - 1)), (max: number) => Math.ceil(max + 1)]}
+          width={44}
+        />
+        <Tooltip content={<TrendTooltip />} />
+        <Line
+          type="monotone"
+          dataKey="km"
+          stroke={SKY}
+          strokeWidth={2}
+          dot={{ r: 3, fill: SKY }}
         />
       </LineChart>
     </ResponsiveContainer>
