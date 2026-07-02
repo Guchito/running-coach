@@ -148,7 +148,7 @@ function runDetail(r: RunRow, opts: { tag?: string; intervals?: boolean } = {}):
       : "";
 
   return [
-    `- ${r.startedAt.slice(0, 10)} "${r.name}"${opts.tag ?? ""}: ${formatDistance(r.distanceM)} in ${formatDuration(
+    `- [#${r.id}] ${r.startedAt.slice(0, 10)} "${r.name}"${opts.tag ?? ""}: ${formatDistance(r.distanceM)} in ${formatDuration(
       r.durationSec
     )}, avg ${formatPace(r.avgPaceSecPerKm)}`,
     `    HR avg/max ${r.avgHr ? Math.round(r.avgHr) : "—"}/${r.maxHr ? Math.round(r.maxHr) : "—"}`,
@@ -162,7 +162,7 @@ function runDetail(r: RunRow, opts: { tag?: string; intervals?: boolean } = {}):
 
 // One-line run summary (no splits/intervals) for the lean default context.
 function runOneLine(r: RunRow): string {
-  return `- ${r.startedAt.slice(0, 10)} "${r.name}": ${formatDistance(r.distanceM)} in ${formatDuration(
+  return `- [#${r.id}] ${r.startedAt.slice(0, 10)} "${r.name}": ${formatDistance(r.distanceM)} in ${formatDuration(
     r.durationSec
   )}, ${formatPace(r.avgPaceSecPerKm)}, HR ${r.avgHr ? Math.round(r.avgHr) : "—"}`;
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-type Imported = { id: number; name: string };
+type Imported = { id: number; name: string; kind?: "run" | "gym" };
 
 // Mounted once in the root layout so it works on any page. Periodically syncs
 // from Google Drive (the server throttles, so this is cheap) and, when a new
@@ -67,6 +67,14 @@ export function SyncNotifier({ authed }: { authed: boolean }) {
 
   function analyze() {
     setDismissed(true);
+    // Fire server-side auto-naming (no-op if the toggle is off) for each synced
+    // run before handing the analysis to the coach. Skip gym ids — they'd map to
+    // a different table on the runs endpoint.
+    for (const r of imported) {
+      if (r.kind !== "gym") {
+        fetch(`/api/runs/${r.id}/autoname`, { method: "POST" }).catch(() => {});
+      }
+    }
     router.push(`/coach?ask=${encodeURIComponent(prompt)}`);
   }
 

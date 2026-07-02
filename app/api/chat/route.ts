@@ -88,6 +88,10 @@ export async function POST(req: NextRequest) {
           lthrTestIntervalWeeks: user?.lthrTestIntervalWeeks ?? null,
           bodyMetric,
         });
+        // Auto-naming is handled reliably server-side (see /api/runs/[id]/autoname),
+        // so the coach is NOT asked to rename during analysis — that avoids weak
+        // models faking the rename and avoids double-renaming. The rename_run tool
+        // stays available for explicit user requests ("rename run #3").
         const system = `${SYSTEM_PROMPT}\n\n---\nCURRENT CONTEXT (refreshed each message):\n${context}`;
         const model = resolveCoachModel(user?.coachModel);
         const provider = resolveProvider(model, anthropicKey);

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Markdown } from "@/components/Markdown";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import type { RunRow } from "@/lib/types";
@@ -9,6 +10,7 @@ import type { RunRow } from "@/lib/types";
 // Shown on a freshly uploaded run: automatically asks the coach to review it,
 // which (via tools) also updates the training plan and may suggest goal changes.
 export function RunReview({ run }: { run: RunRow }) {
+  const router = useRouter();
   const [text, setText] = useState("");
   const [done, setDone] = useState(false);
   const started = useRef(false);
@@ -16,6 +18,15 @@ export function RunReview({ run }: { run: RunRow }) {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
+
+    // Server-side auto-naming (no-op if the toggle is off); refresh so the
+    // renamed title shows without a manual reload.
+    fetch(`/api/runs/${run.id}/autoname`, { method: "POST" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.name) router.refresh();
+      })
+      .catch(() => {});
 
     const prompt =
       `I just uploaded my run "${run.name}" — ${formatDistance(run.distanceM)} in ` +
@@ -49,7 +60,7 @@ export function RunReview({ run }: { run: RunRow }) {
         setDone(true);
       }
     })();
-  }, [run]);
+  }, [run, router]);
 
   return (
     <div className="mb-6 rounded-2xl border border-accent/30 bg-accent-soft/40 p-5">

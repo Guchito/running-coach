@@ -5,6 +5,7 @@ import {
   getGoalById,
   setGoalProjection,
   setGoalResult,
+  renameRun,
   setMacroPlan,
   setMacroInstructions,
   setWeeklyPlan,
@@ -85,6 +86,13 @@ export async function executeTool(
         summary: `Recorded ${updated.title} race result: ${resultTime} on ${updated.racedOn}`,
         data: { goal: updated, resultTime },
       };
+    }
+    case "rename_run": {
+      const name = String(input.name ?? "").trim();
+      if (!name) return { summary: "A name is required", data: { error: "empty name" } };
+      const run = await renameRun(userId, Number(input.id), name);
+      if (!run) return { summary: "Run not found", data: { error: "not found" } };
+      return { summary: `Renamed run to "${run.name}"`, data: { run } };
     }
     case "set_macro_plan": {
       // Preserve the runner's standing instructions across plan rebuilds.

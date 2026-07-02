@@ -1,15 +1,16 @@
 import { getRun, getUserById } from "@/lib/db";
-import { formatPace, formatDuration, formatDistance, formatDatesInText } from "@/lib/parseRun";
-import { PageShell, Card, Stat, Button } from "@/components/ui";
+import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
+import { PageShell, Card, Stat } from "@/components/ui";
 import { CombinedChart } from "@/components/Charts";
 import { SplitsSection } from "@/components/SplitsSection";
 import { HrZonesCard } from "@/components/HrZonesCard";
 import { RunReview } from "@/components/RunReview";
 import { DeleteRunButton } from "@/components/DeleteRunButton";
+import { RunNameEditor } from "@/components/RunNameEditor";
+import { AnalyzeRunButton } from "@/components/AnalyzeRunButton";
 import { requireUserId } from "@/lib/auth";
 import { resolveZones } from "@/lib/hr";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,7 @@ export default async function RunDetail({
 
   return (
     <PageShell
-      title={formatDatesInText(run.name)}
+      title={<RunNameEditor id={run.id} name={run.name} />}
       subtitle={new Date(run.startedAt).toLocaleString("en-GB", {
         weekday: "long",
         day: "numeric",
@@ -59,9 +60,7 @@ export default async function RunDetail({
           <span className="hidden md:block">
             <DeleteRunButton id={run.id} redirectTo="/runs" />
           </span>
-          <Button href={`/coach?ask=${ask}`} variant="soft">
-            🏃 Analyze this run
-          </Button>
+          <AnalyzeRunButton runId={run.id} ask={ask} />
         </div>
       }
     >

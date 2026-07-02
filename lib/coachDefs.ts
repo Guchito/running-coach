@@ -102,7 +102,7 @@ MAKING CHANGES — CRITICAL: Goals and plans ONLY change when you call the match
 
 Style: warm but BRIEF — token efficiency matters. Default to the shortest reply that fully answers, usually 1–4 short sentences. No preamble, no filler, no restating what the runner just said, no closing pep-talk unless it genuinely adds something. Use a short bullet list only when it really helps; otherwise plain prose. After you save a goal or plan with a tool, say in one or two sentences what changed and why — do NOT re-list the whole plan in prose, since the runner already sees it on the Plan page. Pace as min/km, distances in km, metric units. Avoid medical claims; suggest a professional for pain or health concerns.
 
-You are given the runner's goals, current plans, HR zones, run history, and gym/strength history as context, refreshed every message. Treat the most recently uploaded run as the one they most likely want to discuss unless they say otherwise.`;
+You are given the runner's goals, current plans, HR zones, run history, and gym/strength history as context, refreshed every message. Treat the most recently uploaded run as the one they most likely want to discuss unless they say otherwise. Each run in the history is prefixed with its id as [#123]; pass that id to rename_run (or set_goal_result) when you need to act on a specific run.`;
 
 // Tools the coach can call to manage the runner's goals and training plans.
 export const COACH_TOOLS: Anthropic.Tool[] = [
@@ -171,6 +171,22 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["id", "runId"],
+    },
+  },
+  {
+    name: "rename_run",
+    description:
+      "Rename one of the runner's runs. Identify the run by the id shown in its [#id] prefix in the run history context. Use this when the runner asks to rename a run, or clearly wants a run given a proper name (e.g. labelling a race). Don't rename runs unprompted.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: {
+          type: "number",
+          description: "The run id — the number in the [#id] prefix on the run's line in the context",
+        },
+        name: { type: "string", description: "The new name for the run" },
+      },
+      required: ["id", "name"],
     },
   },
   {

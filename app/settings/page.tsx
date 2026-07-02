@@ -6,6 +6,7 @@ import { BodyMetricsSection } from "@/components/BodyMetricsSection";
 import { DriveSettings } from "@/components/DriveSettings";
 import { CoachModelForm } from "@/components/CoachModelForm";
 import { AnthropicKeyForm } from "@/components/AnthropicKeyForm";
+import { AutoNameRunsToggle } from "@/components/AutoNameRunsToggle";
 import { requireUserId } from "@/lib/auth";
 import { isDriveConfigured, serviceAccountEmail } from "@/lib/drive";
 import { resolveCoachModel } from "@/lib/coach";
@@ -27,6 +28,9 @@ export default async function SettingsPage() {
         initial={resolveCoachModel(user?.coachModel)}
         hasAnthropicKey={user?.hasAnthropicKey ?? false}
       />
+
+      <h2 className="font-medium mb-3 mt-8">Run naming</h2>
+      <AutoNameRunsToggle initial={user?.autoNameRuns ?? false} />
 
       <h2 className="font-medium mb-3 mt-8">Your Anthropic API key</h2>
       <AnthropicKeyForm initialHasKey={user?.hasAnthropicKey ?? false} />

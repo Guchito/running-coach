@@ -36,7 +36,7 @@ export function PageShell({
   action,
   children,
 }: {
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   action?: React.ReactNode;
   children: React.ReactNode;

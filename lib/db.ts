@@ -70,6 +70,7 @@ const SCHEMA = `
   ALTER TABLE users ADD COLUMN IF NOT EXISTS coach_model TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS lthr_test_interval_weeks INTEGER;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS anthropic_api_key_enc TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_name_runs BOOLEAN NOT NULL DEFAULT false;
 
   CREATE TABLE IF NOT EXISTS lthr_tests (
     id          SERIAL PRIMARY KEY,
@@ -216,8 +217,17 @@ function rowToUser(r: Record<string, unknown>): User {
       r.lthr_test_interval_weeks === null || r.lthr_test_interval_weeks === undefined
         ? null
         : Number(r.lthr_test_interval_weeks),
+    autoNameRuns: r.auto_name_runs === true,
     createdAt: new Date(r.created_at as string).toISOString(),
   };
+}
+
+export async function setAutoNameRuns(userId: number, enabled: boolean): Promise<User> {
+  const rows = await q(`UPDATE users SET auto_name_runs = $2 WHERE id = $1 RETURNING *`, [
+    userId,
+    enabled,
+  ]);
+  return rowToUser(rows[0]);
 }
 
 export async function setCoachModel(userId: number, model: string | null): Promise<User> {
@@ -504,6 +514,18 @@ export async function getRun(userId: number, id: number): Promise<RunRow | null>
 
 export async function deleteRun(userId: number, id: number): Promise<void> {
   await q(`DELETE FROM runs WHERE id = $1 AND user_id = $2`, [id, userId]);
+}
+
+export async function renameRun(
+  userId: number,
+  id: number,
+  name: string
+): Promise<RunRow | null> {
+  const rows = await q(
+    `UPDATE runs SET name = $3 WHERE id = $2 AND user_id = $1 RETURNING *`,
+    [userId, id, name]
+  );
+  return rows[0] ? rowToRun(rows[0]) : null;
 }
 
 // ---------- gym / strength sessions ----------
