@@ -36,38 +36,55 @@ export default async function SettingsPage() {
       <h2 className="font-medium mb-3 mt-8">Your Anthropic API key</h2>
       <AnthropicKeyForm initialHasKey={user?.hasAnthropicKey ?? false} />
 
-      <h2 className="font-medium mb-3 mt-8">Heart-rate zones</h2>
-      <HrZonesForm
-        initialMaxHr={user?.maxHr ?? null}
-        initialLactateThresholdHr={user?.lactateThresholdHr ?? null}
-        initialZones={user?.hrZones ?? null}
-      />
-
-      <h2 className="font-medium mb-3 mt-8">Lactate threshold test</h2>
-      <LthrTestSection
-        initialTests={lthrTests}
-        initialIntervalWeeks={user?.lthrTestIntervalWeeks ?? null}
-        currentLthr={user?.lactateThresholdHr ?? null}
-      />
+      {/* HR zones + LTHR: side by side and matched height on desktop. The
+          flex-1 + [&>*]:h-full wrapper stretches each card to the taller of the two. */}
+      <div className="grid md:grid-cols-2 gap-x-8 gap-y-6 mt-8">
+        <div className="flex flex-col">
+          <h2 className="font-medium mb-3">Heart-rate zones</h2>
+          <div className="flex-1 *:h-full">
+            <HrZonesForm
+              initialMaxHr={user?.maxHr ?? null}
+              initialLactateThresholdHr={user?.lactateThresholdHr ?? null}
+              initialZones={user?.hrZones ?? null}
+            />
+          </div>
+        </div>
+        <div className="flex flex-col">
+          <h2 className="font-medium mb-3">Lactate threshold test</h2>
+          <div className="flex-1 *:h-full">
+            <LthrTestSection
+              initialTests={lthrTests}
+              initialIntervalWeeks={user?.lthrTestIntervalWeeks ?? null}
+              currentLthr={user?.lactateThresholdHr ?? null}
+            />
+          </div>
+        </div>
+      </div>
 
       <h2 className="font-medium mb-3 mt-8">Resting HR &amp; weight</h2>
       <BodyMetricsSection initialMetrics={bodyMetrics} />
 
-      <h2 className="font-medium mb-3 mt-8">Garmin Connect</h2>
-      <GarminSettings
-        connected={user?.garminConnected ?? false}
-        lastSync={user?.garminLastSync ?? null}
-      />
-
-      <h2 className="font-medium mb-3 mt-8">Google Drive auto-import</h2>
-      <DriveSettings
-        initial={{
-          configured: isDriveConfigured(),
-          serviceAccountEmail: serviceAccountEmail(),
-          folderId: user?.driveFolderId ?? null,
-          lastSync: user?.driveLastSync ?? null,
-        }}
-      />
+      {/* Garmin + Google Drive side by side. */}
+      <div className="grid md:grid-cols-2 gap-x-8 gap-y-6 mt-8 items-start">
+        <div>
+          <h2 className="font-medium mb-3">Garmin Connect</h2>
+          <GarminSettings
+            connected={user?.garminConnected ?? false}
+            lastSync={user?.garminLastSync ?? null}
+          />
+        </div>
+        <div>
+          <h2 className="font-medium mb-3">Google Drive auto-import</h2>
+          <DriveSettings
+            initial={{
+              configured: isDriveConfigured(),
+              serviceAccountEmail: serviceAccountEmail(),
+              folderId: user?.driveFolderId ?? null,
+              lastSync: user?.driveLastSync ?? null,
+            }}
+          />
+        </div>
+      </div>
     </PageShell>
   );
 }

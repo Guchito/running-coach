@@ -62,7 +62,7 @@ export function BodyMetricsSection({ initialMetrics }: { initialMetrics: BodyMet
   }
 
   return (
-    <Card className="p-6 max-w-xl">
+    <Card className="p-6">
       <p className="text-sm text-muted mb-4">
         Log your morning resting heart rate and body weight. A creeping resting HR is an early
         fatigue signal — your coach watches the latest reading.
