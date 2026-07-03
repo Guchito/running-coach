@@ -71,6 +71,8 @@ const SCHEMA = `
   ALTER TABLE users ADD COLUMN IF NOT EXISTS lthr_test_interval_weeks INTEGER;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS anthropic_api_key_enc TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_name_runs BOOLEAN NOT NULL DEFAULT false;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS garmin_token_enc TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS garmin_last_sync TIMESTAMPTZ;
 
   CREATE TABLE IF NOT EXISTS lthr_tests (
     id          SERIAL PRIMARY KEY,
@@ -218,6 +220,10 @@ function rowToUser(r: Record<string, unknown>): User {
         ? null
         : Number(r.lthr_test_interval_weeks),
     autoNameRuns: r.auto_name_runs === true,
+    garminConnected: r.garmin_token_enc != null,
+    garminLastSync: r.garmin_last_sync
+      ? new Date(r.garmin_last_sync as string).toISOString()
+      : null,
     createdAt: new Date(r.created_at as string).toISOString(),
   };
 }
@@ -384,6 +390,32 @@ export async function setDriveFolder(userId: number, folderId: string | null): P
 
 export async function touchDriveSync(userId: number): Promise<void> {
   await q(`UPDATE users SET drive_last_sync = now() WHERE id = $1`, [userId]);
+}
+
+// ---------- Garmin Connect ----------
+
+// Store (encrypted) or clear the Garmin session token JSON. Only the AES-GCM
+// blob is persisted — never the runner's Garmin password.
+export async function setGarminToken(userId: number, tokenJson: string | null): Promise<User> {
+  const enc = tokenJson ? encryptSecret(tokenJson) : null;
+  const rows = await q(`UPDATE users SET garmin_token_enc = $2 WHERE id = $1 RETURNING *`, [
+    userId,
+    enc,
+  ]);
+  return rowToUser(rows[0]);
+}
+
+// Decrypt the stored Garmin session token JSON (or null if not connected).
+export async function getGarminToken(userId: number): Promise<string | null> {
+  const rows = await q<{ garmin_token_enc: string | null }>(
+    `SELECT garmin_token_enc FROM users WHERE id = $1`,
+    [userId]
+  );
+  return decryptSecret(rows[0]?.garmin_token_enc);
+}
+
+export async function touchGarminSync(userId: number): Promise<void> {
+  await q(`UPDATE users SET garmin_last_sync = now() WHERE id = $1`, [userId]);
 }
 
 export async function getImportedFileIds(userId: number): Promise<Set<string>> {
