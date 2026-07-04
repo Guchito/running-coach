@@ -25,12 +25,14 @@ const SKY = "#0ea5e9";
 const GRID = "#eef0f3";
 
 // Color laps by their interval type so work vs recovery reads at a glance.
+// Work reps get the sole bold color (the app accent); the rest stays muted so
+// the interval structure pops: amber warm up, slate recovery, sky cool down.
 export function intensityColor(label: string): string {
   const l = label.toLowerCase();
+  if (/warm/.test(l)) return "#f59e0b";
+  if (/cool/.test(l)) return SKY;
+  if (/(recover|rest|easy)/.test(l)) return "#94a3b8";
   if (/(active|work|interval|fast|tempo|hard|rep)/.test(l)) return ACCENT;
-  if (/(recover|rest|easy)/.test(l)) return "#f59e0b";
-  if (/warm/.test(l)) return "#94a3b8";
-  if (/cool/.test(l)) return "#10b981";
   return ACCENT;
 }
 

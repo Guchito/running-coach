@@ -8,6 +8,13 @@ export type DashboardStats = {
   avgPaceRecent: number | null; // avg pace over last 5 runs
   longestRunM: number;
   bestPace: number | null;
+  // Rolling form: per-run averages over the last 5 vs the last 20 runs.
+  form: {
+    pace5: number | null;
+    pace20: number | null;
+    km5: number | null;
+    km20: number | null;
+  };
   trend: { date: string; km: number; paceSecPerKm: number; avgHr: number | null }[];
 };
 
@@ -35,11 +42,17 @@ export function computeStats(runs: RunRow[]): DashboardStats {
     }
   }
 
-  const recent = runs.slice(0, 5);
-  const avgPaceRecent =
-    recent.length > 0
-      ? recent.reduce((a, r) => a + r.avgPaceSecPerKm, 0) / recent.length
-      : null;
+  const avg = (xs: number[]) =>
+    xs.length > 0 ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+  const last5 = runs.slice(0, 5);
+  const last20 = runs.slice(0, 20);
+  const form = {
+    pace5: avg(last5.map((r) => r.avgPaceSecPerKm)),
+    pace20: avg(last20.map((r) => r.avgPaceSecPerKm)),
+    km5: avg(last5.map((r) => r.distanceM / 1000)),
+    km20: avg(last20.map((r) => r.distanceM / 1000)),
+  };
+  const avgPaceRecent = form.pace5;
 
   // Oldest -> newest for charting.
   const trend = [...runs]
@@ -59,6 +72,7 @@ export function computeStats(runs: RunRow[]): DashboardStats {
     avgPaceRecent,
     longestRunM,
     bestPace,
+    form,
     trend,
   };
 }

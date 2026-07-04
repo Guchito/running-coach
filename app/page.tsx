@@ -1,5 +1,5 @@
 import { listRuns, listGoals, getPlan } from "@/lib/db";
-import { computeStats, daysUntil, projectGoalTime } from "@/lib/stats";
+import { computeStats, daysUntil, projectGoalTime, type DashboardStats } from "@/lib/stats";
 import { formatPace, formatDuration, formatDistance, formatDate, formatDatesInText } from "@/lib/parseRun";
 import {
   trainingLoad,
@@ -127,6 +127,9 @@ export default async function Dashboard() {
             <RecordsCard runs={runs} />
           </div>
 
+          {/* Recent form: last 5 runs vs last 20 */}
+          <RecentFormCard stats={stats} />
+
           {/* Trend */}
           <Card className="p-5 mb-6">
             <div className="flex items-center justify-between mb-3">
@@ -186,6 +189,72 @@ export default async function Dashboard() {
         </>
       )}
     </PageShell>
+  );
+}
+
+// Last-5-runs vs last-20-runs averages for pace and distance, with a delta
+// line showing whether recent form is faster/slower and longer/shorter.
+function RecentFormCard({ stats }: { stats: DashboardStats }) {
+  const { form, totalRuns } = stats;
+  if (form.pace5 == null || form.pace20 == null || form.km5 == null || form.km20 == null) {
+    return null;
+  }
+  // With 5 or fewer runs both windows hold the same runs, so deltas mean nothing.
+  const comparable = totalRuns > 5;
+  const paceDiff = Math.round(form.pace20 - form.pace5); // + → recent runs faster
+  const kmDiff = form.km5 - form.km20; // + → recent runs longer
+
+  return (
+    <Card className="p-5 mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-medium">Recent form</h2>
+        <span className="text-xs text-muted">
+          avg per run · last 5 vs last {Math.min(totalRuns, 20)} runs
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <div className="text-xs text-muted mb-1">Pace</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold tabular-nums leading-none">
+              {formatPace(form.pace5)}
+            </span>
+            <span className="text-sm text-muted tabular-nums">
+              vs {formatPace(form.pace20)}
+            </span>
+          </div>
+          {comparable && paceDiff !== 0 && (
+            <div
+              className={`text-xs mt-1.5 ${paceDiff > 0 ? "text-emerald-600" : "text-rose-600"}`}
+            >
+              {paceDiff > 0
+                ? `▲ ${paceDiff}s/km faster than usual`
+                : `▼ ${-paceDiff}s/km slower than usual`}
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="text-xs text-muted mb-1">Distance</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold tabular-nums leading-none">
+              {form.km5.toFixed(1)} km
+            </span>
+            <span className="text-sm text-muted tabular-nums">
+              vs {form.km20.toFixed(1)} km
+            </span>
+          </div>
+          {comparable && Math.abs(kmDiff) >= 0.05 && (
+            <div
+              className={`text-xs mt-1.5 ${kmDiff > 0 ? "text-emerald-600" : "text-rose-600"}`}
+            >
+              {kmDiff > 0
+                ? `▲ ${kmDiff.toFixed(1)} km longer than usual`
+                : `▼ ${Math.abs(kmDiff).toFixed(1)} km shorter than usual`}
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }
 
