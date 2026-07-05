@@ -72,8 +72,16 @@ export function buildPlanContext(plan: Plan): string {
     );
   }
   if (plan.weekly) {
+    // Include each day's full detail: set_weekly_plan replaces the whole week,
+    // so anything not visible here (e.g. "6×30s strides" living only in the
+    // detail text) would silently regress on the next rebuild.
     const days = plan.weekly.days
-      .map((d) => `  • ${d.day}: ${d.title} (${d.type}${d.distanceKm ? `, ${d.distanceKm}km` : ""})`)
+      .map(
+        (d) =>
+          `  • ${d.day}: ${d.title} (${d.type}${d.distanceKm ? `, ${d.distanceKm}km` : ""})${
+            d.detail ? ` — ${d.detail}` : ""
+          }`
+      )
       .join("\n");
     out.push(`WEEKLY PLAN: ${plan.weekly.summary}\n${days}`);
   } else {
@@ -229,14 +237,21 @@ export function buildGymContext(sessions: GymSession[], limit = 12): string {
 }
 
 // Acute:chronic load + recent weekly volume, so the coach can flag risky ramps.
+// Calendar weeks are spelled out separately from the rolling 7-day figure —
+// around a Sunday long run they differ a lot, and models otherwise read the
+// rolling number as "this week's km".
 function buildLoadContext(runs: RunRow[]): string | null {
   const load = trainingLoad(runs);
   if (load.ratio == null) return null;
   const weeks = load.weeks.map((w) => `${w.km}`).join("/");
+  const thisWeek = load.weeks[load.weeks.length - 1];
+  const lastWeek = load.weeks[load.weeks.length - 2];
   return (
-    `TRAINING LOAD: last 7 days ${load.acuteKm} km vs 4-week avg ${load.chronicKm} km/wk → ` +
+    `TRAINING LOAD: THIS calendar week (Mon ${thisWeek.weekStart} → today): ${thisWeek.km} km so far` +
+    (lastWeek ? `; last calendar week: ${lastWeek.km} km` : "") +
+    `. Rolling last-7-days (NOT the calendar week): ${load.acuteKm} km vs 4-week avg ${load.chronicKm} km/wk → ` +
     `acute:chronic ratio ${load.ratio} (${LOAD_STATUS_LABEL[load.status]}). ` +
-    `Sweet spot is 0.8–1.3; >1.5 is a risky spike, <0.8 is detraining. Last 6 weeks (km): ${weeks}.`
+    `Sweet spot is 0.8–1.3; >1.5 is a risky spike, <0.8 is detraining. Last 6 calendar weeks (km): ${weeks}.`
   );
 }
 

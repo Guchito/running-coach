@@ -2,17 +2,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import type { NextWeekPlanStatus } from "@/lib/adherence";
 
 type Imported = { id: number; name: string; kind?: "run" | "gym" };
 
-// Mounted once in the root layout so it works on any page. Periodically syncs
-// from Google Drive (the server throttles, so this is cheap) and, when a new
-// session lands, pops a dismissible overlay offering coach analysis. Analysis is
-// never automatic — tapping the button hands the run to the coach (via ?ask=).
-export function SyncNotifier({ authed }: { authed: boolean }) {
+// Mounted once in the root layout's notification stack so it works on any
+// page. Periodically syncs from Google Drive (the server throttles, so this is
+// cheap) and, when a new session lands, pops a dismissible card offering coach
+// analysis. Analysis is never automatic — tapping the button hands the run to
+// the coach (via ?ask=). If the synced session completes the planned week (or
+// the plan's week is already over), the same action also asks the coach to
+// build the coming week's plan — analysis first, then the plan.
+export function SyncNotifier({
+  authed,
+  onVisibleChange,
+}: {
+  authed: boolean;
+  onVisibleChange?: (visible: boolean) => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [imported, setImported] = useState<Imported[]>([]);
+  const [weekStatus, setWeekStatus] = useState<NextWeekPlanStatus | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const startedRef = useRef(false);
   // Swipe-to-dismiss (mobile): track horizontal drag on the card.
@@ -37,6 +48,14 @@ export function SyncNotifier({ authed }: { authed: boolean }) {
           setImported(d.imported);
           setDismissed(false);
           setDragX(0);
+          // Did this batch complete the planned week (or is the plan's week
+          // already over)? Then the analyze action also requests next week's plan.
+          try {
+            const ws = await (await fetch("/api/plan/next-week")).json();
+            if (!cancelled) setWeekStatus(ws?.status ?? null);
+          } catch {
+            /* fall back to plain analysis */
+          }
           router.refresh(); // update whatever page is showing
         }
       } catch {
@@ -53,17 +72,28 @@ export function SyncNotifier({ authed }: { authed: boolean }) {
     };
   }, [authed, router]);
 
-  if (!authed || dismissed || imported.length === 0) return null;
-  // Already in the coach — the overlay would be redundant.
-  if (pathname === "/coach") return null;
+  // The card shows everywhere except the coach page (redundant there). Report
+  // visibility up so the stack can hide the standalone plan prompt meanwhile.
+  const visible = authed && !dismissed && imported.length > 0 && pathname !== "/coach";
+  useEffect(() => {
+    onVisibleChange?.(visible);
+  }, [visible, onVisibleChange]);
+  if (!visible) return null;
 
   const one = imported.length === 1;
   const names = imported.map((r) => `"${r.name}"`).join(", ");
+  // Analysis always comes first; the plan request rides along when due.
+  const planTail = weekStatus
+    ? weekStatus.reason === "complete"
+      ? ` That completes all my planned sessions for this week — after the analysis, please build my training plan for next week (the week starting ${weekStatus.targetWeekStart}).`
+      : ` My weekly plan (week of ${weekStatus.planWeekStart}) is over — after the analysis, please build my plan for this week (the week starting ${weekStatus.targetWeekStart}).`
+    : "";
   const prompt =
     `I just synced ${one ? "a new run" : "new runs"} from Google Drive: ${names}. ` +
     `Please analyze ${one ? "it" : "them"} and tell me how it went. ` +
     `Update my weekly and macro plan if this changes anything, and if it was a race or ` +
-    `affects my goals, tell me what you'd recommend.`;
+    `affects my goals, tell me what you'd recommend.` +
+    planTail;
 
   function analyze() {
     setDismissed(true);
@@ -93,46 +123,47 @@ export function SyncNotifier({ authed }: { authed: boolean }) {
   }
 
   return (
-    <div className="fixed z-40 inset-x-4 top-16 md:inset-x-auto md:top-auto md:right-6 md:bottom-6 md:max-w-sm">
-      <div
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{
-          transform: dragX ? `translateX(${dragX}px)` : undefined,
-          opacity: dragX ? Math.max(0, 1 + dragX / 150) : undefined,
-        }}
-        className={`rounded-2xl border border-border bg-card shadow-lg p-4 animate-in touch-pan-y ${
-          dragging ? "" : "transition-transform duration-200"
-        }`}
-      >
-        <div className="flex items-start gap-3">
-          <span className="grid place-items-center w-9 h-9 shrink-0 rounded-full bg-accent text-white">
-            🏁
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="font-medium text-sm">
-              {one ? "New run synced" : `${imported.length} new runs synced`}
-            </div>
-            <div className="text-xs text-muted truncate">
-              {imported.map((r) => r.name).join(", ")}
-            </div>
+    <div
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      style={{
+        transform: dragX ? `translateX(${dragX}px)` : undefined,
+        opacity: dragX ? Math.max(0, 1 + dragX / 150) : undefined,
+      }}
+      className={`pointer-events-auto rounded-2xl border border-border bg-card shadow-lg p-4 animate-in touch-pan-y ${
+        dragging ? "" : "transition-transform duration-200"
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <span className="grid place-items-center w-9 h-9 shrink-0 rounded-full bg-accent text-white">
+          🏁
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="font-medium text-sm">
+            {one ? "New run synced" : `${imported.length} new runs synced`}
+            {weekStatus?.reason === "complete" ? " · week complete 🎉" : ""}
           </div>
-          <button
-            onClick={() => setDismissed(true)}
-            aria-label="Dismiss"
-            className="shrink-0 text-muted hover:text-foreground text-lg leading-none -mt-1"
-          >
-            ×
-          </button>
+          <div className="text-xs text-muted truncate">
+            {imported.map((r) => r.name).join(", ")}
+          </div>
         </div>
         <button
-          onClick={analyze}
-          className="mt-3 w-full rounded-full bg-accent text-white px-3 py-2 text-sm font-medium hover:bg-accent/90"
+          onClick={() => setDismissed(true)}
+          aria-label="Dismiss"
+          className="shrink-0 text-muted hover:text-foreground text-lg leading-none -mt-1"
         >
-          🏃 Have the coach analyze {one ? "it" : "them"}
+          ×
         </button>
       </div>
+      <button
+        onClick={analyze}
+        className="mt-3 w-full rounded-full bg-accent text-white px-3 py-2 text-sm font-medium hover:bg-accent/90"
+      >
+        {weekStatus
+          ? `🏃 Analyze + plan ${weekStatus.reason === "complete" ? "next" : "this"} week`
+          : `🏃 Have the coach analyze ${one ? "it" : "them"}`}
+      </button>
     </div>
   );
 }

@@ -53,8 +53,10 @@ export function trainingLoad(runs: RunRow[], now: number = Date.now()): Training
     const ageDays = (now - Date.parse(r.startedAt)) / DAY;
     if (ageDays < 0) continue;
     const km = r.distanceM / 1000;
-    if (ageDays <= 7) acute += km;
-    if (ageDays <= 28) last28 += km;
+    // Exclusive bounds: a run exactly 7 days old belongs to the previous
+    // window, otherwise two Sunday long runs land in the same "week".
+    if (ageDays < 7) acute += km;
+    if (ageDays < 28) last28 += km;
   }
   const chronic = last28 / 4;
   const ratio = chronic > 0 ? acute / chronic : null;

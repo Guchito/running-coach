@@ -287,7 +287,7 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
             </span>
           </div>
           <div className="text-xs text-muted mt-1">
-            {load.acuteKm} km this week vs {load.chronicKm} km/wk avg · sweet
+            {load.acuteKm} km last 7 days vs {load.chronicKm} km/wk avg · sweet
             spot 0.8–1.3
           </div>
           <div className="flex items-end gap-1.5 h-16 mt-4">

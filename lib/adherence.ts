@@ -46,6 +46,45 @@ function isoDate(d: Date): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+// Non-null when the runner needs a NEW weekly plan: either every planned
+// session of the plan's week is done (offer to plan next week), or that week
+// has already ended without a fresh plan (offer to plan the current week).
+export type NextWeekPlanStatus = {
+  reason: "complete" | "rolled_over";
+  planWeekStart: string; // Monday of the week the current plan covers
+  targetWeekStart: string; // Monday of the week that needs a plan
+  doneCount: number;
+  plannedCount: number;
+};
+
+export function nextWeekPlanStatus(
+  weekly: WeeklyPlan | null,
+  runs: RunRow[],
+  gymSessions: GymSession[],
+  now: number = Date.now()
+): NextWeekPlanStatus | null {
+  const a = weeklyAdherence(weekly, runs, gymSessions, now);
+  // upcoming = the plan already covers a future week, so nothing to prompt for.
+  if (!a || a.plannedCount === 0 || a.upcoming) return null;
+  const planMonday = parseLocalDate(a.weekStart);
+  if (!planMonday) return null;
+  const thisMonday = startOfWeek(new Date(now));
+  const base = {
+    planWeekStart: a.weekStart,
+    doneCount: a.doneCount,
+    plannedCount: a.plannedCount,
+  };
+  if (planMonday.getTime() < thisMonday.getTime()) {
+    return { reason: "rolled_over", targetWeekStart: isoDate(thisMonday), ...base };
+  }
+  if (a.doneCount >= a.plannedCount) {
+    const nextMonday = new Date(planMonday);
+    nextMonday.setDate(nextMonday.getDate() + 7);
+    return { reason: "complete", targetWeekStart: isoDate(nextMonday), ...base };
+  }
+  return null;
+}
+
 export function weeklyAdherence(
   weekly: WeeklyPlan | null,
   runs: RunRow[],
