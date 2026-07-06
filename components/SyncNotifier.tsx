@@ -136,7 +136,7 @@ export function SyncNotifier({
       }`}
     >
       <div className="flex items-start gap-3">
-        <span className="grid place-items-center w-9 h-9 shrink-0 rounded-full bg-accent text-white">
+        <span className="grid place-items-center w-9 h-9 shrink-0 rounded-full bg-ink text-white">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 21V4m0 0h13l-2.5 4L18 12H5" />
           </svg>
@@ -160,7 +160,7 @@ export function SyncNotifier({
       </div>
       <button
         onClick={analyze}
-        className="mt-3 w-full rounded-full bg-accent text-white px-3 py-2 text-sm font-medium hover:bg-accent/90"
+        className="mt-3 w-full rounded-full bg-ink text-white px-3 py-2 text-sm font-medium hover:bg-black transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
       >
         {weekStatus
           ? `Analyze + plan ${weekStatus.reason === "complete" ? "next" : "this"} week`

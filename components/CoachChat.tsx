@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Markdown } from "@/components/Markdown";
+import { HoldConfirmButton } from "@/components/HoldDeleteButton";
 import { CoachModelPicker } from "@/components/CoachModelPicker";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -125,10 +126,12 @@ export function CoachChat({
     scrollToBottom();
   }, [loaded, scrollToBottom]);
 
+  const [clearing, setClearing] = useState(false);
   async function clearChat() {
-    if (!confirm("Clear the whole conversation?")) return;
+    setClearing(true);
     await fetch("/api/chat", { method: "DELETE" });
     setMessages([]);
+    setClearing(false);
   }
 
   const empty = messages.length === 0;
@@ -148,12 +151,14 @@ export function CoachChat({
           </div>
         </div>
         {!empty && (
-          <button
-            onClick={clearChat}
-            className="text-sm text-muted hover:text-red-600 transition-colors duration-150"
-          >
-            Clear
-          </button>
+          <HoldConfirmButton
+            label="Clear"
+            busyLabel="Clearing…"
+            title="Hold to clear the conversation"
+            confirmText="Clear the whole conversation?"
+            onConfirm={clearChat}
+            busy={clearing}
+          />
         )}
       </div>
 
@@ -171,10 +176,10 @@ export function CoachChat({
             </p>
             {!hasGoal && (
               <p className="text-sm mt-3">
-                <a href="/goal" className="text-accent underline">Set a goal</a> so I can tailor your plan.
+                <a href="/goals" className="text-accent underline">Set a goal</a> so I can tailor your plan.
               </p>
             )}
-            <div className="flex flex-wrap gap-2 justify-center mt-5">
+            <div className="flex flex-wrap gap-2 justify-center mt-5 stagger-in">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
@@ -193,7 +198,7 @@ export function CoachChat({
             <div
               className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm animate-in ${
                 m.role === "user"
-                  ? "bg-accent text-white rounded-br-md"
+                  ? "bg-accent-soft text-foreground rounded-br-md"
                   : "bg-card border border-border rounded-bl-md"
               }`}
             >
@@ -240,7 +245,7 @@ export function CoachChat({
           <button
             type="submit"
             disabled={sending || !input.trim()}
-            className="shrink-0 grid place-items-center w-9 h-9 rounded-xl bg-accent text-white transition-[transform,opacity] duration-150 ease-out active:scale-[0.94] disabled:opacity-40 disabled:active:scale-100"
+            className="shrink-0 grid place-items-center w-9 h-9 rounded-xl bg-ink text-white hover:bg-black transition-[transform,background-color,opacity] duration-150 ease-out active:scale-[0.94] disabled:opacity-40 disabled:active:scale-100"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />

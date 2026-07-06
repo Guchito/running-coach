@@ -1,13 +1,16 @@
 import { PageShell, Card } from "@/components/ui";
 import { UploadForm } from "@/components/UploadForm";
+import { ManualEntryForm } from "@/components/ManualEntryForm";
 
 export default function UploadPage() {
   return (
     <PageShell
       title="Upload a session"
-      subtitle="Add a run or a gym session — we detect which it is automatically."
+      subtitle="Add a run or a gym session: drop a file, or log one manually."
     >
       <UploadForm />
+
+      <ManualEntryForm />
 
       <Card className="p-5 mt-6 text-sm text-muted">
         <div className="font-medium text-foreground mb-2">Supported files</div>

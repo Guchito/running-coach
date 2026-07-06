@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
+import { HoldConfirmButton } from "@/components/HoldDeleteButton";
 import { formatDuration, formatDistance, formatDate } from "@/lib/parseRun";
 import { daysUntil } from "@/lib/stats";
 import type { Goal, GoalStatus } from "@/lib/types";
@@ -71,8 +72,9 @@ export function GoalsManager({
   // Goal id whose "which run was the race?" picker is open.
   const [marking, setMarking] = useState<number | null>(null);
 
+  const [removingId, setRemovingId] = useState<number | null>(null);
   async function remove(g: Goal) {
-    if (!confirm(`Delete goal "${g.title}"?`)) return;
+    setRemovingId(g.id);
     await fetch(`/api/goals/${g.id}`, { method: "DELETE" });
     router.refresh();
   }
@@ -94,7 +96,6 @@ export function GoalsManager({
     router.refresh();
   }
   async function clearResult(g: Goal) {
-    if (!confirm(`Remove the recorded race result for "${g.title}"?`)) return;
     await fetch(`/api/goals/${g.id}/result`, { method: "DELETE" });
     router.refresh();
   }
@@ -169,12 +170,14 @@ export function GoalsManager({
                     >
                       Edit
                     </button>
-                    <button
-                      onClick={() => remove(g)}
-                      className="text-muted hover:text-red-600"
-                    >
-                      Delete
-                    </button>
+                    <HoldConfirmButton
+                      label="Delete"
+                      busyLabel="Deleting…"
+                      title="Hold to delete goal"
+                      confirmText={`Delete goal "${g.title}"?`}
+                      onConfirm={() => remove(g)}
+                      busy={removingId === g.id}
+                    />
                   </div>
                 </div>
                 <select
@@ -207,12 +210,13 @@ export function GoalsManager({
                     </span>
                   )}
                 </span>
-                <button
-                  onClick={() => clearResult(g)}
-                  className="text-muted hover:text-red-600 shrink-0"
-                >
-                  Clear
-                </button>
+                <HoldConfirmButton
+                  label="Clear"
+                  title="Hold to remove this race result"
+                  confirmText={`Remove the recorded race result for "${g.title}"?`}
+                  onConfirm={() => clearResult(g)}
+                  className="shrink-0"
+                />
               </div>
             ) : marking === g.id ? (
               <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">

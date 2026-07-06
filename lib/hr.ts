@@ -11,7 +11,7 @@ const ZONE_DEFS: { name: string; lowPct: number; highPct: number }[] = [
   { name: "Z5 VO2 Max", lowPct: 0.9, highPct: 1.0 },
 ];
 
-export const ZONE_COLORS = ["#94a3b8", "#10b981", "#4f46e5", "#f59e0b", "#e11d48"];
+export const ZONE_COLORS = ["#94a3b8", "#10b981", "#0ea5e9", "#f59e0b", "#e11d48"];
 
 // Build default zones from a max HR.
 export function defaultZones(maxHr: number = DEFAULT_MAX_HR): HrZone[] {

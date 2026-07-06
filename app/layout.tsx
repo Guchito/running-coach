@@ -26,9 +26,15 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
       <body className="min-h-full">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-card focus:border focus:border-border focus:rounded-lg focus:px-4 focus:py-2 focus:text-sm"
+        >
+          Skip to content
+        </a>
         <div className="flex min-h-screen">
           <Nav email={session?.email ?? null} />
-          <main className="flex-1 min-w-0">{children}</main>
+          <main id="main" className="flex-1 min-w-0">{children}</main>
           <NotificationStack authed={!!session?.email} />
         </div>
       </body>

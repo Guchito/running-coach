@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -18,11 +18,61 @@ import {
 import type { SeriesPoint, LapSplit } from "@/lib/types";
 import { formatPace, formatDuration, formatDistance, formatDate } from "@/lib/parseRun";
 
-const ACCENT = "#4f46e5";
+const ACCENT = "#2563eb";
+const INK = "#16161a";
+const CADENCE = "#f59e0b";
 const RED = "#e11d48";
 const GREEN = "#059669";
 const SKY = "#0ea5e9";
 const GRID = "#eef0f3";
+
+// First-view gate for below-the-fold charts: the chart (and its draw-in
+// animation) mounts when the placeholder first scrolls into view, so the
+// animation isn't spent while the chart is off-screen.
+function useInView<T extends HTMLElement>(threshold = 0.35) {
+  const ref = useRef<T | null>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { threshold }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [threshold]);
+  return { ref, inView };
+}
+
+// Reserves the chart's height, mounts the chart on first view. Mounting is
+// what starts recharts' draw-in, so the animation happens where you can see it.
+function InViewChart({
+  height,
+  children,
+}: {
+  height: number;
+  children: React.ReactElement;
+}) {
+  const { ref, inView } = useInView<HTMLDivElement>();
+  return (
+    <div ref={ref} style={{ height }}>
+      {inView && (
+        <ResponsiveContainer width="100%" height={height}>
+          {children}
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+}
 
 // Color laps by their interval type so work vs recovery reads at a glance.
 // Work reps get the sole bold color (the app accent); the rest stays muted so
@@ -62,7 +112,7 @@ const METRICS: {
 }[] = [
   { key: "pace", label: "Pace", color: ACCENT, unit: "", fmt: (v) => formatPace(v), domain: ["dataMin - 20", "dataMax + 20"], tick: (v) => paceTick(v) },
   { key: "hr", label: "Heart rate", color: RED, unit: "bpm", fmt: (v) => `${v} bpm`, domain: ["dataMin - 10", "dataMax + 10"], tick: (v) => `${Math.round(v)}` },
-  { key: "spm", label: "Cadence", color: SKY, unit: "spm", fmt: (v) => `${v} spm`, domain: ["dataMin - 6", "dataMax + 6"], tick: (v) => `${Math.round(v)}` },
+  { key: "spm", label: "Cadence", color: CADENCE, unit: "spm", fmt: (v) => `${v} spm`, domain: ["dataMin - 6", "dataMax + 6"], tick: (v) => `${Math.round(v)}` },
   { key: "elev", label: "Elevation", color: GREEN, unit: "m", fmt: (v) => `${Math.round(v)} m`, domain: ["dataMin - 5", "dataMax + 5"], tick: (v) => `${Math.round(v)}` },
 ];
 
@@ -90,8 +140,50 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
     spm: false,
     elev: false,
   });
-  const toggle = (k: MetricKey) => setVisible((v) => ({ ...v, [k]: !v[k] }));
+  // Toggling on mounts the series and recharts draws it in start-to-end.
+  // Toggling off plays the reverse: a clip wipe that empties the series from
+  // its end back to the start (WAAPI on the layer), then unmounts.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [exiting, setExiting] = useState<Partial<Record<MetricKey, boolean>>>({});
+  const exitTimers = useRef<Partial<Record<MetricKey, ReturnType<typeof setTimeout>>>>({});
+  useEffect(() => {
+    const timers = exitTimers.current;
+    return () => Object.values(timers).forEach((t) => t && clearTimeout(t));
+  }, []);
+  const layerFor = (k: MetricKey) =>
+    wrapRef.current?.querySelector<SVGGElement>(`.metric-layer-${k}`) ?? null;
+  const toggle = (k: MetricKey) => {
+    const t = exitTimers.current[k];
+    if (t) clearTimeout(t);
+    if (visible[k]) {
+      setVisible((v) => ({ ...v, [k]: false }));
+      const layer = layerFor(k);
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (layer?.animate && !reduce) {
+        setExiting((e) => ({ ...e, [k]: true }));
+        // Right inset grows → the line retracts from its end toward the start.
+        layer.animate(
+          [{ clipPath: "inset(0 0 0 0)" }, { clipPath: "inset(0 100% 0 0)" }],
+          { duration: 400, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards" }
+        );
+        exitTimers.current[k] = setTimeout(
+          () => setExiting((e) => ({ ...e, [k]: false })),
+          410
+        );
+      }
+    } else {
+      // Re-enabling mid-exit: cancel the wipe so the series snaps back whole.
+      layerFor(k)
+        ?.getAnimations()
+        .forEach((a) => a.cancel());
+      setExiting((e) => ({ ...e, [k]: false }));
+      setVisible((v) => ({ ...v, [k]: true }));
+    }
+  };
   const isOn = (k: MetricKey) => visible[k] && available.some((m) => m.key === k);
+  // A series renders while on OR while wiping out.
+  const showSeries = (k: MetricKey) => isOn(k) || !!exiting[k];
+  const seriesCls = (k: MetricKey) => `metric-layer-${k}`;
 
   // At most two visible axes: the two highest-priority metrics currently on get
   // one each — first → left, second → right. The rest still scale to their own
@@ -102,7 +194,7 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
   if (axisMetrics[1]) axisSide[axisMetrics[1]] = "right";
 
   return (
-    <div>
+    <div ref={wrapRef}>
       <div className="flex flex-wrap gap-2 mb-3">
         {available.map((m) => {
           const on = visible[m.key];
@@ -126,7 +218,7 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
         })}
       </div>
 
-      <ResponsiveContainer width="100%" height={280}>
+      <InViewChart height={280}>
         <ComposedChart data={data} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="elevFillCombined" x1="0" y1="0" x2="0" y2="1">
@@ -176,8 +268,10 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
             }}
           />
           {/* Elevation first so it sits behind the lines. */}
-          {isOn("elev") && (
+          {showSeries("elev") && (
             <Area
+              key="elev"
+              className={seriesCls("elev")}
               yAxisId="elev"
               type="monotone"
               dataKey="elev"
@@ -186,11 +280,14 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
               strokeWidth={1.5}
               fill="url(#elevFillCombined)"
               connectNulls
-              isAnimationActive={false}
+              animationDuration={500}
+              animationEasing="ease-out"
             />
           )}
-          {isOn("pace") && (
+          {showSeries("pace") && (
             <Line
+              key="pace"
+              className={seriesCls("pace")}
               yAxisId="pace"
               type="monotone"
               dataKey="pace"
@@ -199,11 +296,14 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
               strokeWidth={2}
               dot={false}
               connectNulls
-              isAnimationActive={false}
+              animationDuration={500}
+              animationEasing="ease-out"
             />
           )}
-          {isOn("hr") && (
+          {showSeries("hr") && (
             <Line
+              key="hr"
+              className={seriesCls("hr")}
               yAxisId="hr"
               type="monotone"
               dataKey="hr"
@@ -212,24 +312,28 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
               strokeWidth={1.5}
               dot={false}
               connectNulls
-              isAnimationActive={false}
+              animationDuration={500}
+              animationEasing="ease-out"
             />
           )}
-          {isOn("spm") && (
+          {showSeries("spm") && (
             <Line
+              key="spm"
+              className={seriesCls("spm")}
               yAxisId="spm"
               type="monotone"
               dataKey="spm"
               name="spm"
-              stroke={SKY}
+              stroke={CADENCE}
               strokeWidth={1.5}
               dot={false}
               connectNulls
-              isAnimationActive={false}
+              animationDuration={500}
+              animationEasing="ease-out"
             />
           )}
         </ComposedChart>
-      </ResponsiveContainer>
+      </InViewChart>
     </div>
   );
 }
@@ -248,7 +352,7 @@ export function SplitsChart({
     speed: s.paceSecPerKm > 0 ? 3600 / s.paceSecPerKm : 0,
   }));
   return (
-    <ResponsiveContainer width="100%" height={180}>
+    <InViewChart height={180}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
         <CartesianGrid stroke={GRID} vertical={false} />
         <XAxis
@@ -282,9 +386,15 @@ export function SplitsChart({
           labelFormatter={(l) => `Km ${l}`}
           cursor={{ fill: "#f3f4f6" }}
         />
-        <Bar dataKey="speed" fill={ACCENT} radius={[4, 4, 0, 0]} />
+        <Bar
+          dataKey="speed"
+          fill={ACCENT}
+          radius={[4, 4, 0, 0]}
+          animationDuration={600}
+          animationEasing="ease-out"
+        />
       </BarChart>
-    </ResponsiveContainer>
+    </InViewChart>
   );
 }
 
@@ -304,7 +414,7 @@ export function LapsChart({ laps }: { laps: LapSplit[] }) {
       color: intensityColor(l.intensity),
     }));
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <InViewChart height={200}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
         <CartesianGrid stroke={GRID} vertical={false} />
         <XAxis
@@ -346,13 +456,18 @@ export function LapsChart({ laps }: { laps: LapSplit[] }) {
           }}
           labelFormatter={(l) => `Lap ${l}`}
         />
-        <Bar dataKey="speed" radius={[4, 4, 0, 0]}>
+        <Bar
+          dataKey="speed"
+          radius={[4, 4, 0, 0]}
+          animationDuration={600}
+          animationEasing="ease-out"
+        >
           {data.map((d, i) => (
             <Cell key={i} fill={d.color} />
           ))}
         </Bar>
       </BarChart>
-    </ResponsiveContainer>
+    </InViewChart>
   );
 }
 
@@ -400,7 +515,7 @@ export function PaceTrendChart({ trend }: { trend: TrendPoint[] }) {
     );
   }
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <InViewChart height={220}>
       <LineChart
         data={trend}
         margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
@@ -435,7 +550,7 @@ export function PaceTrendChart({ trend }: { trend: TrendPoint[] }) {
           dot={{ r: 3, fill: ACCENT }}
         />
       </LineChart>
-    </ResponsiveContainer>
+    </InViewChart>
   );
 }
 
@@ -448,7 +563,7 @@ export function DistanceTrendChart({ trend }: { trend: TrendPoint[] }) {
     );
   }
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <InViewChart height={220}>
       <LineChart data={trend} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
         <CartesianGrid stroke={GRID} vertical={false} />
         <XAxis
@@ -474,11 +589,11 @@ export function DistanceTrendChart({ trend }: { trend: TrendPoint[] }) {
         <Line
           type="monotone"
           dataKey="km"
-          stroke={SKY}
+          stroke={INK}
           strokeWidth={2}
-          dot={{ r: 3, fill: SKY }}
+          dot={{ r: 3, fill: INK }}
         />
       </LineChart>
-    </ResponsiveContainer>
+    </InViewChart>
   );
 }

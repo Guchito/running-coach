@@ -3,6 +3,7 @@ import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import { PageShell, Card, Stat } from "@/components/ui";
 import { CombinedChart } from "@/components/Charts";
 import { SplitsSection } from "@/components/SplitsSection";
+import { AddSplitsCard } from "@/components/AddSplitsCard";
 import { HrZonesCard } from "@/components/HrZonesCard";
 import { RunReview } from "@/components/RunReview";
 import { DeleteRunButton } from "@/components/DeleteRunButton";
@@ -10,6 +11,7 @@ import { RunNameEditor } from "@/components/RunNameEditor";
 import { AnalyzeRunButton } from "@/components/AnalyzeRunButton";
 import { requireUserId } from "@/lib/auth";
 import { resolveZones } from "@/lib/hr";
+import { RevealOnView } from "@/components/RevealOnView";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -100,9 +102,19 @@ export default async function RunDetail({
         <CombinedChart series={s.series} />
       </Card>
 
-      {/* Splits — kilometers or workout intervals */}
+      {/* Splits — kilometers or workout intervals. A run without any (manual
+          entry, bulk CSV import) gets an editor to add them after the fact. */}
       <div className="mb-6">
-        <SplitsSection splits={s.splits} laps={s.laps ?? []} />
+        {s.splits.length === 0 && (s.laps ?? []).length === 0 ? (
+          <AddSplitsCard
+            runId={run.id}
+            distanceM={run.distanceM}
+            durationSec={run.durationSec}
+            avgHr={s.avgHr}
+          />
+        ) : (
+          <SplitsSection splits={s.splits} laps={s.laps ?? []} />
+        )}
       </div>
 
       {/* Form metrics + effort */}
@@ -141,10 +153,10 @@ export default async function RunDetail({
 
         <Card className="p-5">
           <h2 className="font-medium mb-3">Effort breakdown</h2>
-          <div className="space-y-2">
+          <RevealOnView className="space-y-2">
             {Object.entries(s.intensityBreakdown)
               .sort((a, b) => b[1] - a[1])
-              .map(([label, sec]) => (
+              .map(([label, sec], i) => (
                 <div key={label}>
                   <div className="flex justify-between text-sm mb-0.5">
                     <span className="capitalize">{label}</span>
@@ -154,13 +166,16 @@ export default async function RunDetail({
                   </div>
                   <div className="h-2 rounded-full bg-black/5 overflow-hidden">
                     <div
-                      className="h-full bg-accent rounded-full"
-                      style={{ width: `${(sec / intensityTotal) * 100}%` }}
+                      className="h-full bg-accent rounded-full fill-grow"
+                      style={{
+                        width: `${(sec / intensityTotal) * 100}%`,
+                        animationDelay: `${i * 60}ms`,
+                      }}
                     />
                   </div>
                 </div>
               ))}
-          </div>
+          </RevealOnView>
           {s.avgHr && (
             <div className="mt-4 pt-4 border-t border-border">
               <HrZonesCard

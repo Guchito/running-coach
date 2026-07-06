@@ -112,7 +112,7 @@ export function UploadForm() {
       </div>
 
       {file && (
-        <Card className="p-4 space-y-3">
+        <Card className="p-4 space-y-3 animate-in">
           <label className="block text-sm">
             <span className="text-muted">Name this session (optional)</span>
             <input
@@ -134,13 +134,13 @@ export function UploadForm() {
       )}
 
       {notice && (
-        <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+        <div className="animate-in text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
           {notice}
         </div>
       )}
 
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+        <div className="animate-in text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
           {error}
         </div>
       )}

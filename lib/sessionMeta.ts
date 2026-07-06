@@ -4,7 +4,7 @@ import { gymTypeLabel } from "./gym";
 // Client-safe colour + label helpers shared by the history list and the calendar.
 // Runs are a single category; each gym type gets its own colour.
 
-export const RUN_COLOR = "#4f46e5"; // indigo
+export const RUN_COLOR = "#2563eb"; // electric blue
 
 export const GYM_TYPE_COLOR: Record<GymType, string> = {
   push: "#e11d48", // rose

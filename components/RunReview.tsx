@@ -63,7 +63,7 @@ export function RunReview({ run }: { run: RunRow }) {
   }, [run, router]);
 
   return (
-    <div className="mb-6 rounded-2xl border border-accent/30 bg-accent-soft/40 p-5">
+    <div className="mb-6 rounded-2xl border border-accent/30 bg-accent-soft/40 p-5 animate-in">
       <div className="flex items-center gap-2 mb-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="" className="w-7 h-7 rounded-full object-contain bg-accent-soft" />

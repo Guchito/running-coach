@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CountUp } from "@/components/CountUp";
 
 export function Card({
   children,
@@ -21,12 +22,21 @@ export function Stat({
   value: React.ReactNode;
   sub?: React.ReactNode;
 }) {
+  // No card box: headline numbers sit directly on the page, mono like a race
+  // clock. Boxing every stat is the template look this app is walking away from.
+  // Centered per column so the strip reads balanced against the cards around it.
   return (
-    <Card className="p-4">
-      <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
-      <div className="text-2xl font-semibold mt-1 tabular-nums">{value}</div>
+    <div className="py-4 md:py-2 text-center">
+      <div className="font-mono text-[11px] uppercase tracking-wider text-muted">{label}</div>
+      <div className="font-mono text-2xl md:text-3xl font-semibold mt-1 tracking-tight tabular-nums">
+        {typeof value === "string" || typeof value === "number" ? (
+          <CountUp value={String(value)} />
+        ) : (
+          value
+        )}
+      </div>
       {sub && <div className="text-xs text-muted mt-0.5">{sub}</div>}
-    </Card>
+    </div>
   );
 }
 
@@ -64,8 +74,10 @@ const buttonBase =
   "active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
 
 const buttonStyles = {
-  primary: "bg-accent text-white hover:bg-accent-strong",
-  soft: "bg-accent-soft text-accent hover:bg-indigo-100",
+  // Primary actions are ink, not accent: the blue stays reserved for data
+  // and state, which keeps it meaningful.
+  primary: "bg-ink text-white hover:bg-black",
+  soft: "bg-accent-soft text-accent hover:bg-[#bfdbfe]",
   ghost: "text-foreground/70 hover:bg-black/4 border border-border",
 } as const;
 

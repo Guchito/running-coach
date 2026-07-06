@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { HoldDeleteButton } from "@/components/HoldDeleteButton";
 
 export function DeleteRunButton({ id, redirectTo }: { id: number; redirectTo?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
   async function del() {
-    if (!confirm("Delete this run? This cannot be undone.")) return;
     setBusy(true);
     await fetch(`/api/runs/${id}`, { method: "DELETE" });
     if (redirectTo) router.push(redirectTo);
@@ -16,13 +16,11 @@ export function DeleteRunButton({ id, redirectTo }: { id: number; redirectTo?: s
   }
 
   return (
-    <button
-      onClick={del}
-      disabled={busy}
-      className="text-sm text-muted hover:text-red-600 transition-colors disabled:opacity-50"
-      title="Delete run"
-    >
-      {busy ? "Deleting…" : "Delete"}
-    </button>
+    <HoldDeleteButton
+      title="Hold to delete run"
+      confirmText="Delete this run? This cannot be undone."
+      onDelete={del}
+      busy={busy}
+    />
   );
 }

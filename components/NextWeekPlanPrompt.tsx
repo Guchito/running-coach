@@ -77,7 +77,7 @@ export function NextWeekPlanPrompt({
   return (
     <div className="pointer-events-auto rounded-2xl border border-border bg-card shadow-lg p-4 animate-in">
       <div className="flex items-start gap-3">
-        <span className="grid place-items-center w-9 h-9 shrink-0 rounded-full bg-accent text-white">
+        <span className="grid place-items-center w-9 h-9 shrink-0 rounded-full bg-ink text-white">
           📅
         </span>
         <div className="min-w-0 flex-1">
@@ -100,7 +100,7 @@ export function NextWeekPlanPrompt({
       </div>
       <button
         onClick={planIt}
-        className="mt-3 w-full rounded-full bg-accent text-white px-3 py-2 text-sm font-medium hover:bg-accent/90"
+        className="mt-3 w-full rounded-full bg-ink text-white px-3 py-2 text-sm font-medium hover:bg-black transition-[background-color,transform] duration-150 ease-out active:scale-[0.98]"
       >
         📅 Yes — plan {complete ? "next" : "this"} week
       </button>

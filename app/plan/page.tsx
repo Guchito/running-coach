@@ -11,13 +11,15 @@ export const dynamic = "force-dynamic";
 const DAY_TYPE_COLOR: Record<string, string> = {
   easy: "#10b981",
   recovery: "#94a3b8",
-  long: "#4f46e5",
+  long: "#2563eb",
   tempo: "#f59e0b",
   intervals: "#e11d48",
   race: "#7c3aed",
   cross: "#0ea5e9",
-  strength: "#d97706",
-  rest: "#cbd5e1",
+  // Clearly apart from easy's emerald; the fuchsia only ever appears as a
+  // tinted label, so it reads as a category, not decoration.
+  strength: "#c026d3",
+  rest: "#94a3b8",
 };
 
 const DAYS_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -144,15 +146,8 @@ export default async function PlanPage() {
                     .map((d, i) => (
                       <div
                         key={i}
-                        className="flex gap-3 rounded-xl border border-border p-3"
+                        className="rounded-xl border border-border p-3"
                       >
-                        <div
-                          className="w-1 rounded-full shrink-0"
-                          style={{
-                            backgroundColor:
-                              DAY_TYPE_COLOR[d.type] ?? "#cbd5e1",
-                          }}
-                        />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold w-8 text-muted">
@@ -170,9 +165,19 @@ export default async function PlanPage() {
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-muted mt-0.5">
-                            <span className="capitalize">{d.type}</span>
-                            {d.distanceKm ? ` · ${d.distanceKm} km` : ""}
+                          <div className="text-sm text-muted mt-1.5 flex items-center gap-1.5">
+                            {/* Day-type as a tinted pill: same treatment the
+                                splits table uses for interval intensity. */}
+                            <span
+                              className="inline-flex items-center text-xs font-medium capitalize px-2 py-0.5 rounded-full"
+                              style={{
+                                color: `color-mix(in srgb, ${DAY_TYPE_COLOR[d.type] ?? "#94a3b8"} 65%, black)`,
+                                backgroundColor: `${DAY_TYPE_COLOR[d.type] ?? "#94a3b8"}1a`,
+                              }}
+                            >
+                              {d.type}
+                            </span>
+                            {d.distanceKm ? <span>{d.distanceKm} km</span> : null}
                           </div>
                           {d.detail && (
                             <div className="text-sm text-muted/90 mt-1">

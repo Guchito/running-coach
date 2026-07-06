@@ -1,5 +1,6 @@
 import { zoneTimes, ZONE_COLORS } from "@/lib/hr";
 import { formatDuration } from "@/lib/parseRun";
+import { RevealOnView } from "@/components/RevealOnView";
 import type { HrZone } from "@/lib/types";
 
 // Renders time-in-zone for one run, computed from its bpm histogram against
@@ -26,7 +27,7 @@ export function HrZonesCard({
           {customized ? "Edit zones" : "Set your zones"}
         </a>
       </div>
-      <div className="space-y-1.5">
+      <RevealOnView className="space-y-1.5">
         {times.map(({ zone, seconds }, i) => (
           <div key={zone.name} className="flex items-center gap-2 text-xs">
             <span
@@ -37,10 +38,11 @@ export function HrZonesCard({
             </span>
             <div className="flex-1 h-1.5 rounded-full bg-black/5 overflow-hidden">
               <div
-                className="h-full rounded-full"
+                className="h-full rounded-full fill-grow"
                 style={{
                   width: `${(seconds / total) * 100}%`,
                   backgroundColor: ZONE_COLORS[i] ?? "#cbd5e1",
+                  animationDelay: `${i * 60}ms`,
                 }}
               />
             </div>
@@ -49,7 +51,7 @@ export function HrZonesCard({
             </span>
           </div>
         ))}
-      </div>
+      </RevealOnView>
       {!customized && (
         <p className="text-[11px] text-muted mt-2">
           Using default zones — set your max HR in Settings.

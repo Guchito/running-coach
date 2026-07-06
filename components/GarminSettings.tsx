@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
+import { HoldConfirmButton } from "@/components/HoldDeleteButton";
 import { formatDate } from "@/lib/parseRun";
 
 type SyncResult = {
@@ -75,7 +76,6 @@ export function GarminSettings({
   }
 
   async function disconnect() {
-    if (!confirm("Disconnect your Garmin account? Imported runs stay.")) return;
     setBusy("disconnect");
     try {
       await fetch("/api/garmin/disconnect", { method: "POST" });
@@ -99,9 +99,15 @@ export function GarminSettings({
             <Button onClick={sync} variant="soft">
               {busy === "sync" ? "Syncing…" : "Sync now"}
             </Button>
-            <Button onClick={disconnect} variant="ghost">
-              {busy === "disconnect" ? "…" : "Disconnect"}
-            </Button>
+            <HoldConfirmButton
+              label="Disconnect"
+              busyLabel="Disconnecting…"
+              title="Hold to disconnect Garmin"
+              confirmText="Disconnect your Garmin account? Imported runs stay."
+              onConfirm={disconnect}
+              busy={busy === "disconnect"}
+              className="border border-border rounded-lg"
+            />
           </div>
         </div>
 

@@ -1,14 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f8fa;
-  --foreground: #18181b;
+  --background: #f7f7f5;
+  --foreground: #16161a;
   --card: #ffffff;
   --muted: #6b7280;
-  --border: #e7e8ec;
-  --accent: #4f46e5;
-  --accent-strong: #4338ca;
-  --accent-soft: #eef0fe;
+  --border: #e8e8e4;
+  /* Electric blue: the single energy color. AA-safe on white for text/links;
+     use --accent-pop for blue on dark (ink) surfaces. */
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-soft: #dbeafe;
+  --accent-pop: #60a5fa;
+  --ink: #16161a;
   --good: #059669;
   --warn: #d97706;
 
@@ -16,6 +20,10 @@
      only add lift on interactive surfaces. */
   --shadow-lift: 0 2px 8px -2px rgb(63 63 106 / 0.08), 0 6px 20px -4px rgb(63 63 106 / 0.06);
 }
+
+/* Z-index scale (keep new layers on these steps, nothing arbitrary):
+   z-20 app chrome (nav bars) · z-40 notification stack · z-50 popovers/menus
+   and the skip-to-content link. */
 
 @theme inline {
   --color-background: var(--background);
@@ -26,6 +34,8 @@
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-pop: var(--accent-pop);
+  --color-ink: var(--ink);
   --color-good: var(--good);
   --color-warn: var(--warn);
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
@@ -44,6 +54,12 @@ html,
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -114,11 +130,39 @@ select:focus-visible:not(.no-ring) {
 .stagger-in > *:nth-child(5) { animation-delay: 160ms; }
 .stagger-in > *:nth-child(n + 6) { animation-delay: 200ms; }
 
+/* Bars (training load) grow up from the baseline; pair with a per-bar
+   animation-delay for a quick left-to-right cascade. */
+@keyframes bar-grow {
+  from { transform: scaleY(0.2); opacity: 0; }
+}
+.bar-grow {
+  animation: bar-grow 0.45s var(--ease-out) both;
+  transform-origin: bottom;
+}
+
+/* Horizontal meters (effort breakdown, HR zones) fill from the left. */
+@keyframes fill-grow {
+  from { transform: scaleX(0); }
+}
+.fill-grow {
+  animation: fill-grow 0.6s var(--ease-out) both;
+  transform-origin: left;
+}
+
+/* Scroll-triggered reveals (see RevealOnView): animations inside a wrapper
+   that hasn't entered the viewport yet hold at their first frame. */
+[data-reveal="out"] .bar-grow,
+[data-reveal="out"] .fill-grow {
+  animation-play-state: paused;
+}
+
 /* Reduced motion: keep opacity fades (they aid comprehension), remove
    movement. Transforms collapse to a plain fade. */
 @media (prefers-reduced-motion: reduce) {
   .animate-in,
-  .stagger-in > * {
+  .stagger-in > *,
+  .bar-grow,
+  .fill-grow {
     animation-duration: 0.15s;
     animation-name: fade-only;
   }

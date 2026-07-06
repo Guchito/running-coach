@@ -8,6 +8,7 @@ import {
 } from "@/lib/trainingLoad";
 import { runningRecords } from "@/lib/prs";
 import { Card, Stat, PageShell, Button, EmptyState, interactiveRow } from "@/components/ui";
+import { RevealOnView } from "@/components/RevealOnView";
 import { PaceTrendChart, DistanceTrendChart } from "@/components/Charts";
 import { requireUserId } from "@/lib/auth";
 import type { Goal, RunRow } from "@/lib/types";
@@ -171,7 +172,7 @@ export default async function Dashboard() {
                       {formatDate(r.startedAt)}
                     </div>
                   </div>
-                  <div className="flex items-center gap-5 text-sm tabular-nums">
+                  <div className="flex items-center gap-5 text-sm font-mono tabular-nums">
                     <span className="font-medium">
                       {formatDistance(r.distanceM)}
                     </span>
@@ -216,7 +217,7 @@ function RecentFormCard({ stats }: { stats: DashboardStats }) {
         <div>
           <div className="text-xs text-muted mb-1">Pace</div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold tabular-nums leading-none">
+            <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums leading-none">
               {formatPace(form.pace5)}
             </span>
             <span className="text-sm text-muted tabular-nums">
@@ -236,7 +237,7 @@ function RecentFormCard({ stats }: { stats: DashboardStats }) {
         <div>
           <div className="text-xs text-muted mb-1">Distance</div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold tabular-nums leading-none">
+            <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums leading-none">
               {form.km5.toFixed(1)} km
             </span>
             <span className="text-sm text-muted tabular-nums">
@@ -276,7 +277,7 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
       ) : (
         <>
           <div className="flex items-end gap-3">
-            <div className="text-3xl font-bold tabular-nums leading-none">
+            <div className="font-mono text-3xl font-semibold tracking-tight tabular-nums leading-none">
               {load.ratio.toFixed(2)}
             </div>
             <span
@@ -290,20 +291,21 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
             {load.acuteKm} km last 7 days vs {load.chronicKm} km/wk avg · sweet
             spot 0.8–1.3
           </div>
-          <div className="flex items-end gap-1.5 h-16 mt-4">
+          <RevealOnView className="flex items-end gap-1.5 h-16 mt-4">
             {load.weeks.map((w, i) => (
               <div
                 key={w.weekStart}
-                className="flex-1 rounded-t"
+                className="flex-1 rounded-t bar-grow"
                 style={{
                   height: `${Math.max(4, (w.km / max) * 100)}%`,
                   backgroundColor:
-                    i === load.weeks.length - 1 ? "#4f46e5" : "#c7d2fe",
+                    i === load.weeks.length - 1 ? "#2563eb" : "#dbeafe",
+                  animationDelay: `${i * 40}ms`,
                 }}
                 title={`Week of ${w.weekStart}: ${w.km} km`}
               />
             ))}
-          </div>
+          </RevealOnView>
           <div className="text-[10px] text-muted mt-1 text-right">
             last 6 weeks → now
           </div>
@@ -330,7 +332,7 @@ function RecordsCard({ runs }: { runs: RunRow[] }) {
               className="flex items-center justify-between gap-3 text-sm"
             >
               <span className="text-muted w-28 shrink-0">{e.label}</span>
-              <span className="font-medium tabular-nums">
+              <span className="font-mono font-medium tabular-nums">
                 {formatDuration(e.timeSec)}
               </span>
               <span className="text-xs text-muted tabular-nums w-24 text-right">
@@ -376,13 +378,13 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
     raced && goal.targetTimeSec ? goal.resultTimeSec! <= goal.targetTimeSec : null;
 
   return (
-    // Plain div, not <Card>: Card's bg-card (white) conflicts with the accent
+    // Plain div, not <Card>: Card's bg-card (white) conflicts with the ink
     // background at the utility layer.
-    <div className="rounded-2xl p-5 bg-accent text-white">
+    <div className="rounded-2xl p-5 bg-ink text-white">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-lg font-semibold truncate">{goal.title}</div>
-          <div className="text-white/75 text-sm mt-0.5">
+          <div className="text-white/60 text-sm mt-0.5">
             {goal.raceType}
             {goal.targetTimeSec
               ? ` · ${formatDuration(goal.targetTimeSec)}`
@@ -392,24 +394,24 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
         </div>
         {!raced && days !== null && days >= 0 && (
           <div className="text-right shrink-0">
-            <div className="text-2xl font-bold tabular-nums leading-none">
+            <div className="font-mono text-3xl font-semibold tabular-nums leading-none text-accent-pop">
               {days}
             </div>
-            <div className="text-[11px] text-white/70">days to go</div>
+            <div className="font-mono text-[10px] uppercase tracking-wider text-white/50 mt-1">days to go</div>
           </div>
         )}
       </div>
 
       {raced ? (
         <div className="mt-4 space-y-2">
-          <div className="bg-white/15 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3">
-            <span className="text-white/75 text-sm">
+          <div className="bg-white/8 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3">
+            <span className="text-white/60 text-sm">
               Raced{goal.racedOn ? ` ${formatDate(goal.racedOn)}` : ""}
             </span>
-            <strong className="tabular-nums text-lg">{formatDuration(goal.resultTimeSec!)}</strong>
+            <strong className="font-mono tabular-nums text-lg">{formatDuration(goal.resultTimeSec!)}</strong>
           </div>
           {goal.targetTimeSec && (
-            <div className="text-xs text-white/85 px-1">
+            <div className={`text-xs px-1 ${beatTarget ? "text-accent-pop" : "text-white/70"}`}>
               {beatTarget
                 ? `Beat your ${formatDuration(goal.targetTimeSec)} target by ${formatDuration(
                     goal.targetTimeSec - goal.resultTimeSec!,
@@ -424,29 +426,29 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
         (ifToday || projected || goal.targetTimeSec) && (
         <div className="mt-4 space-y-2">
           {ifToday && (
-            <div className="bg-white/15 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
-              <span className="text-white/75">If you raced today</span>
-              <strong className="tabular-nums">
+            <div className="bg-white/8 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
+              <span className="text-white/60">If you raced today</span>
+              <strong className="font-mono tabular-nums">
                 {formatDuration(ifToday)}
               </strong>
             </div>
           )}
           {projected ? (
-            <div className="bg-white/15 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
-              <span className="text-white/75">Projected · race day</span>
-              <strong className="tabular-nums">
+            <div className="bg-white/8 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
+              <span className="text-white/60">Projected · race day</span>
+              <strong className="font-mono tabular-nums">
                 {formatDuration(projected)}
               </strong>
             </div>
           ) : (
-            <div className="text-xs text-white/60 px-1">
+            <div className="text-xs text-white/50 px-1">
               Ask your coach for a race-day projection.
             </div>
           )}
           {goal.targetTimeSec && ref && (
             <div
               className={`text-xs px-2.5 py-1.5 rounded-lg inline-block ${
-                onTrack ? "bg-white/15 text-white" : "bg-black/15 text-white/90"
+                onTrack ? "bg-accent-pop/15 text-accent-pop" : "bg-white/8 text-white/80"
               }`}
             >
               {onTrack
