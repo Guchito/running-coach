@@ -531,6 +531,64 @@ export async function insertRun(
   return rowToRun(rows[0]);
 }
 
+// Upload dedupe: find the run starting at the same second (the same key the
+// Drive/Garmin sync importers use), plus how many samples it stored — so the
+// caller can decide whether the incoming file carries more data. Matched in
+// JS (not SQL) so naive-vs-UTC timestamp interpretation stays consistent with
+// getRunStartKeys().
+export async function findRunByStart(
+  userId: number,
+  startedAt: string
+): Promise<{ id: number; name: string; sampleCount: number } | null> {
+  const key = new Date(startedAt).toISOString().slice(0, 19);
+  const rows = await q<{ id: number; name: string; started_at: string; sample_count: number | null }>(
+    `SELECT id, name, started_at, (summary_json->>'sampleCount')::int AS sample_count
+     FROM runs WHERE user_id = $1`,
+    [userId]
+  );
+  for (const r of rows) {
+    if (new Date(r.started_at).toISOString().slice(0, 19) === key) {
+      return { id: r.id, name: r.name, sampleCount: r.sample_count ?? 0 };
+    }
+  }
+  return null;
+}
+
+// Replace a stored run's metrics with a richer version of the same run (e.g.
+// a FIT upload for a run first imported from a summary-only activities.csv).
+// Keeps the existing name unless a new one is passed.
+export async function updateRunSummary(
+  userId: number,
+  id: number,
+  name: string | null,
+  summary: RunSummary
+): Promise<RunRow | null> {
+  const rows = await q(
+    `UPDATE runs SET
+       name = COALESCE($3, name),
+       started_at = $4, distance_m = $5, duration_s = $6, avg_pace_s = $7,
+       avg_hr = $8, max_hr = $9, avg_cadence = $10, avg_power = $11,
+       elev_gain_m = $12, summary_json = $13
+     WHERE id = $2 AND user_id = $1 RETURNING *`,
+    [
+      userId,
+      id,
+      name,
+      summary.startedAt,
+      summary.distanceM,
+      summary.durationSec,
+      summary.avgPaceSecPerKm,
+      summary.avgHr,
+      summary.maxHr,
+      summary.avgCadence,
+      summary.avgPower,
+      summary.elevGainM,
+      JSON.stringify(summary),
+    ]
+  );
+  return rows[0] ? rowToRun(rows[0]) : null;
+}
+
 export async function listRuns(userId: number): Promise<RunRow[]> {
   const rows = await q(
     `SELECT * FROM runs WHERE user_id = $1 ORDER BY started_at DESC`,

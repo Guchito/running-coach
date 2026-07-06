@@ -11,6 +11,7 @@ export function UploadForm() {
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [name, setName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -18,6 +19,7 @@ export function UploadForm() {
   async function upload(f: File) {
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       const fd = new FormData();
       fd.append("file", f);
@@ -25,8 +27,31 @@ export function UploadForm() {
       const res = await fetch("/api/sessions", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed.");
+      if (data.kind === "bulk") {
+        // Garmin activities.csv — many runs at once.
+        if (data.imported === 0) {
+          setNotice(
+            data.duplicates > 0
+              ? `Nothing new to import — all ${data.duplicates} run${data.duplicates === 1 ? "" : "s"} in the file were already here.`
+              : "No runs found in that file."
+          );
+          setBusy(false);
+          setFile(null);
+          return;
+        }
+        if (data.imported === 1 && data.lastId) {
+          router.push(`/runs/${data.lastId}?new=1`);
+          return;
+        }
+        router.push("/runs");
+        return;
+      }
       // Detected as a run or a gym session — go straight to its breakdown.
-      router.push(data.kind === "gym" ? `/gym/${data.id}` : `/runs/${data.id}?new=1`);
+      // A duplicate upload lands on the run it matched, without the
+      // "new run" review banner.
+      router.push(
+        data.kind === "gym" ? `/gym/${data.id}` : `/runs/${data.id}${data.duplicate ? "" : "?new=1"}`
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed.");
       setBusy(false);
@@ -73,7 +98,7 @@ export function UploadForm() {
           ) : (
             <>
               <div className="font-medium">Drop your session file here</div>
-              <div className="text-sm text-muted mt-1">or click to browse · <strong>.csv</strong>, <strong>.fit</strong> or <strong>.tcx</strong> — runs and gym sessions are detected automatically</div>
+              <div className="text-sm text-muted mt-1">or click to browse · <strong>.csv</strong>, <strong>.fit</strong> or <strong>.tcx</strong> — runs and gym sessions are detected automatically. Garmin&apos;s bulk <strong>activities.csv</strong> export imports every run at once.</div>
             </>
           )}
           <input
@@ -106,6 +131,12 @@ export function UploadForm() {
             </Button>
           </div>
         </Card>
+      )}
+
+      {notice && (
+        <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+          {notice}
+        </div>
       )}
 
       {error && (
