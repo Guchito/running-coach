@@ -160,7 +160,7 @@ export function DriveSettings({ initial }: { initial: Config }) {
       {result && (
         <div className="text-sm rounded-lg bg-black/3 p-3">
           {result.error ? (
-            <span className="text-red-600">⚠️ {result.error}</span>
+            <span className="text-red-600">{result.error}</span>
           ) : result.imported.length ? (
             <div>
               <div className="text-good font-medium">

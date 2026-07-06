@@ -55,7 +55,7 @@ export function CoachModelForm({
                   ? "border-border opacity-50 cursor-not-allowed"
                   : model === m.id
                   ? "border-accent bg-accent-soft cursor-pointer"
-                  : "border-border hover:bg-black/5 cursor-pointer"
+                  : "border-border hover:bg-black/4 cursor-pointer"
               }`}
             >
               <input

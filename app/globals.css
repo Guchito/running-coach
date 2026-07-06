@@ -7,9 +7,14 @@
   --muted: #6b7280;
   --border: #e7e8ec;
   --accent: #4f46e5;
+  --accent-strong: #4338ca;
   --accent-soft: #eef0fe;
   --good: #059669;
   --warn: #d97706;
+
+  /* Tinted (not gray) shadow, barely there: cards rely on borders, shadows
+     only add lift on interactive surfaces. */
+  --shadow-lift: 0 2px 8px -2px rgb(63 63 106 / 0.08), 0 6px 20px -4px rgb(63 63 106 / 0.06);
 }
 
 @theme inline {
@@ -19,11 +24,20 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);
   --color-good: var(--good);
   --color-warn: var(--warn);
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
+}
+
+/* Motion system: replace Tailwind's weak default curves with strong ones, so
+   the canonical `ease-out` / `ease-in-out` utilities feel intentional.
+   ease-out drives enters + feedback; ease-in-out drives on-screen movement. */
+@theme {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 html,
@@ -37,9 +51,37 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: #d4d4d8 transparent;
+}
+
+/* One focus treatment app-wide: visible for keyboard users, invisible for
+   pointer clicks. Inputs keep their own border treatment (below). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Inputs swap the outline for a border + soft ring. Composed fields (e.g. the
+   chat composer) mark their inner control with .no-ring and let the wrapper
+   show focus via :focus-within instead. */
+input:focus-visible:not(.no-ring),
+textarea:focus-visible:not(.no-ring),
+select:focus-visible:not(.no-ring) {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.no-ring:focus-visible {
+  outline: none;
 }
 
 /* Markdown-ish styling for coach messages */
@@ -60,4 +102,30 @@ body {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-in { animation: slide-up-in 0.25s ease-out; }
+.animate-in { animation: slide-up-in 0.3s var(--ease-out) both; }
+
+/* Stagger helper: apply to a container whose direct children should cascade
+   in. Decorative only; never blocks interaction. */
+.stagger-in > * { animation: slide-up-in 0.35s var(--ease-out) both; }
+.stagger-in > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-in > *:nth-child(2) { animation-delay: 40ms; }
+.stagger-in > *:nth-child(3) { animation-delay: 80ms; }
+.stagger-in > *:nth-child(4) { animation-delay: 120ms; }
+.stagger-in > *:nth-child(5) { animation-delay: 160ms; }
+.stagger-in > *:nth-child(n + 6) { animation-delay: 200ms; }
+
+/* Reduced motion: keep opacity fades (they aid comprehension), remove
+   movement. Transforms collapse to a plain fade. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .stagger-in > * {
+    animation-duration: 0.15s;
+    animation-name: fade-only;
+  }
+  .typing-dot { animation-duration: 2s; }
+}
+
+@keyframes fade-only {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

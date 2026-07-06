@@ -15,7 +15,7 @@ export function AnalyzeRunButton({ runId, ask }: { runId: number; ask: string })
 
   return (
     <Button onClick={go} variant="soft">
-      🏃 Analyze this run
+      Analyze this run
     </Button>
   );
 }

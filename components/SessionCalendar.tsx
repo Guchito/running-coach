@@ -106,7 +106,7 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
           <button
             onClick={() => step(-1)}
             aria-label="Previous month"
-            className="w-8 h-8 grid place-items-center rounded-lg text-foreground/70 hover:bg-black/5"
+            className="w-8 h-8 grid place-items-center rounded-lg text-foreground/70 hover:bg-black/4"
           >
             ‹
           </button>
@@ -116,14 +116,14 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
               setYear(now.getFullYear());
               setMonth(now.getMonth());
             }}
-            className="text-xs px-2 h-8 rounded-lg text-foreground/70 hover:bg-black/5"
+            className="text-xs px-2 h-8 rounded-lg text-foreground/70 hover:bg-black/4"
           >
             Today
           </button>
           <button
             onClick={() => step(1)}
             aria-label="Next month"
-            className="w-8 h-8 grid place-items-center rounded-lg text-foreground/70 hover:bg-black/5"
+            className="w-8 h-8 grid place-items-center rounded-lg text-foreground/70 hover:bg-black/4"
           >
             ›
           </button>
@@ -151,7 +151,7 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
               disabled={!has}
               className={`h-12 rounded-lg border p-0.5 flex flex-col items-center justify-center gap-0.5 transition-colors ${
                 isToday ? "border-accent" : "border-transparent"
-              } ${has ? "cursor-pointer hover:bg-black/5" : "cursor-default"}`}
+              } ${has ? "cursor-pointer hover:bg-black/4" : "cursor-default"}`}
             >
               <span
                 className={`text-[11px] leading-none ${
@@ -201,7 +201,7 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
               <button
                 onClick={() => setModalDay(null)}
                 aria-label="Close"
-                className="w-8 h-8 grid place-items-center rounded-lg text-foreground/70 hover:bg-black/5 -mr-1 -mt-1"
+                className="w-8 h-8 grid place-items-center rounded-lg text-foreground/70 hover:bg-black/4 -mr-1 -mt-1"
               >
                 ✕
               </button>
@@ -212,7 +212,7 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
                 <Link
                   key={s.kind + s.id}
                   href={s.href}
-                  className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-black/2"
+                  className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-black/4"
                 >
                   <SessionBadge s={s} size="lg" />
                   <div className="min-w-0 flex-1">

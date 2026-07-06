@@ -194,7 +194,7 @@ export function GoalsManager({
             {g.resultTimeSec != null ? (
               <div className="mt-4 rounded-lg bg-good/10 px-3 py-2 text-sm flex items-center justify-between gap-3">
                 <span>
-                  🏁 Raced {g.racedOn ? formatDate(g.racedOn) : ""} ·{" "}
+                  Raced {g.racedOn ? formatDate(g.racedOn) : ""} ·{" "}
                   <strong className="tabular-nums">
                     {formatDuration(g.resultTimeSec)}
                   </strong>

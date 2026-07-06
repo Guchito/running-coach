@@ -104,7 +104,7 @@ export function Nav({ email }: { email: string | null }) {
       </header>
 
       <nav
-        className={`md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-border bg-card flex justify-around py-2 transition-transform duration-300 ${
+        className={`md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-border bg-card flex justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-transform duration-300 ease-out ${
           barsHidden ? "translate-y-full" : "translate-y-0"
         }`}
       >
@@ -117,7 +117,7 @@ export function Nav({ email }: { email: string | null }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`flex flex-col items-center gap-0.5 px-2 text-[10px] ${active ? "text-accent" : "text-muted"}`}
+                className={`flex flex-col items-center gap-0.5 px-2 text-[10px] transition-[color,transform] duration-150 ease-out active:scale-95 ${active ? "text-accent" : "text-muted"}`}
               >
                 <svg
                   className="w-5 h-5"
@@ -157,7 +157,7 @@ export function Nav({ email }: { email: string | null }) {
             <Link
               key={l.href}
               href={l.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98] ${
                 active
                   ? "bg-accent-soft text-accent font-medium"
                   : "text-foreground/70 hover:bg-black/4"
@@ -188,7 +188,7 @@ export function Nav({ email }: { email: string | null }) {
           <button
             onClick={logout}
             disabled={loggingOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-black/5 transition-colors disabled:opacity-50"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-black/4 transition-[background-color,transform] duration-150 ease-out active:scale-[0.98] disabled:opacity-50"
           >
             <svg
               className="w-5 h-5"

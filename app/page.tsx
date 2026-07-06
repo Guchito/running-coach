@@ -7,7 +7,7 @@ import {
   LOAD_STATUS_COLOR,
 } from "@/lib/trainingLoad";
 import { runningRecords } from "@/lib/prs";
-import { Card, Stat, PageShell, Button, EmptyState } from "@/components/ui";
+import { Card, Stat, PageShell, Button, EmptyState, interactiveRow } from "@/components/ui";
 import { PaceTrendChart, DistanceTrendChart } from "@/components/Charts";
 import { requireUserId } from "@/lib/auth";
 import type { Goal, RunRow } from "@/lib/types";
@@ -163,7 +163,7 @@ export default async function Dashboard() {
                 <Link
                   key={r.id}
                   href={`/runs/${r.id}`}
-                  className="flex items-center justify-between py-3 -mx-2 px-2 rounded-lg hover:bg-black/3"
+                  className={`flex items-center justify-between py-3 -mx-2 px-2 rounded-lg ${interactiveRow}`}
                 >
                   <div className="min-w-0">
                     <div className="font-medium truncate">{formatDatesInText(r.name)}</div>
@@ -228,8 +228,8 @@ function RecentFormCard({ stats }: { stats: DashboardStats }) {
               className={`text-xs mt-1.5 ${paceDiff > 0 ? "text-emerald-600" : "text-rose-600"}`}
             >
               {paceDiff > 0
-                ? `▲ ${paceDiff}s/km faster than usual`
-                : `▼ ${-paceDiff}s/km slower than usual`}
+                ? `↑ ${paceDiff}s/km faster than usual`
+                : `↓ ${-paceDiff}s/km slower than usual`}
             </div>
           )}
         </div>
@@ -248,8 +248,8 @@ function RecentFormCard({ stats }: { stats: DashboardStats }) {
               className={`text-xs mt-1.5 ${kmDiff > 0 ? "text-emerald-600" : "text-rose-600"}`}
             >
               {kmDiff > 0
-                ? `▲ ${kmDiff.toFixed(1)} km longer than usual`
-                : `▼ ${Math.abs(kmDiff).toFixed(1)} km shorter than usual`}
+                ? `↑ ${kmDiff.toFixed(1)} km longer than usual`
+                : `↓ ${Math.abs(kmDiff).toFixed(1)} km shorter than usual`}
             </div>
           )}
         </div>
@@ -376,11 +376,13 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
     raced && goal.targetTimeSec ? goal.resultTimeSec! <= goal.targetTimeSec : null;
 
   return (
-    <Card className="p-5 bg-linear-to-br from-accent to-indigo-600 text-white border-0">
+    // Plain div, not <Card>: Card's bg-card (white) conflicts with the accent
+    // background at the utility layer.
+    <div className="rounded-2xl p-5 bg-accent text-white">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-lg font-semibold truncate">{goal.title}</div>
-          <div className="text-white/80 text-sm mt-0.5">
+          <div className="text-white/75 text-sm mt-0.5">
             {goal.raceType}
             {goal.targetTimeSec
               ? ` · ${formatDuration(goal.targetTimeSec)}`
@@ -400,16 +402,16 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
 
       {raced ? (
         <div className="mt-4 space-y-2">
-          <div className="bg-white/20 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3">
-            <span className="text-white/80 text-sm">
-              🏁 Raced{goal.racedOn ? ` ${formatDate(goal.racedOn)}` : ""}
+          <div className="bg-white/15 rounded-lg px-3 py-2.5 flex items-center justify-between gap-3">
+            <span className="text-white/75 text-sm">
+              Raced{goal.racedOn ? ` ${formatDate(goal.racedOn)}` : ""}
             </span>
             <strong className="tabular-nums text-lg">{formatDuration(goal.resultTimeSec!)}</strong>
           </div>
           {goal.targetTimeSec && (
             <div className="text-xs text-white/85 px-1">
               {beatTarget
-                ? `🎉 Beat your ${formatDuration(goal.targetTimeSec)} target by ${formatDuration(
+                ? `Beat your ${formatDuration(goal.targetTimeSec)} target by ${formatDuration(
                     goal.targetTimeSec - goal.resultTimeSec!,
                   )}.`
                 : `${formatDuration(
@@ -442,19 +444,23 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
             </div>
           )}
           {goal.targetTimeSec && ref && (
-            <div className="text-xs text-white/80 px-1">
+            <div
+              className={`text-xs px-2.5 py-1.5 rounded-lg inline-block ${
+                onTrack ? "bg-white/15 text-white" : "bg-black/15 text-white/90"
+              }`}
+            >
               {onTrack
-                ? `🎯 On track for your ${formatDuration(goal.targetTimeSec)} target (${formatDuration(
+                ? `On track for ${formatDuration(goal.targetTimeSec)} · ${formatDuration(
                     Math.abs(ref - goal.targetTimeSec),
-                  )} to spare).`
-                : `⏱️ ${formatDuration(
+                  )} to spare`
+                : `${formatDuration(
                     Math.abs(ref - goal.targetTimeSec),
-                  )} off your ${formatDuration(goal.targetTimeSec)} target — keep building.`}
+                  )} off your ${formatDuration(goal.targetTimeSec)} target · keep building`}
             </div>
           )}
         </div>
         )
       )}
-    </Card>
+    </div>
   );
 }

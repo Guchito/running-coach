@@ -25,10 +25,10 @@ function parsePace(v: string): number | null {
 }
 
 function chipCls(active: boolean): string {
-  return `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+  return `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.96] ${
     active
       ? "border-accent bg-accent-soft text-accent"
-      : "border-border text-foreground/70 hover:bg-black/5"
+      : "border-border text-foreground/70 hover:bg-black/4"
   }`;
 }
 
@@ -192,7 +192,7 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
           filtered.map((s) => (
             <div
               key={s.kind + s.id}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-black/2"
+              className="flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-black/4 first:rounded-t-2xl last:rounded-b-2xl"
             >
               <SessionBadge s={s} />
               <Link

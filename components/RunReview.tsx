@@ -55,7 +55,7 @@ export function RunReview({ run }: { run: RunRow }) {
           setText(acc);
         }
       } catch (e) {
-        setText(`⚠️ ${e instanceof Error ? e.message : "Review failed."}`);
+        setText(`**Review failed.** ${e instanceof Error ? e.message : ""}`);
       } finally {
         setDone(true);
       }
@@ -65,7 +65,8 @@ export function RunReview({ run }: { run: RunRow }) {
   return (
     <div className="mb-6 rounded-2xl border border-accent/30 bg-accent-soft/40 p-5">
       <div className="flex items-center gap-2 mb-2">
-        <span className="grid place-items-center w-7 h-7 rounded-full bg-accent text-white text-sm">🏃</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="" className="w-7 h-7 rounded-full object-contain bg-accent-soft" />
         <span className="font-medium">Coach review</span>
         {!done && (
           <span className="flex gap-1 ml-1">

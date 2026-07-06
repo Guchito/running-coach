@@ -84,7 +84,7 @@ export function CoachChat({
         const msg = e instanceof Error ? e.message : "Something went wrong.";
         setMessages((m) => {
           const copy = [...m];
-          copy[copy.length - 1] = { role: "assistant", content: `⚠️ ${msg}` };
+          copy[copy.length - 1] = { role: "assistant", content: `**Something went wrong.** ${msg}` };
           return copy;
         });
       } finally {
@@ -138,7 +138,8 @@ export function CoachChat({
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <div className="flex items-center gap-3">
-          <span className="grid place-items-center w-9 h-9 rounded-full bg-accent text-white">🏃</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="" className="w-9 h-9 rounded-full object-contain bg-accent-soft" />
           <div>
             <div className="font-semibold leading-tight">Coach</div>
             <div className="mt-0.5">
@@ -147,15 +148,21 @@ export function CoachChat({
           </div>
         </div>
         {!empty && (
-          <button onClick={clearChat} className="text-sm text-muted hover:text-red-600">Clear</button>
+          <button
+            onClick={clearChat}
+            className="text-sm text-muted hover:text-red-600 transition-colors duration-150"
+          >
+            Clear
+          </button>
         )}
       </div>
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 space-y-4">
         {empty && loaded && (
-          <div className="text-center mt-10">
-            <div className="text-4xl mb-3">👋</div>
+          <div className="text-center mt-10 animate-in">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" className="w-14 h-14 rounded-2xl object-contain mx-auto mb-4" />
             <h2 className="text-lg font-medium">Hi! I&apos;m your running coach.</h2>
             <p className="text-muted text-sm mt-1 max-w-md mx-auto">
               {hasRuns
@@ -172,7 +179,7 @@ export function CoachChat({
                 <button
                   key={s}
                   onClick={() => send(s)}
-                  className="text-sm px-3 py-1.5 rounded-full border border-border hover:border-accent hover:text-accent transition-colors"
+                  className="text-sm px-3 py-1.5 rounded-full border border-border hover:border-accent hover:text-accent transition-[border-color,color,transform] duration-150 ease-out active:scale-[0.97]"
                 >
                   {s}
                 </button>
@@ -184,7 +191,7 @@ export function CoachChat({
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
+              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm animate-in ${
                 m.role === "user"
                   ? "bg-accent text-white rounded-br-md"
                   : "bg-card border border-border rounded-bl-md"
@@ -216,7 +223,7 @@ export function CoachChat({
         }}
         className="border-t border-border pt-3"
       >
-        <div className="flex items-end gap-2 bg-card border border-border rounded-2xl px-3 py-2 focus-within:border-accent">
+        <div className="flex items-end gap-2 bg-card border border-border rounded-2xl px-3 py-2 transition-[border-color,box-shadow] duration-150 focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft)]">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -228,12 +235,12 @@ export function CoachChat({
             }}
             rows={1}
             placeholder="Ask your coach…"
-            className="flex-1 resize-none bg-transparent outline-none text-sm max-h-32 py-1"
+            className="no-ring flex-1 resize-none bg-transparent outline-none text-sm max-h-32 py-1"
           />
           <button
             type="submit"
             disabled={sending || !input.trim()}
-            className="shrink-0 grid place-items-center w-9 h-9 rounded-xl bg-accent text-white disabled:opacity-40"
+            className="shrink-0 grid place-items-center w-9 h-9 rounded-xl bg-accent text-white transition-[transform,opacity] duration-150 ease-out active:scale-[0.94] disabled:opacity-40 disabled:active:scale-100"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />

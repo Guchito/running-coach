@@ -111,7 +111,7 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
               key={m.key}
               onClick={() => toggle(m.key)}
               className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                on ? "border-transparent text-white" : "border-border text-muted hover:bg-black/5"
+                on ? "border-transparent text-white" : "border-border text-muted hover:bg-black/4"
               }`}
               style={on ? { backgroundColor: m.color } : undefined}
               aria-pressed={on}

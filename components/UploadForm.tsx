@@ -32,7 +32,7 @@ export function UploadForm() {
         if (data.imported === 0) {
           setNotice(
             data.duplicates > 0
-              ? `Nothing new to import — all ${data.duplicates} run${data.duplicates === 1 ? "" : "s"} in the file were already here.`
+              ? `Nothing new to import: all ${data.duplicates} run${data.duplicates === 1 ? "" : "s"} in the file were already here.`
               : "No runs found in that file."
           );
           setBusy(false);
@@ -71,8 +71,8 @@ export function UploadForm() {
   return (
     <div className="space-y-4">
       <div
-        className={`${cardCls} p-10 border-2 border-dashed text-center transition-colors cursor-pointer ${
-          dragging ? "border-accent bg-accent-soft" : "border-border"
+        className={`${cardCls} p-10 border-2 border-dashed text-center cursor-pointer transition-[border-color,background-color,transform] duration-200 ease-out ${
+          dragging ? "border-accent bg-accent-soft scale-[1.01]" : "border-border"
         }`}
         onClick={() => inputRef.current?.click()}
       >
@@ -98,7 +98,7 @@ export function UploadForm() {
           ) : (
             <>
               <div className="font-medium">Drop your session file here</div>
-              <div className="text-sm text-muted mt-1">or click to browse · <strong>.csv</strong>, <strong>.fit</strong> or <strong>.tcx</strong> — runs and gym sessions are detected automatically. Garmin&apos;s bulk <strong>activities.csv</strong> export imports every run at once.</div>
+              <div className="text-sm text-muted mt-1">or click to browse · <strong>.csv</strong>, <strong>.fit</strong> or <strong>.tcx</strong>. Runs and gym sessions are detected automatically, and Garmin&apos;s bulk <strong>activities.csv</strong> export imports every run at once.</div>
             </>
           )}
           <input
