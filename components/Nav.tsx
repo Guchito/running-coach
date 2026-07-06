@@ -63,8 +63,10 @@ export function Nav({ email }: { email: string | null }) {
     let lastY = window.scrollY;
     function onScroll() {
       const y = window.scrollY;
-      if (y < 12) setBarsHidden(false); // always visible near the top
-      else if (y > lastY + 5) setBarsHidden(true); // scrolling down
+      if (y < 12)
+        setBarsHidden(false); // always visible near the top
+      else if (y > lastY + 5)
+        setBarsHidden(true); // scrolling down
       else if (y < lastY - 5) setBarsHidden(false); // scrolling up
       lastY = y;
     }
@@ -93,7 +95,11 @@ export function Nav({ email }: { email: string | null }) {
       >
         <Link href="/" className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Home" className="w-8 h-8 rounded-lg object-contain" />
+          <img
+            src="/logo.png"
+            alt="Home"
+            className="w-8 h-8 rounded-lg object-contain"
+          />
         </Link>
       </header>
 
@@ -105,32 +111,40 @@ export function Nav({ email }: { email: string | null }) {
         {links
           .filter((l) => !l.hideOnMobile)
           .map((l) => {
-          const active =
-            l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
-          return (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={`flex flex-col items-center gap-0.5 px-2 text-[10px] ${active ? "text-accent" : "text-muted"}`}
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth={1.8}
+            const active =
+              l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`flex flex-col items-center gap-0.5 px-2 text-[10px] ${active ? "text-accent" : "text-muted"}`}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d={l.icon} />
-              </svg>
-              {l.label.split(" ")[0]}
-            </Link>
-          );
-        })}
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d={l.icon}
+                  />
+                </svg>
+                {l.label.split(" ")[0]}
+              </Link>
+            );
+          })}
       </nav>
       <aside className="w-60 shrink-0 border-r border-border bg-card/60 backdrop-blur px-4 py-6 hidden md:flex flex-col gap-1 sticky top-0 h-screen">
         <Link href="/" className="flex items-center gap-2 px-2 mb-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Gunna" className="w-9 h-9 rounded-xl object-contain" />
+          <img
+            src="/logo.png"
+            alt="Gunna"
+            className="w-9 h-9 rounded-xl object-contain"
+          />
           <div className="leading-tight">
             <div className="font-semibold">Gunna</div>
             <div className="text-xs text-muted">AI Running Coach</div>
@@ -164,7 +178,10 @@ export function Nav({ email }: { email: string | null }) {
         })}
         <div className="mt-auto pt-4 border-t border-border">
           {email && (
-            <div className="px-3 py-1 text-xs text-muted truncate" title={email}>
+            <div
+              className="px-3 py-1 text-xs text-muted truncate"
+              title={email}
+            >
               {email}
             </div>
           )}
@@ -173,12 +190,21 @@ export function Nav({ email }: { email: string | null }) {
             disabled={loggingOut}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-black/5 transition-colors disabled:opacity-50"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth={1.8}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
             </svg>
             {loggingOut ? "Signing out…" : "Sign out"}
           </button>
-          <div className="px-3 pt-2 text-[11px] text-muted">Powered by Claude</div>
         </div>
       </aside>
     </>

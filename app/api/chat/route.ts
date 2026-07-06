@@ -12,7 +12,7 @@ import {
   getLatestBodyMetric,
   getAnthropicApiKey,
 } from "@/lib/db";
-import { resolveCoachModel, SYSTEM_PROMPT, buildContextBlock } from "@/lib/coach";
+import { resolveCoachModel, SYSTEM_PROMPT, buildContextBlock, providerFor } from "@/lib/coach";
 import { executeTool } from "@/lib/coachTools";
 import { resolveProvider, type ProviderMessage } from "@/lib/providers";
 import { getCurrentUserId, unauthorized } from "@/lib/auth";
@@ -75,6 +75,13 @@ export async function POST(req: NextRequest) {
             getLatestBodyMetric(userId),
             getAnthropicApiKey(userId),
           ]);
+        const model = resolveCoachModel(user?.coachModel);
+        // Anthropic caches the static prefix (tools + system + context), so
+        // repeat reads in the agentic loop bill at ~10%. The other providers
+        // re-send everything at full price each call — give them a leaner
+        // context, shorter history, and fewer loop turns so free-tier token
+        // quotas last.
+        const cached = providerFor(model) === "anthropic";
         const context = buildContextBlock({
           goals,
           plan,
@@ -87,19 +94,21 @@ export async function POST(req: NextRequest) {
           lastLthrTestOn: lastLthrTest?.testedOn ?? null,
           lthrTestIntervalWeeks: user?.lthrTestIntervalWeeks ?? null,
           bodyMetric,
+          lean: !cached,
         });
         // Auto-naming is handled reliably server-side (see /api/runs/[id]/autoname),
         // so the coach is NOT asked to rename during analysis — that avoids weak
         // models faking the rename and avoids double-renaming. The rename_run tool
         // stays available for explicit user requests ("rename run #3").
         const system = `${SYSTEM_PROMPT}\n\n---\nCURRENT CONTEXT (refreshed each message):\n${context}`;
-        const model = resolveCoachModel(user?.coachModel);
         const provider = resolveProvider(model, anthropicKey);
+        const convo = cached ? messages : messages.slice(-12);
+        const maxTurns = cached ? 6 : 4;
 
         // Agentic loop: stream text, run any tools, feed results back, repeat.
         // The provider (Claude or a free NVIDIA model) handles its own wire format.
-        for (let turn = 0; turn < 6; turn++) {
-          const result = await provider.streamTurn({ model, system, messages, onText: send });
+        for (let turn = 0; turn < maxTurns; turn++) {
+          const result = await provider.streamTurn({ model, system, messages: convo, onText: send });
 
           if (result.stopReason !== "tool_use" || result.toolCalls.length === 0) {
             if (result.stopReason === "max_tokens") {
@@ -109,7 +118,7 @@ export async function POST(req: NextRequest) {
           }
 
           // Record the assistant turn (the text it said + the tool calls it made).
-          messages.push({ role: "assistant", text: result.text, toolCalls: result.toolCalls });
+          convo.push({ role: "assistant", text: result.text, toolCalls: result.toolCalls });
 
           const toolResults = [];
           for (const tc of result.toolCalls) {
@@ -117,7 +126,7 @@ export async function POST(req: NextRequest) {
             send(`\n\n_✓ ${r.summary}_\n\n`);
             toolResults.push({ id: tc.id, content: JSON.stringify(r.data) });
           }
-          messages.push({ role: "tool", toolResults });
+          convo.push({ role: "tool", toolResults });
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Coach failed to respond.";

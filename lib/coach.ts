@@ -309,6 +309,10 @@ export function buildContextBlock(opts: {
   lastLthrTestOn?: string | null;
   lthrTestIntervalWeeks?: number | null;
   bodyMetric?: BodyMetric | null;
+  // Leaner block for providers without prompt caching (free NVIDIA models),
+  // where every agentic turn re-sends the whole context at full price. The
+  // coach can still pull depth on demand via get_training_history.
+  lean?: boolean;
 }): string {
   const today = new Date().toISOString().slice(0, 10);
   const zones = resolveZones(opts.maxHr ?? null, opts.hrZones ?? null);
@@ -330,9 +334,9 @@ export function buildContextBlock(opts: {
     buildLoadContext(opts.runs),
     buildRecordsContext(opts.runs),
     "",
-    buildRecentRunsContext(opts.runs),
+    buildRecentRunsContext(opts.runs, 1, opts.lean ? 3 : 5),
     "",
-    buildGymContext(gym, 5),
+    buildGymContext(gym, opts.lean ? 3 : 5),
   ]
     .filter((l) => l !== null)
     .join("\n");
