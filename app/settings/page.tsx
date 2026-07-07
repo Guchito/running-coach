@@ -7,6 +7,7 @@ import { DriveSettings } from "@/components/DriveSettings";
 import { GarminSettings } from "@/components/GarminSettings";
 import { CoachModelForm } from "@/components/CoachModelForm";
 import { AnthropicKeyForm } from "@/components/AnthropicKeyForm";
+import { NvidiaKeyForm } from "@/components/NvidiaKeyForm";
 import { AutoNameRunsToggle } from "@/components/AutoNameRunsToggle";
 import { requireUserId } from "@/lib/auth";
 import { isDriveConfigured, serviceAccountEmail } from "@/lib/drive";
@@ -35,6 +36,9 @@ export default async function SettingsPage() {
 
       <h2 className="font-medium mb-3 mt-8">Your Anthropic API key</h2>
       <AnthropicKeyForm initialHasKey={user?.hasAnthropicKey ?? false} />
+
+      <h2 className="font-medium mb-3 mt-8">Your NVIDIA API key</h2>
+      <NvidiaKeyForm initialHasKey={user?.hasNvidiaKey ?? false} />
 
       {/* HR zones + LTHR: side by side and matched height on desktop. The
           flex-1 + [&>*]:h-full wrapper stretches each card to the taller of the two. */}

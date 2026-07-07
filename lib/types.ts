@@ -158,6 +158,7 @@ export type User = {
   driveLastSync: string | null;
   coachModel: string | null;  // chosen Claude model for the coach; null = use the default
   hasAnthropicKey: boolean;   // whether the runner has stored their own Anthropic API key
+  hasNvidiaKey: boolean;      // whether the runner has stored their own NVIDIA API key
   lthrTestIntervalWeeks: number | null; // re-test cadence; null = no schedule
   autoNameRuns: boolean;      // let the coach rename runs after analyzing them
   garminConnected: boolean;   // whether a Garmin Connect session token is stored

@@ -70,6 +70,7 @@ const SCHEMA = `
   ALTER TABLE users ADD COLUMN IF NOT EXISTS coach_model TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS lthr_test_interval_weeks INTEGER;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS anthropic_api_key_enc TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS nvidia_api_key_enc TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_name_runs BOOLEAN NOT NULL DEFAULT false;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS garmin_token_enc TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS garmin_last_sync TIMESTAMPTZ;
@@ -215,6 +216,7 @@ function rowToUser(r: Record<string, unknown>): User {
     // Never expose the key itself on the User object (it can be serialized to the
     // client); just whether one is stored, so the UI can show "key set".
     hasAnthropicKey: r.anthropic_api_key_enc != null,
+    hasNvidiaKey: r.nvidia_api_key_enc != null,
     lthrTestIntervalWeeks:
       r.lthr_test_interval_weeks === null || r.lthr_test_interval_weeks === undefined
         ? null
@@ -263,6 +265,26 @@ export async function getAnthropicApiKey(userId: number): Promise<string | null>
     [userId]
   );
   return decryptSecret(rows[0]?.anthropic_api_key_enc);
+}
+
+// Store (encrypted) or clear the runner's own NVIDIA API key. Without one they
+// share the server's default key (and its rate limit).
+export async function setNvidiaApiKey(userId: number, plaintext: string | null): Promise<User> {
+  const enc = plaintext ? encryptSecret(plaintext) : null;
+  const rows = await q(`UPDATE users SET nvidia_api_key_enc = $2 WHERE id = $1 RETURNING *`, [
+    userId,
+    enc,
+  ]);
+  return rowToUser(rows[0]);
+}
+
+// Fetch and decrypt the runner's own NVIDIA API key (null = use the server's).
+export async function getNvidiaApiKey(userId: number): Promise<string | null> {
+  const rows = await q<{ nvidia_api_key_enc: string | null }>(
+    `SELECT nvidia_api_key_enc FROM users WHERE id = $1`,
+    [userId]
+  );
+  return decryptSecret(rows[0]?.nvidia_api_key_enc);
 }
 
 export async function setLthrTestInterval(userId: number, weeks: number | null): Promise<User> {

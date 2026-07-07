@@ -12,12 +12,20 @@ export type { CoachProvider, ProviderMessage } from "./types";
 // decrypted from their account). Claude is paid, so each runner brings their own;
 // the server's ANTHROPIC_API_KEY is only used as a fallback if it happens to be
 // set (e.g. the owner's personal deployment).
-export function resolveProvider(model: string, userAnthropicKey?: string | null): CoachProvider {
+//
+// For NVIDIA models the runner's own key (free at build.nvidia.com) takes
+// precedence so they get their own rate limit; otherwise everyone shares the
+// server's NVIDIA_API_KEY.
+export function resolveProvider(
+  model: string,
+  userAnthropicKey?: string | null,
+  userNvidiaKey?: string | null
+): CoachProvider {
   if (providerFor(model) === "nvidia") {
-    const key = process.env.NVIDIA_API_KEY;
+    const key = userNvidiaKey || process.env.NVIDIA_API_KEY;
     if (!key) {
       throw new Error(
-        "This free model needs NVIDIA_API_KEY set on the server. Add it to .env.local (free key at build.nvidia.com), or pick a Claude model in Settings."
+        "This free model needs an NVIDIA API key. Add your own under Settings (free key at build.nvidia.com), or pick a Claude model."
       );
     }
     return new NvidiaProvider(key);

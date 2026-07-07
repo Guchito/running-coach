@@ -27,7 +27,8 @@ function cleanName(raw: string): string | null {
 export async function generateRunName(
   run: RunRow,
   model: string,
-  apiKey: string | null
+  apiKey: string | null,
+  nvidiaKey: string | null = null
 ): Promise<string | null> {
   const stats = [
     `Distance: ${formatDistance(run.distanceM)}`,
@@ -41,7 +42,7 @@ export async function generateRunName(
     .join(", ");
 
   try {
-    const provider = resolveProvider(model, apiKey);
+    const provider = resolveProvider(model, apiKey, nvidiaKey);
     const result = await provider.streamTurn({
       model,
       system: NAMING_SYSTEM,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRun, getUserById, renameRun, getAnthropicApiKey } from "@/lib/db";
+import { getRun, getUserById, renameRun, getAnthropicApiKey, getNvidiaApiKey } from "@/lib/db";
 import { resolveCoachModel } from "@/lib/coach";
 import { generateRunName } from "@/lib/runNaming";
 import { getCurrentUserId, unauthorized } from "@/lib/auth";
@@ -27,8 +27,11 @@ export async function POST(
 
   try {
     const model = resolveCoachModel(user.coachModel);
-    const apiKey = await getAnthropicApiKey(userId);
-    const name = await generateRunName(run, model, apiKey);
+    const [apiKey, nvidiaKey] = await Promise.all([
+      getAnthropicApiKey(userId),
+      getNvidiaApiKey(userId),
+    ]);
+    const name = await generateRunName(run, model, apiKey, nvidiaKey);
     if (!name) return NextResponse.json({ skipped: true });
     const updated = await renameRun(userId, run.id, name);
     return NextResponse.json({ name: updated?.name ?? name });

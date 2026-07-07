@@ -11,6 +11,7 @@ import {
   getLatestLthrTest,
   getLatestBodyMetric,
   getAnthropicApiKey,
+  getNvidiaApiKey,
 } from "@/lib/db";
 import { resolveCoachModel, SYSTEM_PROMPT, buildContextBlock, providerFor } from "@/lib/coach";
 import { executeTool } from "@/lib/coachTools";
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
 
       try {
         // Rebuild fresh context each request (goals/plan/runs may have changed).
-        const [goals, plan, runs, gymSessions, user, lastLthrTest, bodyMetric, anthropicKey] =
+        const [goals, plan, runs, gymSessions, user, lastLthrTest, bodyMetric, anthropicKey, nvidiaKey] =
           await Promise.all([
             listGoals(userId),
             getPlan(userId),
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
             getLatestLthrTest(userId),
             getLatestBodyMetric(userId),
             getAnthropicApiKey(userId),
+            getNvidiaApiKey(userId),
           ]);
         const model = resolveCoachModel(user?.coachModel);
         // Anthropic caches the static prefix (tools + system + context), so
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
         // models faking the rename and avoids double-renaming. The rename_run tool
         // stays available for explicit user requests ("rename run #3").
         const system = `${SYSTEM_PROMPT}\n\n---\nCURRENT CONTEXT (refreshed each message):\n${context}`;
-        const provider = resolveProvider(model, anthropicKey);
+        const provider = resolveProvider(model, anthropicKey, nvidiaKey);
         const convo = cached ? messages : messages.slice(-12);
         const maxTurns = cached ? 6 : 4;
 
