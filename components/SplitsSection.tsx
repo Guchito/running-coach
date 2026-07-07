@@ -21,6 +21,8 @@ export function SplitsSection({
   const [view, setView] = useState<"km" | "lap">(
     hasIntervals && hasStructure ? "lap" : "km"
   );
+  // Collapsed = capped height with inner scroll; expanded = the whole table.
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="bg-card border border-border rounded-2xl p-5">
@@ -51,7 +53,7 @@ export function SplitsSection({
       {view === "km" ? (
         <>
           <SplitsChart splits={splits} />
-          <div className="mt-3 max-h-56 overflow-auto text-sm">
+          <div className={`mt-3 text-sm ${expanded ? "" : "max-h-56 overflow-auto"}`}>
             <table className="w-full">
               <tbody className="divide-y divide-border">
                 {splits.map((sp) => (
@@ -74,11 +76,19 @@ export function SplitsSection({
               </tbody>
             </table>
           </div>
+          {splits.length > 8 && (
+            <ExpandToggle
+              expanded={expanded}
+              count={splits.length}
+              noun="kilometers"
+              onToggle={() => setExpanded((e) => !e)}
+            />
+          )}
         </>
       ) : laps.length > 0 ? (
         <>
           <LapsChart laps={laps} />
-          <div className="mt-3 max-h-72 overflow-auto text-sm -mx-1">
+          <div className={`mt-3 text-sm -mx-1 ${expanded ? "" : "max-h-72 overflow-auto"}`}>
             <table className="w-full">
               <tbody className="divide-y divide-border">
                 {laps.map((l) => (
@@ -123,6 +133,14 @@ export function SplitsSection({
               </tbody>
             </table>
           </div>
+          {laps.length > 8 && (
+            <ExpandToggle
+              expanded={expanded}
+              count={laps.length}
+              noun="intervals"
+              onToggle={() => setExpanded((e) => !e)}
+            />
+          )}
           <p className="text-xs text-muted mt-3">
             Intervals come from the laps set in your watch workout.
           </p>
@@ -134,5 +152,40 @@ export function SplitsSection({
         </div>
       )}
     </div>
+  );
+}
+
+// Footer button that trades the capped, scrollable table for the full list.
+function ExpandToggle({
+  expanded,
+  count,
+  noun,
+  onToggle,
+}: {
+  expanded: boolean;
+  count: number;
+  noun: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm text-muted hover:text-foreground hover:bg-black/4 transition-[background-color,color] duration-150"
+    >
+      <svg
+        className={`w-4 h-4 transition-transform duration-200 ease-out ${
+          expanded ? "rotate-180" : ""
+        }`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        strokeWidth={1.8}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+      {expanded ? "Show less" : `Show all ${count} ${noun}`}
+    </button>
   );
 }
