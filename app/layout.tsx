@@ -23,6 +23,10 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
+      // Lets Next disable smooth scrolling during route transitions (it would
+      // otherwise animate the scroll-to-top on every navigation) while keeping
+      // it for in-page anchor jumps.
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
       <body className="min-h-full">

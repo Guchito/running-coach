@@ -104,21 +104,25 @@ export default async function Dashboard() {
               label="Total runs"
               value={stats.totalRuns}
               sub={`${stats.totalKm} km all-time`}
+              appear={0}
             />
             <Stat
               label="This week"
               value={`${stats.last7Km} km`}
               sub={`${stats.last7Runs} run${stats.last7Runs === 1 ? "" : "s"}`}
+              appear={1}
             />
             <Stat
               label="Recent avg pace"
               value={formatPace(stats.avgPaceRecent)}
               sub="last 5 runs"
+              appear={2}
             />
             <Stat
               label="Best pace"
               value={formatPace(stats.bestPace)}
               sub={`longest ${formatDistance(stats.longestRunM)}`}
+              appear={3}
             />
           </div>
 

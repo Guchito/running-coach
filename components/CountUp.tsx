@@ -12,7 +12,7 @@ import { useEffect, useRef } from "react";
 // or reduced motion the number is simply there.
 const DURATION_MS = 900;
 
-export function CountUp({ value }: { value: string }) {
+export function CountUp({ value, delayMs = 0 }: { value: string; delayMs?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -24,6 +24,16 @@ export function CountUp({ value }: { value: string }) {
     if (!isNum.some(Boolean)) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    const frame = (eased: number) => {
+      el.textContent = parts
+        .map((part, i) => {
+          if (!isNum[i]) return part;
+          const n = Math.round(parseInt(part, 10) * eased);
+          return String(n).padStart(part.length, "0");
+        })
+        .join("");
+    };
+
     let raf = 0;
     let started = false;
     const io = new IntersectionObserver(
@@ -31,21 +41,17 @@ export function CountUp({ value }: { value: string }) {
         if (!entry.isIntersecting || started) return;
         started = true;
         io.disconnect();
-        const t0 = performance.now();
+        // Zero immediately, then hold until this stat's slot in the
+        // left-to-right sequence comes up (delayMs).
+        frame(0);
+        const t0 = performance.now() + delayMs;
         const tick = (now: number) => {
-          const p = Math.min(1, (now - t0) / DURATION_MS);
-          const eased = 1 - Math.pow(1 - p, 3);
+          const p = Math.min(1, Math.max(0, (now - t0) / DURATION_MS));
           if (p >= 1) {
             el.textContent = target;
             return;
           }
-          el.textContent = parts
-            .map((part, i) => {
-              if (!isNum[i]) return part;
-              const n = Math.round(parseInt(part, 10) * eased);
-              return String(n).padStart(part.length, "0");
-            })
-            .join("");
+          frame(1 - Math.pow(1 - p, 3));
           raf = requestAnimationFrame(tick);
         };
         raf = requestAnimationFrame(tick);
@@ -57,7 +63,7 @@ export function CountUp({ value }: { value: string }) {
       io.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [value]);
+  }, [value, delayMs]);
 
   return <span ref={ref}>{value}</span>;
 }

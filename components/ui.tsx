@@ -13,14 +13,20 @@ export function Card({
   );
 }
 
+// Gap between stats in the left-to-right count-up sequence.
+const STAT_STAGGER_MS = 180;
+
 export function Stat({
   label,
   value,
   sub,
+  appear,
 }: {
   label: string;
   value: React.ReactNode;
   sub?: React.ReactNode;
+  // Column index in the strip: staggers the count-up left to right.
+  appear?: number;
 }) {
   // No card box: headline numbers sit directly on the page, mono like a race
   // clock. Boxing every stat is the template look this app is walking away from.
@@ -30,7 +36,7 @@ export function Stat({
       <div className="font-mono text-[11px] uppercase tracking-wider text-muted">{label}</div>
       <div className="font-mono text-2xl md:text-3xl font-semibold mt-1 tracking-tight tabular-nums">
         {typeof value === "string" || typeof value === "number" ? (
-          <CountUp value={String(value)} />
+          <CountUp value={String(value)} delayMs={(appear ?? 0) * STAT_STAGGER_MS} />
         ) : (
           value
         )}

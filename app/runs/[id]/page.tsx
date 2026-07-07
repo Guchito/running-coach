@@ -70,17 +70,19 @@ export default async function RunDetail({
 
       {/* Headline stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Stat label="Distance" value={formatDistance(run.distanceM)} />
-        <Stat label="Time" value={formatDuration(run.durationSec)} />
+        <Stat label="Distance" value={formatDistance(run.distanceM)} appear={0} />
+        <Stat label="Time" value={formatDuration(run.durationSec)} appear={1} />
         <Stat
           label="Avg pace"
           value={formatPace(run.avgPaceSecPerKm)}
           sub={`moving ${formatPace(s.avgMovingPaceSecPerKm)}`}
+          appear={2}
         />
         <Stat
           label="Avg / max HR"
           value={`${s.avgHr ? Math.round(s.avgHr) : "—"} / ${s.maxHr ? Math.round(s.maxHr) : "—"}`}
           sub="bpm"
+          appear={3}
         />
       </div>
 
