@@ -1,7 +1,8 @@
 import type { RunRow } from "./types";
 
 // Acute:chronic workload ratio (ACWR) and recent weekly volume, from run
-// distance. A ratio in ~0.8–1.3 is the "sweet spot"; >1.5 flags a risky ramp.
+// distance. 0.8–1.3 is the healthy band; within it, 1.0–1.1 is the sweet spot
+// (steady build ≈ the classic +10%/week); >1.5 flags a risky ramp.
 
 export type WeekVolume = { weekStart: string; km: number };
 
@@ -9,7 +10,7 @@ export type TrainingLoad = {
   acuteKm: number; // last 7 days
   chronicKm: number; // average weekly volume over the last 28 days
   ratio: number | null; // acute / chronic
-  status: "none" | "detraining" | "optimal" | "caution" | "high";
+  status: "none" | "detraining" | "good" | "optimal" | "caution" | "high";
   weeks: WeekVolume[]; // last 6 weeks, oldest → newest
 };
 
@@ -46,7 +47,10 @@ function lastNWeeks(runs: RunRow[], n: number, now: number): WeekVolume[] {
   return buckets.map((b) => ({ ...b, km: round1(b.km) }));
 }
 
-export function trainingLoad(runs: RunRow[], now: number = Date.now()): TrainingLoad {
+export function trainingLoad(
+  runs: RunRow[],
+  now: number = Date.now(),
+): TrainingLoad {
   let acute = 0;
   let last28 = 0;
   for (const r of runs) {
@@ -64,7 +68,9 @@ export function trainingLoad(runs: RunRow[], now: number = Date.now()): Training
   let status: TrainingLoad["status"] = "none";
   if (ratio != null) {
     if (ratio < 0.8) status = "detraining";
-    else if (ratio <= 1.3) status = "optimal";
+    else if (ratio < 1.0) status = "good";
+    else if (ratio <= 1.1) status = "optimal";
+    else if (ratio <= 1.3) status = "good";
     else if (ratio <= 1.5) status = "caution";
     else status = "high";
   }
@@ -81,7 +87,8 @@ export function trainingLoad(runs: RunRow[], now: number = Date.now()): Training
 export const LOAD_STATUS_LABEL: Record<TrainingLoad["status"], string> = {
   none: "Not enough data",
   detraining: "Ramping down",
-  optimal: "Optimal",
+  good: "Good",
+  optimal: "Optimal · Sweet spot",
   caution: "Building fast",
   high: "Spike — injury risk",
 };
@@ -89,7 +96,8 @@ export const LOAD_STATUS_LABEL: Record<TrainingLoad["status"], string> = {
 export const LOAD_STATUS_COLOR: Record<TrainingLoad["status"], string> = {
   none: "#94a3b8",
   detraining: "#0ea5e9",
-  optimal: "#10b981",
+  good: "#10b981",
+  optimal: "#059669",
   caution: "#f59e0b",
   high: "#e11d48",
 };

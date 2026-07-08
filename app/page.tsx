@@ -1,13 +1,31 @@
 import { listRuns, listGoals, getPlan } from "@/lib/db";
-import { computeStats, daysUntil, projectGoalTime, type DashboardStats } from "@/lib/stats";
-import { formatPace, formatDuration, formatDistance, formatDate, formatDatesInText } from "@/lib/parseRun";
+import {
+  computeStats,
+  daysUntil,
+  projectGoalTime,
+  type DashboardStats,
+} from "@/lib/stats";
+import {
+  formatPace,
+  formatDuration,
+  formatDistance,
+  formatDate,
+  formatDatesInText,
+} from "@/lib/parseRun";
 import {
   trainingLoad,
   LOAD_STATUS_LABEL,
   LOAD_STATUS_COLOR,
 } from "@/lib/trainingLoad";
 import { runningRecords } from "@/lib/prs";
-import { Card, Stat, PageShell, Button, EmptyState, interactiveRow } from "@/components/ui";
+import {
+  Card,
+  Stat,
+  PageShell,
+  Button,
+  EmptyState,
+  interactiveRow,
+} from "@/components/ui";
 import { RevealOnView } from "@/components/RevealOnView";
 import { PaceTrendChart, DistanceTrendChart } from "@/components/Charts";
 import { requireUserId } from "@/lib/auth";
@@ -140,7 +158,7 @@ export default async function Dashboard() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-medium">Pace trend</h2>
               <span className="text-xs text-muted">
-                avg pace per run · lower is faster
+                avg pace per run · higher is faster
               </span>
             </div>
             <PaceTrendChart trend={stats.trend} />
@@ -171,7 +189,9 @@ export default async function Dashboard() {
                   className={`flex items-center justify-between py-3 -mx-2 px-2 rounded-lg ${interactiveRow}`}
                 >
                   <div className="min-w-0">
-                    <div className="font-medium truncate">{formatDatesInText(r.name)}</div>
+                    <div className="font-medium truncate">
+                      {formatDatesInText(r.name)}
+                    </div>
                     <div className="text-xs text-muted">
                       {formatDate(r.startedAt)}
                     </div>
@@ -201,7 +221,12 @@ export default async function Dashboard() {
 // line showing whether recent form is faster/slower and longer/shorter.
 function RecentFormCard({ stats }: { stats: DashboardStats }) {
   const { form, totalRuns } = stats;
-  if (form.pace5 == null || form.pace20 == null || form.km5 == null || form.km20 == null) {
+  if (
+    form.pace5 == null ||
+    form.pace20 == null ||
+    form.km5 == null ||
+    form.km20 == null
+  ) {
     return null;
   }
   // With 5 or fewer runs both windows hold the same runs, so deltas mean nothing.
@@ -292,8 +317,8 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
             </span>
           </div>
           <div className="text-xs text-muted mt-1">
-            {load.acuteKm} km last 7 days vs {load.chronicKm} km/wk avg · sweet
-            spot 0.8–1.3
+            {load.acuteKm} km last 7 days vs {load.chronicKm} km/wk avg · good
+            0.8–1.3 · sweet spot 1.0–1.1
           </div>
           <RevealOnView className="flex items-end gap-1.5 h-16 mt-4">
             {load.weeks.map((w, i) => (
@@ -379,7 +404,9 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
   // Once raced, the card celebrates the actual result instead of projections.
   const raced = goal.resultTimeSec != null;
   const beatTarget =
-    raced && goal.targetTimeSec ? goal.resultTimeSec! <= goal.targetTimeSec : null;
+    raced && goal.targetTimeSec
+      ? goal.resultTimeSec! <= goal.targetTimeSec
+      : null;
 
   return (
     // Plain div, not <Card>: Card's bg-card (white) conflicts with the ink
@@ -401,7 +428,9 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
             <div className="font-mono text-3xl font-semibold tabular-nums leading-none text-accent-pop">
               {days}
             </div>
-            <div className="font-mono text-[10px] uppercase tracking-wider text-white/50 mt-1">days to go</div>
+            <div className="font-mono text-[10px] uppercase tracking-wider text-white/50 mt-1">
+              days to go
+            </div>
           </div>
         )}
       </div>
@@ -412,10 +441,14 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
             <span className="text-white/60 text-sm">
               Raced{goal.racedOn ? ` ${formatDate(goal.racedOn)}` : ""}
             </span>
-            <strong className="font-mono tabular-nums text-lg">{formatDuration(goal.resultTimeSec!)}</strong>
+            <strong className="font-mono tabular-nums text-lg">
+              {formatDuration(goal.resultTimeSec!)}
+            </strong>
           </div>
           {goal.targetTimeSec && (
-            <div className={`text-xs px-1 ${beatTarget ? "text-accent-pop" : "text-white/70"}`}>
+            <div
+              className={`text-xs px-1 ${beatTarget ? "text-accent-pop" : "text-white/70"}`}
+            >
               {beatTarget
                 ? `Beat your ${formatDuration(goal.targetTimeSec)} target by ${formatDuration(
                     goal.targetTimeSec - goal.resultTimeSec!,
@@ -428,43 +461,45 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
         </div>
       ) : (
         (ifToday || projected || goal.targetTimeSec) && (
-        <div className="mt-4 space-y-2">
-          {ifToday && (
-            <div className="bg-white/8 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
-              <span className="text-white/60">If you raced today</span>
-              <strong className="font-mono tabular-nums">
-                {formatDuration(ifToday)}
-              </strong>
-            </div>
-          )}
-          {projected ? (
-            <div className="bg-white/8 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
-              <span className="text-white/60">Projected · race day</span>
-              <strong className="font-mono tabular-nums">
-                {formatDuration(projected)}
-              </strong>
-            </div>
-          ) : (
-            <div className="text-xs text-white/50 px-1">
-              Ask your coach for a race-day projection.
-            </div>
-          )}
-          {goal.targetTimeSec && ref && (
-            <div
-              className={`text-xs px-2.5 py-1.5 rounded-lg inline-block ${
-                onTrack ? "bg-accent-pop/15 text-accent-pop" : "bg-white/8 text-white/80"
-              }`}
-            >
-              {onTrack
-                ? `On track for ${formatDuration(goal.targetTimeSec)} · ${formatDuration(
-                    Math.abs(ref - goal.targetTimeSec),
-                  )} to spare`
-                : `${formatDuration(
-                    Math.abs(ref - goal.targetTimeSec),
-                  )} off your ${formatDuration(goal.targetTimeSec)} target · keep building`}
-            </div>
-          )}
-        </div>
+          <div className="mt-4 space-y-2">
+            {ifToday && (
+              <div className="bg-white/8 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
+                <span className="text-white/60">If you raced today</span>
+                <strong className="font-mono tabular-nums">
+                  {formatDuration(ifToday)}
+                </strong>
+              </div>
+            )}
+            {projected ? (
+              <div className="bg-white/8 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3">
+                <span className="text-white/60">Projected · race day</span>
+                <strong className="font-mono tabular-nums">
+                  {formatDuration(projected)}
+                </strong>
+              </div>
+            ) : (
+              <div className="text-xs text-white/50 px-1">
+                Ask your coach for a race-day projection.
+              </div>
+            )}
+            {goal.targetTimeSec && ref && (
+              <div
+                className={`text-xs px-2.5 py-1.5 rounded-lg inline-block ${
+                  onTrack
+                    ? "bg-accent-pop/15 text-accent-pop"
+                    : "bg-white/8 text-white/80"
+                }`}
+              >
+                {onTrack
+                  ? `On track for ${formatDuration(goal.targetTimeSec)} · ${formatDuration(
+                      Math.abs(ref - goal.targetTimeSec),
+                    )} to spare`
+                  : `${formatDuration(
+                      Math.abs(ref - goal.targetTimeSec),
+                    )} off your ${formatDuration(goal.targetTimeSec)} target · keep building`}
+              </div>
+            )}
+          </div>
         )
       )}
     </div>

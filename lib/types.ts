@@ -212,6 +212,12 @@ export type GymSummary = {
   subSport: string | null; // raw FIT sub-sport, e.g. "strength_training"
 };
 
+// One set of an exercise, as logged in a lifting app (e.g. Strong). Weight is
+// null for bodyweight/rep-only sets.
+export type GymSet = { weightKg: number | null; reps: number };
+
+export type GymExercise = { name: string; sets: GymSet[] };
+
 export type GymSession = {
   id: number;
   name: string;
@@ -224,6 +230,9 @@ export type GymSession = {
   calories: number | null;
   notes: string | null;
   summary: GymSummary;
+  // Exercises pasted from a lifting app; null when only watch data exists.
+  exercises: GymExercise[] | null;
+  strongLink: string | null; // share link from the pasted Strong export
   createdAt: string;
 };
 

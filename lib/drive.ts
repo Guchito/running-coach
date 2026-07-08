@@ -8,6 +8,8 @@ import {
   getImportedGymFileIds,
   getRunStartKeys,
   getGymStartKeys,
+  findGymSessionAwaitingWatchData,
+  mergeWatchDataIntoGymSession,
   touchDriveSync,
 } from "./db";
 import { parseActivityFile, runNameFromFile, gymNameFromFile } from "./ingest";
@@ -167,6 +169,17 @@ export async function importDriveFiles(
         if (gymStartKeys.has(key)) {
           result.skipped++;
           continue;
+        }
+        // A pasted Strong workout may already hold this session's exercises —
+        // fill in the watch data instead of creating a duplicate.
+        const pending = await findGymSessionAwaitingWatchData(userId, parsed.summary.startedAt);
+        if (pending) {
+          const merged = await mergeWatchDataIntoGymSession(userId, pending.id, parsed.summary, f.id);
+          if (merged) {
+            gymStartKeys.add(key);
+            result.imported.push({ id: merged.id, name: merged.name, kind: "gym" });
+            continue;
+          }
         }
         const name = gymNameFromFile(f.name, parsed.summary.startedAt);
         const type = guessGymType(parsed.summary.sport, parsed.summary.subSport);

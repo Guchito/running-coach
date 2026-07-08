@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listGymSessions, insertGymSession } from "@/lib/db";
+import {
+  listGymSessions,
+  insertGymSession,
+  findGymSessionAwaitingWatchData,
+  mergeWatchDataIntoGymSession,
+} from "@/lib/db";
 import { parseGymFile, gymNameFromFile } from "@/lib/ingest";
 import { guessGymType, isGymType } from "@/lib/gym";
 import { getCurrentUserId, unauthorized } from "@/lib/auth";
@@ -41,6 +46,14 @@ export async function POST(req: NextRequest) {
     if (rpeRaw) {
       const n = Math.round(Number(rpeRaw));
       if (!Number.isNaN(n)) rpe = Math.min(10, Math.max(1, n));
+    }
+
+    // If a pasted Strong workout already covers this session, fill in the
+    // watch data instead of creating a duplicate.
+    const pending = await findGymSessionAwaitingWatchData(userId, summary.startedAt);
+    if (pending) {
+      const merged = await mergeWatchDataIntoGymSession(userId, pending.id, summary, null);
+      if (merged) return NextResponse.json({ session: merged, merged: true });
     }
 
     const name = providedName || gymNameFromFile(filename, summary.startedAt);

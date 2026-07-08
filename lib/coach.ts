@@ -2,6 +2,7 @@ import type { RunRow, Goal, Plan, HrZone, GymSession, BodyMetric } from "./types
 import { formatPace, formatDuration, formatDistance } from "./parseRun";
 import { resolveZones } from "./hr";
 import { gymTypeLabel } from "./gym";
+import { topSet, exercisesVolumeKg } from "./parseStrong";
 import { trainingLoad, LOAD_STATUS_LABEL } from "./trainingLoad";
 import { runningRecords } from "./prs";
 import { weeklyAdherence } from "./adherence";
@@ -220,13 +221,28 @@ export function buildGymContext(sessions: GymSession[], limit = 12): string {
   const recent = sessions.slice(0, limit);
   const lines = recent.map((g, i) => {
     const tag = i === 0 ? " [MOST RECENT]" : "";
+    // Top set per exercise (pasted from the lifting app), so the coach can
+    // track progressive overload without the full set-by-set log.
+    const lifts =
+      g.exercises && g.exercises.length > 0
+        ? `lifts (top sets, ${exercisesVolumeKg(g.exercises)} kg volume): ` +
+          g.exercises
+            .map((e) => {
+              const s = topSet(e);
+              if (!s) return null;
+              return `${e.name} ${s.weightKg != null ? `${s.weightKg}kg×${s.reps}` : `${s.reps} reps`}`;
+            })
+            .filter(Boolean)
+            .join("; ")
+        : null;
     const bits = [
-      `- ${g.startedAt.slice(0, 10)} "${g.name}"${tag}: ${gymTypeLabel(g.type)}, ${formatDuration(
-        g.durationSec
-      )}`,
+      `- ${g.startedAt.slice(0, 10)} "${g.name}"${tag}: ${gymTypeLabel(g.type)}, ${
+        g.durationSec > 0 ? formatDuration(g.durationSec) : "duration n/a"
+      }`,
       g.rpe != null ? `RPE ${g.rpe}/10` : null,
       g.avgHr != null ? `HR avg ${Math.round(g.avgHr)}` : null,
       g.calories != null ? `${Math.round(g.calories)} kcal` : null,
+      lifts,
       g.notes ? `note: ${g.notes}` : null,
     ].filter(Boolean);
     return bits.join(", ");
@@ -251,7 +267,13 @@ function buildLoadContext(runs: RunRow[]): string | null {
     (lastWeek ? `; last calendar week: ${lastWeek.km} km` : "") +
     `. Rolling last-7-days (NOT the calendar week): ${load.acuteKm} km vs 4-week avg ${load.chronicKm} km/wk → ` +
     `acute:chronic ratio ${load.ratio} (${LOAD_STATUS_LABEL[load.status]}). ` +
-    `Sweet spot is 0.8–1.3; >1.5 is a risky spike, <0.8 is detraining. Last 6 calendar weeks (km): ${weeks}.`
+    `Zones: 0.8–1.3 is good, with 1.0–1.1 the sweet spot (a steady build of roughly +10%/week); ` +
+    `1.3–1.5 is an aggressive ramp, >1.5 a risky spike, <0.8 detraining/taper. When building volume, ` +
+    `aim the plan at the 1.0–1.1 band UNLESS tapering, recovering, or the runner explicitly asks for a ` +
+    `different weekly increase — their call wins: warn them once about the injury risk if it exceeds the ` +
+    `good band, then build the plan at the rate they chose. If it's a standing preference (not just this ` +
+    `week), record it with set_plan_instructions so it survives plan rebuilds. ` +
+    `Last 6 calendar weeks (km): ${weeks}.`
   );
 }
 

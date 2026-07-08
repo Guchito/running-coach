@@ -13,6 +13,7 @@ import type {
   GymSession,
   GymSummary,
   GymType,
+  GymExercise,
   LthrTest,
   BodyMetric,
 } from "./types";
@@ -171,6 +172,8 @@ const SCHEMA = `
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
   );
   CREATE INDEX IF NOT EXISTS gym_user_started_idx ON gym_sessions(user_id, started_at DESC);
+  ALTER TABLE gym_sessions ADD COLUMN IF NOT EXISTS exercises_json JSONB;
+  ALTER TABLE gym_sessions ADD COLUMN IF NOT EXISTS strong_link TEXT;
 `;
 
 // Run schema creation once per process.
@@ -655,20 +658,30 @@ function rowToGymSession(r: Record<string, unknown>): GymSession {
     calories: r.calories === null || r.calories === undefined ? null : Number(r.calories),
     notes: (r.notes as string) ?? null,
     summary: jsonField<GymSummary>(r.summary_json) as GymSummary,
+    exercises: jsonField<GymExercise[]>(r.exercises_json),
+    strongLink: (r.strong_link as string) ?? null,
     createdAt: new Date(r.created_at as string).toISOString(),
   };
 }
 
 export async function insertGymSession(
   userId: number,
-  fields: { name: string; type: GymType; rpe: number | null; notes: string | null },
+  fields: {
+    name: string;
+    type: GymType;
+    rpe: number | null;
+    notes: string | null;
+    exercises?: GymExercise[] | null;
+    strongLink?: string | null;
+  },
   summary: GymSummary,
   sourceFileId: string | null = null
 ): Promise<GymSession> {
   const rows = await q(
     `INSERT INTO gym_sessions (user_id, name, type, started_at, duration_s, rpe,
-       avg_hr, max_hr, calories, notes, summary_json, source_file_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+       avg_hr, max_hr, calories, notes, summary_json, source_file_id,
+       exercises_json, strong_link)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
     [
       userId,
       fields.name,
@@ -682,9 +695,99 @@ export async function insertGymSession(
       fields.notes,
       JSON.stringify(summary),
       sourceFileId,
+      fields.exercises ? JSON.stringify(fields.exercises) : null,
+      fields.strongLink ?? null,
     ]
   );
   return rowToGymSession(rows[0]);
+}
+
+// Nearest gym session to `startedAt` on the same day (±3h slack for the
+// timezone skew between watch files stored in UTC and pasted local times).
+// Used to match a pasted Strong workout to an already-imported watch session.
+export async function findGymSessionNear(
+  userId: number,
+  startedAt: string
+): Promise<GymSession | null> {
+  const day = startedAt.slice(0, 10);
+  const rows = await q(
+    `SELECT * FROM gym_sessions
+     WHERE user_id = $1
+       AND started_at >= $2::timestamp - interval '3 hours'
+       AND started_at <  $2::timestamp + interval '27 hours'
+     ORDER BY ABS(EXTRACT(EPOCH FROM (started_at - $3::timestamp))) ASC
+     LIMIT 1`,
+    [userId, `${day}T00:00:00`, startedAt]
+  );
+  return rows[0] ? rowToGymSession(rows[0]) : null;
+}
+
+// A paste-created session near `startedAt` that has exercises but no watch
+// data yet — the merge target when the watch file arrives second.
+export async function findGymSessionAwaitingWatchData(
+  userId: number,
+  startedAt: string
+): Promise<GymSession | null> {
+  const day = startedAt.slice(0, 10);
+  const rows = await q(
+    `SELECT * FROM gym_sessions
+     WHERE user_id = $1
+       AND exercises_json IS NOT NULL
+       AND source_file_id IS NULL
+       AND avg_hr IS NULL
+       AND started_at >= $2::timestamp - interval '3 hours'
+       AND started_at <  $2::timestamp + interval '27 hours'
+     ORDER BY ABS(EXTRACT(EPOCH FROM (started_at - $3::timestamp))) ASC
+     LIMIT 1`,
+    [userId, `${day}T00:00:00`, startedAt]
+  );
+  return rows[0] ? rowToGymSession(rows[0]) : null;
+}
+
+// Attach (or replace — re-pasting is how you edit) pasted exercises on an
+// existing session. The Strong title wins over filename-derived names/types.
+export async function setGymSessionExercises(
+  userId: number,
+  id: number,
+  fields: { name: string; type: GymType; exercises: GymExercise[]; strongLink: string | null }
+): Promise<GymSession | null> {
+  const rows = await q(
+    `UPDATE gym_sessions
+     SET name = $3, type = $4, exercises_json = $5,
+         strong_link = COALESCE($6, strong_link)
+     WHERE user_id = $1 AND id = $2 RETURNING *`,
+    [userId, id, fields.name, fields.type, JSON.stringify(fields.exercises), fields.strongLink]
+  );
+  return rows[0] ? rowToGymSession(rows[0]) : null;
+}
+
+// Fill in the watch-only fields (timing, HR, calories) on a paste-created
+// session once the watch file for the same workout shows up.
+export async function mergeWatchDataIntoGymSession(
+  userId: number,
+  id: number,
+  summary: GymSummary,
+  sourceFileId: string | null
+): Promise<GymSession | null> {
+  const rows = await q(
+    `UPDATE gym_sessions
+     SET started_at = $3, duration_s = $4, avg_hr = $5, max_hr = $6,
+         calories = $7, summary_json = $8,
+         source_file_id = COALESCE($9, source_file_id)
+     WHERE user_id = $1 AND id = $2 RETURNING *`,
+    [
+      userId,
+      id,
+      summary.startedAt,
+      summary.durationSec,
+      summary.avgHr,
+      summary.maxHr,
+      summary.calories,
+      JSON.stringify(summary),
+      sourceFileId,
+    ]
+  );
+  return rows[0] ? rowToGymSession(rows[0]) : null;
 }
 
 export async function listGymSessions(userId: number): Promise<GymSession[]> {
