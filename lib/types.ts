@@ -118,12 +118,25 @@ export type MacroPlan = {
   updatedAt: string;
 };
 
+// One prescribed lift in a planned strength day. reps is a string so ranges
+// ("6-8") and time holds ("30s") both fit; weightKg is the target working
+// weight the coach derives from the runner's logged lifts.
+export type PlanExercise = {
+  name: string;
+  sets: number;
+  reps: string;
+  weightKg: number | null;
+  note: string | null;
+};
+
 export type PlanDay = {
   day: string;              // "Mon".."Sun"
   type: string;             // easy | tempo | intervals | long | rest | cross | race
   title: string;            // short label
   detail: string;           // the workout description
   distanceKm: number | null;
+  // The prescribed session for strength days — what to actually do in the gym.
+  exercises?: PlanExercise[] | null;
   done?: boolean;
 };
 

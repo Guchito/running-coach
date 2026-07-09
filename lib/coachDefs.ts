@@ -26,13 +26,15 @@ export const COACH_MODELS = [
     id: "claude-opus-4-8",
     provider: "anthropic",
     label: "Claude Opus 4.8",
-    blurb: "Most capable — sharpest plans and coaching judgement. Needs your own Anthropic API key (paid).",
+    blurb:
+      "Most capable — sharpest plans and coaching judgement. Needs your own Anthropic API key (paid).",
   },
   {
     id: "claude-sonnet-4-6",
     provider: "anthropic",
     label: "Claude Sonnet 4.6",
-    blurb: "Balanced — fast replies, strong quality, lower cost. Needs your own Anthropic API key (paid).",
+    blurb:
+      "Balanced — fast replies, strong quality, lower cost. Needs your own Anthropic API key (paid).",
   },
   {
     id: "claude-haiku-4-5",
@@ -55,7 +57,12 @@ export const COACH_MODELS = [
     blurb:
       "Free — no API key needed. Reliable at plans, but noticeably slower (it reasons before replying).",
   },
-] as const satisfies readonly { id: string; provider: CoachProviderId; label: string; blurb: string }[];
+] as const satisfies readonly {
+  id: string;
+  provider: CoachProviderId;
+  label: string;
+  blurb: string;
+}[];
 
 export type CoachModelId = (typeof COACH_MODELS)[number]["id"];
 
@@ -79,7 +86,7 @@ export function supportsEffort(model: string): boolean {
   return model.startsWith("claude-opus-4") || model === "claude-sonnet-4-6";
 }
 
-export const SYSTEM_PROMPT = `You are an expert running coach embedded in a personal training app. You speak directly to one runner (the user) whose Apple Watch run AND gym/strength data you can see.
+export const SYSTEM_PROMPT = `You are an expert running and lifting coach embedded in a personal training app. You speak directly to one runner (the user) whose Apple Watch run AND gym/strength data you can see.
 
 Your responsibilities:
 1. ANALYZE every run they upload — pacing, heart-rate effort, cadence, splits, intervals, consistency — and give specific, encouraging, honest feedback that cites their real numbers. Never invent data you weren't given.
@@ -92,6 +99,7 @@ Your responsibilities:
    Keep both current: whenever goals change, or a new run shows their fitness/availability is different from what the plan assumed, update the relevant plan. If a run shows they're ahead of schedule, progress the plan; if behind or fatigued, ease it.
 4. PLAN STRENGTH TRAINING alongside running. The runner uploads gym/strength sessions (with a type like push/pull/legs/full-body, an RPE, and often the actual exercises with sets × weight × reps). Treat strength as part of their overall training load:
    - Schedule strength sessions explicitly in the WEEKLY plan as days with type "strength" (give each a clear title/detail, e.g. "Lower body — squat focus"). Respect how often they actually train in the gym based on their history; ~2 strength sessions/week is the evidence-backed sweet spot for a runner.
+   - PRESCRIBE the actual gym session on every strength day via the day's "exercises" field: exercise name, sets, reps, and a target weight in kg taken from their logged lifts and progressed per double progression (never guess weights for lifts you have no history on — omit weightKg instead). Use the movements they already do unless deliberately introducing one (say why in the note). Whenever you revise the weekly plan, revise these prescriptions too — the runner opens each gym day on the Plan page and lifts exactly what's written there.
    - Arrange runs AROUND that lifting so the two don't collide: avoid hard or long runs the day after a demanding lower-body session, keep easy/recovery or rest after heavy legs, and don't stack a hard run and heavy lifting on the same day unless they ask (if they must combine, run first or separate by 6+ hours — explosive strength suffers most when both land in one session). Quality run days should land on fresh legs.
    - Account for the fatigue strength adds when judging whether they're ready to progress running volume/intensity.
 5. COACH THE LIFTING like you coach the running. When a gym session includes exercises, analyze them against that exercise's history (top sets are in the gym context; call get_training_history for the full set-by-set detail):
@@ -120,15 +128,30 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: "object",
       properties: {
-        id: { type: "number", description: "Existing goal id to update; omit to create a new goal" },
-        title: { type: "string", description: "Short title, e.g. 'Sub-1:30 Half Marathon'" },
+        id: {
+          type: "number",
+          description: "Existing goal id to update; omit to create a new goal",
+        },
+        title: {
+          type: "string",
+          description: "Short title, e.g. 'Sub-1:30 Half Marathon'",
+        },
         raceType: {
           type: "string",
           enum: ["5K", "10K", "Half Marathon", "Marathon", "Custom", "Other"],
         },
-        targetDistanceM: { type: "number", description: "Target distance in meters" },
-        targetTimeSec: { type: "number", description: "Target finish time in seconds" },
-        targetDate: { type: "string", description: "Target date, ISO YYYY-MM-DD" },
+        targetDistanceM: {
+          type: "number",
+          description: "Target distance in meters",
+        },
+        targetTimeSec: {
+          type: "number",
+          description: "Target finish time in seconds",
+        },
+        targetDate: {
+          type: "string",
+          description: "Target date, ISO YYYY-MM-DD",
+        },
         notes: { type: "string" },
         status: { type: "string", enum: ["active", "achieved", "abandoned"] },
       },
@@ -137,7 +160,8 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "delete_goal",
-    description: "Permanently remove a goal the runner no longer wants to track.",
+    description:
+      "Permanently remove a goal the runner no longer wants to track.",
     input_schema: {
       type: "object",
       properties: { id: { type: "number" } },
@@ -151,7 +175,10 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: "object",
       properties: {
-        id: { type: "number", description: "The goal id (from the GOALS context)" },
+        id: {
+          type: "number",
+          description: "The goal id (from the GOALS context)",
+        },
         projectedTime: {
           type: "string",
           description:
@@ -168,7 +195,10 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: "object",
       properties: {
-        id: { type: "number", description: "The goal id (from the GOALS context)" },
+        id: {
+          type: "number",
+          description: "The goal id (from the GOALS context)",
+        },
         runId: {
           type: "number",
           description:
@@ -187,7 +217,8 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
       properties: {
         id: {
           type: "number",
-          description: "The run id — the number in the [#id] prefix on the run's line in the context",
+          description:
+            "The run id — the number in the [#id] prefix on the run's line in the context",
         },
         name: { type: "string", description: "The new name for the run" },
       },
@@ -201,17 +232,29 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: "object",
       properties: {
-        summary: { type: "string", description: "1-3 sentence overview of the overall strategy" },
+        summary: {
+          type: "string",
+          description: "1-3 sentence overview of the overall strategy",
+        },
         phases: {
           type: "array",
           items: {
             type: "object",
             properties: {
-              name: { type: "string", description: "e.g. Base, Build, Peak, Taper" },
+              name: {
+                type: "string",
+                description: "e.g. Base, Build, Peak, Taper",
+              },
               start: { type: "string", description: "ISO date YYYY-MM-DD" },
               end: { type: "string", description: "ISO date YYYY-MM-DD" },
-              focus: { type: "string", description: "What this phase develops" },
-              weeklyKm: { type: "number", description: "Approx target weekly volume in km" },
+              focus: {
+                type: "string",
+                description: "What this phase develops",
+              },
+              weeklyKm: {
+                type: "number",
+                description: "Approx target weekly volume in km",
+              },
               notes: { type: "string" },
             },
             required: ["name", "focus"],
@@ -231,7 +274,8 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
       properties: {
         instructions: {
           type: "string",
-          description: "The full new instructions text (replaces the previous value; empty string clears it)",
+          description:
+            "The full new instructions text (replaces the previous value; empty string clears it)",
         },
       },
       required: ["instructions"],
@@ -245,8 +289,14 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: "object",
       properties: {
-        weekStart: { type: "string", description: "ISO date of this week's Monday" },
-        summary: { type: "string", description: "1-2 sentence focus for the week" },
+        weekStart: {
+          type: "string",
+          description: "ISO date of this week's Monday",
+        },
+        summary: {
+          type: "string",
+          description: "1-2 sentence focus for the week",
+        },
         days: {
           type: "array",
           items: {
@@ -270,9 +320,45 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
                   "recovery",
                 ],
               },
-              title: { type: "string", description: "Short label, e.g. '6×800m intervals' or 'Lower body — squat focus'" },
-              detail: { type: "string", description: "The full workout description" },
+              title: {
+                type: "string",
+                description:
+                  "Short label, e.g. '6×800m intervals' or 'Lower body — squat focus'",
+              },
+              detail: {
+                type: "string",
+                description: "The full workout description",
+              },
               distanceKm: { type: "number" },
+              exercises: {
+                type: "array",
+                description:
+                  "For type 'strength' ONLY: the prescribed gym session. Base exercise names and target weights on the runner's logged lifts, progressed per double progression; stick to movements from their history unless deliberately introducing one.",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: {
+                      type: "string",
+                      description:
+                        "Exercise name as it appears in their gym history, e.g. 'Deadlift (Barbell)'",
+                    },
+                    sets: { type: "number", description: "Number of working sets" },
+                    reps: {
+                      type: "string",
+                      description: "Rep target or range, e.g. '6-8', '12', '30s'",
+                    },
+                    weightKg: {
+                      type: "number",
+                      description: "Target working weight in kg; omit for bodyweight",
+                    },
+                    note: {
+                      type: "string",
+                      description: "Optional cue, e.g. 'add 2.5 kg if all reps clean'",
+                    },
+                  },
+                  required: ["name", "sets", "reps"],
+                },
+              },
             },
             required: ["day", "type", "title", "detail"],
           },
@@ -289,10 +375,22 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: "object",
       properties: {
-        lthr: { type: "number", description: "Lactate threshold HR in bpm (100-220)" },
-        maxHr: { type: "number", description: "Max HR seen during the test, if known (bpm)" },
-        testedOn: { type: "string", description: "Date of the test, ISO YYYY-MM-DD. Defaults to today." },
-        notes: { type: "string", description: "Optional notes (protocol, conditions, how it felt)" },
+        lthr: {
+          type: "number",
+          description: "Lactate threshold HR in bpm (100-220)",
+        },
+        maxHr: {
+          type: "number",
+          description: "Max HR seen during the test, if known (bpm)",
+        },
+        testedOn: {
+          type: "string",
+          description: "Date of the test, ISO YYYY-MM-DD. Defaults to today.",
+        },
+        notes: {
+          type: "string",
+          description: "Optional notes (protocol, conditions, how it felt)",
+        },
       },
       required: ["lthr"],
     },

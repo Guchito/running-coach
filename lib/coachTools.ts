@@ -131,6 +131,17 @@ export async function executeTool(
           title: String(d.title),
           detail: String(d.detail),
           distanceKm: d.distanceKm ?? null,
+          exercises: Array.isArray(d.exercises)
+            ? d.exercises
+                .filter((e) => e && e.name && Number(e.sets) > 0)
+                .map((e) => ({
+                  name: String(e.name),
+                  sets: Math.round(Number(e.sets)),
+                  reps: String(e.reps ?? ""),
+                  weightKg: e.weightKg != null && Number.isFinite(Number(e.weightKg)) ? Number(e.weightKg) : null,
+                  note: e.note ? String(e.note) : null,
+                }))
+            : null,
         })),
         updatedAt: nowIso(),
       };

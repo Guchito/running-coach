@@ -1,28 +1,13 @@
 import { getPlan, listGoals, listRuns, listGymSessions } from "@/lib/db";
 import { PageShell, Card, Button, EmptyState } from "@/components/ui";
 import { PlanInstructions } from "@/components/PlanInstructions";
+import { WeeklyPlanDays } from "@/components/WeeklyPlanDays";
 import { weeklyAdherence } from "@/lib/adherence";
 import { formatDate } from "@/lib/parseRun";
 import { requireUserId } from "@/lib/auth";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
-
-const DAY_TYPE_COLOR: Record<string, string> = {
-  easy: "#10b981",
-  recovery: "#94a3b8",
-  long: "#2563eb",
-  tempo: "#f59e0b",
-  intervals: "#e11d48",
-  race: "#7c3aed",
-  cross: "#0ea5e9",
-  // Clearly apart from easy's emerald; the fuchsia only ever appears as a
-  // tinted label, so it reads as a category, not decoration.
-  strength: "#c026d3",
-  rest: "#94a3b8",
-};
-
-const DAYS_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default async function PlanPage() {
   const userId = await requireUserId();
@@ -34,7 +19,6 @@ export default async function PlanPage() {
   ]);
   const activeGoals = goals.filter((g) => g.status === "active");
   const adherence = weeklyAdherence(plan.weekly, runs, gymSessions);
-  const doneByDay = new Map((adherence?.items ?? []).map((it) => [it.day, it]));
   const hasMacro = !!(
     plan.macro &&
     (plan.macro.summary.trim() || plan.macro.phases.length)
@@ -137,57 +121,12 @@ export default async function PlanPage() {
                 </div>
                 <p className="text-sm text-muted mb-5">{plan.weekly.summary}</p>
 
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {[...plan.weekly.days]
-                    .sort(
-                      (a, b) =>
-                        DAYS_ORDER.indexOf(a.day) - DAYS_ORDER.indexOf(b.day),
-                    )
-                    .map((d, i) => (
-                      <div
-                        key={i}
-                        className="rounded-xl border border-border p-3"
-                      >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold w-8 text-muted">
-                              {d.day}
-                            </span>
-                            <span className="font-medium truncate">
-                              {d.title}
-                            </span>
-                            {doneByDay.get(d.day)?.done && (
-                              <span
-                                className="text-good text-sm shrink-0"
-                                title="Completed"
-                              >
-                                ✓
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted mt-1.5 flex items-center gap-1.5">
-                            {/* Day-type as a tinted pill: same treatment the
-                                splits table uses for interval intensity. */}
-                            <span
-                              className="inline-flex items-center text-xs font-medium capitalize px-2 py-0.5 rounded-full"
-                              style={{
-                                color: `color-mix(in srgb, ${DAY_TYPE_COLOR[d.type] ?? "#94a3b8"} 65%, black)`,
-                                backgroundColor: `${DAY_TYPE_COLOR[d.type] ?? "#94a3b8"}1a`,
-                              }}
-                            >
-                              {d.type}
-                            </span>
-                            {d.distanceKm ? <span>{d.distanceKm} km</span> : null}
-                          </div>
-                          {d.detail && (
-                            <div className="text-sm text-muted/90 mt-1">
-                              {d.detail}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
+                <WeeklyPlanDays
+                  days={plan.weekly.days}
+                  doneDays={(adherence?.items ?? [])
+                    .filter((it) => it.done)
+                    .map((it) => it.day)}
+                />
               </Card>
             )}
 
