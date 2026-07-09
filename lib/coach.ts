@@ -3,6 +3,7 @@ import { formatPace, formatDuration, formatDistance } from "./parseRun";
 import { resolveZones } from "./hr";
 import { gymTypeLabel } from "./gym";
 import { topSet, exercisesVolumeKg } from "./parseStrong";
+import { setsSummary } from "./gymProgress";
 import { trainingLoad, LOAD_STATUS_LABEL } from "./trainingLoad";
 import { runningRecords } from "./prs";
 import { weeklyAdherence } from "./adherence";
@@ -214,20 +215,22 @@ export function buildRecentRunsContext(runs: RunRow[], recentDetail = 1, summari
 }
 
 // Compact summary of recent gym/strength sessions. Most recent first.
-export function buildGymContext(sessions: GymSession[], limit = 12): string {
+export function buildGymContext(sessions: GymSession[], limit = 12, fullSets = false): string {
   if (sessions.length === 0) {
     return "GYM / STRENGTH HISTORY: (none uploaded yet.)";
   }
   const recent = sessions.slice(0, limit);
   const lines = recent.map((g, i) => {
     const tag = i === 0 ? " [MOST RECENT]" : "";
-    // Top set per exercise (pasted from the lifting app), so the coach can
-    // track progressive overload without the full set-by-set log.
+    // Default context carries the top set per exercise — enough to track
+    // progressive overload cheaply. get_training_history asks for fullSets,
+    // the complete set-by-set log for real programming decisions.
     const lifts =
       g.exercises && g.exercises.length > 0
-        ? `lifts (top sets, ${exercisesVolumeKg(g.exercises)} kg volume): ` +
+        ? `lifts (${fullSets ? "all sets" : "top sets"}, ${exercisesVolumeKg(g.exercises)} kg volume): ` +
           g.exercises
             .map((e) => {
+              if (fullSets) return `${e.name} ${setsSummary(e.sets)}`;
               const s = topSet(e);
               if (!s) return null;
               return `${e.name} ${s.weightKg != null ? `${s.weightKg}kg×${s.reps}` : `${s.reps} reps`}`;

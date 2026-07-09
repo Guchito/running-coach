@@ -120,6 +120,14 @@ select:focus-visible:not(.no-ring) {
 }
 .animate-in { animation: slide-up-in 0.3s var(--ease-out) both; }
 
+/* Dropdown menus enter from their anchor (above), quicker than page reveals —
+   state feedback, not choreography. */
+@keyframes slide-down-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-menu-in { animation: slide-down-in 0.18s var(--ease-out) both; }
+
 /* Stagger helper: apply to a container whose direct children should cascade
    in. Decorative only; never blocks interaction. */
 .stagger-in > * { animation: slide-up-in 0.35s var(--ease-out) both; }
@@ -160,6 +168,7 @@ select:focus-visible:not(.no-ring) {
    movement. Transforms collapse to a plain fade. */
 @media (prefers-reduced-motion: reduce) {
   .animate-in,
+  .animate-menu-in,
   .stagger-in > *,
   .bar-grow,
   .fill-grow {

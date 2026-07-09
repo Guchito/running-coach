@@ -46,11 +46,22 @@ const links = [
     icon: "M5 3v4M3 5h4M6 17v4m-2-2h4m10-14a4 4 0 11-8 0 4 4 0 018 0zM8.21 13.89L7 23l5-3 5 3-1.21-9.12",
   },
   {
+    href: "/profile",
+    label: "Profile",
+    icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
+    // Grouped with Settings behind the "You" popover on mobile.
+    hideOnMobile: true,
+  },
+  {
     href: "/settings",
     label: "Settings",
     icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
+    hideOnMobile: true,
   },
 ];
+
+// The two links the mobile "You" popover groups together.
+const youLinks = links.filter((l) => l.href === "/profile" || l.href === "/settings");
 
 export function Nav({ email }: { email: string | null }) {
   const pathname = usePathname();
@@ -58,6 +69,21 @@ export function Nav({ email }: { email: string | null }) {
   const [loggingOut, setLoggingOut] = useState(false);
   // Hide the mobile bars when scrolling down, reveal them when scrolling up.
   const [barsHidden, setBarsHidden] = useState(false);
+  // Mobile-only "You" menu (Profile + Settings) in the top bar.
+  const [youOpen, setYouOpen] = useState(false);
+
+  // Close the menu on navigation, when the bars hide on scroll (the menu is
+  // anchored to the top bar's position), and on Escape.
+  useEffect(() => setYouOpen(false), [pathname]);
+  useEffect(() => {
+    if (barsHidden) setYouOpen(false);
+  }, [barsHidden]);
+  useEffect(() => {
+    if (!youOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setYouOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [youOpen]);
 
   useEffect(() => {
     let lastY = window.scrollY;
@@ -89,7 +115,7 @@ export function Nav({ email }: { email: string | null }) {
       {/* Mobile top bar: the logo is the home/dashboard link, kept visible while
           scrolling so Dashboard can drop off the crowded bottom bar. */}
       <header
-        className={`md:hidden fixed top-0 inset-x-0 z-20 h-14 border-b border-border bg-card/90 backdrop-blur flex items-center px-4 transition-transform duration-300 ${
+        className={`md:hidden fixed top-0 inset-x-0 z-20 h-14 border-b border-border bg-card/90 backdrop-blur flex items-center justify-between px-4 transition-transform duration-300 ${
           barsHidden ? "-translate-y-full" : "translate-y-0"
         }`}
       >
@@ -101,7 +127,65 @@ export function Nav({ email }: { email: string | null }) {
             className="w-8 h-8 rounded-lg object-contain"
           />
         </Link>
+
+        {/* "You": Profile + Settings grouped behind one person icon. */}
+        <button
+          type="button"
+          onClick={() => setYouOpen((o) => !o)}
+          aria-expanded={youOpen}
+          aria-haspopup="menu"
+          aria-label="Profile and settings"
+          className={`p-2 -mr-2 rounded-lg transition-[color,background-color,transform] duration-150 ease-out active:scale-95 ${
+            youOpen || pathname.startsWith("/profile") || pathname.startsWith("/settings")
+              ? "text-accent"
+              : "text-foreground/70"
+          }`}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
+        </button>
+
       </header>
+
+      {/* The "You" menu lives OUTSIDE the header: the header's translate
+          transform would turn fixed positioning relative to it, shrinking the
+          tap-to-close backdrop to the bar's own strip. z-50 = popover layer. */}
+      {youOpen && (
+        <div className="md:hidden fixed inset-0 z-50" onClick={() => setYouOpen(false)}>
+          <div
+            role="menu"
+            onClick={(e) => e.stopPropagation()}
+            className="absolute top-16 right-3 w-44 rounded-xl border border-border bg-card p-1.5 animate-menu-in"
+            style={{ boxShadow: "var(--shadow-lift)" }}
+          >
+            {youLinks.map((l) => {
+              const active = pathname.startsWith(l.href);
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  role="menuitem"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98] ${
+                    active
+                      ? "bg-accent-soft text-accent font-medium"
+                      : "text-foreground/80 hover:bg-black/4"
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={l.icon} />
+                  </svg>
+                  {l.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <nav
         className={`md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-border bg-card flex justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-transform duration-300 ease-out ${

@@ -162,7 +162,7 @@ export async function executeTool(
     }
     case "get_training_history": {
       const [runs, gym] = await Promise.all([listRuns(userId), listGymSessions(userId)]);
-      const history = `${buildRunsContext(runs, 14)}\n\n${buildGymContext(gym, 14)}`;
+      const history = `${buildRunsContext(runs, 14)}\n\n${buildGymContext(gym, 14, true)}`;
       return { summary: "Reviewed your full training history", data: { history } };
     }
     default:

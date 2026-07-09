@@ -499,6 +499,31 @@ export async function getUserById(id: number): Promise<User | null> {
   return rows[0] ? rowToUser(rows[0]) : null;
 }
 
+// With the stored hash, for verifying the current password on password change.
+export async function getUserWithHashById(
+  id: number
+): Promise<(User & { passwordHash: string }) | null> {
+  const rows = await q(`SELECT * FROM users WHERE id = $1`, [id]);
+  if (!rows[0]) return null;
+  return { ...rowToUser(rows[0]), passwordHash: rows[0].password_hash as string };
+}
+
+export async function updateUserAccount(
+  userId: number,
+  name: string | null,
+  email: string
+): Promise<User> {
+  const rows = await q(
+    `UPDATE users SET name = $2, email = $3 WHERE id = $1 RETURNING *`,
+    [userId, name, email.toLowerCase()]
+  );
+  return rowToUser(rows[0]);
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string): Promise<void> {
+  await q(`UPDATE users SET password_hash = $2 WHERE id = $1`, [userId, passwordHash]);
+}
+
 export async function countUsers(): Promise<number> {
   const rows = await q<{ count: string }>(`SELECT COUNT(*)::int AS count FROM users`);
   return Number(rows[0].count);
