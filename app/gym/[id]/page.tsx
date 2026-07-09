@@ -1,9 +1,10 @@
-import { getGymSession } from "@/lib/db";
+import { getGymSession, listGymSessions } from "@/lib/db";
 import { formatDuration, formatDatesInText } from "@/lib/parseRun";
 import { gymTypeLabel } from "@/lib/gym";
-import { exercisesVolumeKg } from "@/lib/parseStrong";
 import { PageShell, Card, Stat, Button } from "@/components/ui";
 import { DeleteGymButton } from "@/components/DeleteGymButton";
+import { ExerciseList } from "@/components/ExerciseList";
+import { RevealOnView } from "@/components/RevealOnView";
 import { requireUserId } from "@/lib/auth";
 import { notFound } from "next/navigation";
 
@@ -18,6 +19,8 @@ export default async function GymSessionPage({
   const { id } = await params;
   const session = await getGymSession(userId, Number(id));
   if (!session) notFound();
+  // Full history so each exercise can compare against its previous outing.
+  const allSessions = session.exercises?.length ? await listGymSessions(userId) : [];
 
   const started = new Date(session.startedAt);
 
@@ -56,46 +59,9 @@ export default async function GymSessionPage({
       </div>
 
       {session.exercises && session.exercises.length > 0 && (
-        <Card className="p-5 mt-4">
-          <div className="flex items-baseline justify-between gap-3 mb-3">
-            <div className="text-xs uppercase tracking-wide text-muted">Exercises</div>
-            <div className="text-xs text-muted">
-              {session.exercises.reduce((n, ex) => n + ex.sets.length, 0)} sets
-              {exercisesVolumeKg(session.exercises) > 0 &&
-                ` · ${exercisesVolumeKg(session.exercises).toLocaleString("en-GB")} kg total volume`}
-            </div>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
-            {session.exercises.map((ex) => (
-              <div key={ex.name}>
-                <div className="text-sm font-medium">{ex.name}</div>
-                <ul className="mt-1 space-y-0.5">
-                  {ex.sets.map((s, i) => (
-                    <li
-                      key={i}
-                      className="text-sm text-muted font-mono tabular-nums flex gap-3"
-                    >
-                      <span className="w-5 text-right shrink-0">{i + 1}</span>
-                      <span>
-                        {s.weightKg != null ? `${s.weightKg} kg × ${s.reps}` : `${s.reps} reps`}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          {session.strongLink && (
-            <a
-              href={session.strongLink}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block mt-4 text-xs text-muted hover:text-foreground underline underline-offset-2"
-            >
-              View in Strong
-            </a>
-          )}
-        </Card>
+        <RevealOnView threshold={0.1}>
+          <ExerciseList session={session} allSessions={allSessions} />
+        </RevealOnView>
       )}
 
       {session.notes && (

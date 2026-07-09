@@ -5,6 +5,8 @@ import {
   getRunStartKeys,
   findRunByStart,
   updateRunSummary,
+  findGymSessionAwaitingWatchData,
+  mergeWatchDataIntoGymSession,
 } from "@/lib/db";
 import { parseActivityFile, runNameFromFile, gymNameFromFile } from "@/lib/ingest";
 import { isGarminActivitiesCsv, parseGarminActivitiesCsv } from "@/lib/parseGarminCsv";
@@ -82,9 +84,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ kind: "run", id: run.id });
     }
 
+    // A pasted Strong workout may already cover this session — fill in the
+    // watch data instead of creating a duplicate.
+    const pending = await findGymSessionAwaitingWatchData(userId, parsed.summary.startedAt);
+    if (pending) {
+      const merged = await mergeWatchDataIntoGymSession(userId, pending.id, parsed.summary, null);
+      if (merged) return NextResponse.json({ kind: "gym", id: merged.id });
+    }
+
     const type = guessGymType(parsed.summary.sport, parsed.summary.subSport);
     const name = providedName || gymNameFromFile(filename, parsed.summary.startedAt);
-    const session = await insertGymSession(userId, { name, type, rpe: null, notes: null }, parsed.summary);
+    const session = await insertGymSession(
+      userId,
+      { name, type, rpe: parsed.summary.rpe, notes: null },
+      parsed.summary
+    );
     return NextResponse.json({ kind: "gym", id: session.id });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to parse file.";

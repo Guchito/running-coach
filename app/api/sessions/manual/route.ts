@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
         avgHr: num(body.avgHr),
         maxHr: null,
         calories: num(body.calories),
+        rpe,
         sport: null,
         subSport: null,
       };

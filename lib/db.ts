@@ -773,7 +773,8 @@ export async function mergeWatchDataIntoGymSession(
     `UPDATE gym_sessions
      SET started_at = $3, duration_s = $4, avg_hr = $5, max_hr = $6,
          calories = $7, summary_json = $8,
-         source_file_id = COALESCE($9, source_file_id)
+         rpe = COALESCE($9, rpe),
+         source_file_id = COALESCE($10, source_file_id)
      WHERE user_id = $1 AND id = $2 RETURNING *`,
     [
       userId,
@@ -784,6 +785,7 @@ export async function mergeWatchDataIntoGymSession(
       summary.maxHr,
       summary.calories,
       JSON.stringify(summary),
+      summary.rpe,
       sourceFileId,
     ]
   );

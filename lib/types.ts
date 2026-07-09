@@ -208,6 +208,9 @@ export type GymSummary = {
   avgHr: number | null;
   maxHr: number | null;
   calories: number | null;
+  // Effort rating entered on the watch when ending the workout (FIT
+  // workout_rpe ÷ 10 → 1-10). Null when the file/source doesn't carry one.
+  rpe: number | null;
   sport: string | null; // raw FIT/TCX sport, e.g. "training"
   subSport: string | null; // raw FIT sub-sport, e.g. "strength_training"
 };

@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
       avgHr: null,
       maxHr: null,
       calories: null,
+      rpe: null,
       sport: null,
       subSport: null,
     };

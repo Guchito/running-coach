@@ -1,0 +1,122 @@
+import type { GymSession, GymSet } from "./types";
+import { topSet } from "./parseStrong";
+
+// Client-safe helpers for tracking one exercise across gym sessions: history
+// extraction, previous-vs-current comparison, and formatting. All pure — the
+// session detail page and the per-exercise history page share them.
+
+// Sessions log the same movement with slightly different casing/spacing;
+// progression must not fork on that.
+export function exerciseKey(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+// Estimated one-rep max (Epley). Null for bodyweight/rep-only sets.
+export function epley1Rm(s: GymSet): number | null {
+  if (s.weightKg == null || s.weightKg <= 0) return null;
+  if (s.reps <= 1) return s.weightKg;
+  return s.weightKg * (1 + s.reps / 30);
+}
+
+export function volumeOf(sets: GymSet[]): number {
+  return sets.reduce((t, s) => t + (s.weightKg ?? 0) * s.reps, 0);
+}
+
+// "17.5" not "17.50", "40" not "40.0". Volume-sized numbers get thousands
+// separators via toLocaleString at the call site.
+export function formatKg(v: number): string {
+  const rounded = Math.round(v * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+// One exercise's appearance in one session.
+export type ExerciseEntry = {
+  sessionId: number;
+  sessionName: string;
+  date: string; // session startedAt (ISO)
+  sets: GymSet[];
+  top: GymSet | null;
+  e1Rm: number | null; // best estimated 1RM across the entry's sets
+  volumeKg: number;
+};
+
+export type ExerciseHistory = {
+  name: string; // display name (most recent spelling)
+  entries: ExerciseEntry[]; // oldest → newest
+};
+
+// Full per-exercise history across every session that has pasted exercises.
+export function buildExerciseHistory(sessions: GymSession[]): Map<string, ExerciseHistory> {
+  const byKey = new Map<string, ExerciseHistory>();
+  const sorted = [...sessions]
+    .filter((s) => s.exercises && s.exercises.length > 0)
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
+
+  for (const session of sorted) {
+    for (const ex of session.exercises!) {
+      if (ex.sets.length === 0) continue;
+      const key = exerciseKey(ex.name);
+      const top = topSet(ex);
+      const e1Rm = ex.sets.reduce<number | null>((best, s) => {
+        const v = epley1Rm(s);
+        return v != null && (best == null || v > best) ? v : best;
+      }, null);
+      const entry: ExerciseEntry = {
+        sessionId: session.id,
+        sessionName: session.name,
+        date: session.startedAt,
+        sets: ex.sets,
+        top,
+        e1Rm,
+        volumeKg: volumeOf(ex.sets),
+      };
+      const hist = byKey.get(key);
+      if (hist) {
+        hist.name = ex.name; // newest spelling wins
+        hist.entries.push(entry);
+      } else {
+        byKey.set(key, { name: ex.name, entries: [entry] });
+      }
+    }
+  }
+  return byKey;
+}
+
+// How the current entry moved against the previous one. Top-set weight is the
+// athlete's headline; reps break the tie when the weight held; volume breaks
+// it when both held.
+export type ProgressDelta =
+  | { kind: "first" }
+  | { kind: "weight"; diffKg: number }
+  | { kind: "reps"; diff: number }
+  | { kind: "volume"; diffKg: number }
+  | { kind: "same" };
+
+export function compareEntries(prev: ExerciseEntry | null, cur: ExerciseEntry): ProgressDelta {
+  if (!prev) return { kind: "first" };
+  const pw = prev.top?.weightKg ?? null;
+  const cw = cur.top?.weightKg ?? null;
+  if (pw != null && cw != null && Math.abs(cw - pw) >= 0.05) {
+    return { kind: "weight", diffKg: Math.round((cw - pw) * 10) / 10 };
+  }
+  const pr = prev.top?.reps ?? null;
+  const cr = cur.top?.reps ?? null;
+  if (pr != null && cr != null && cr !== pr) {
+    return { kind: "reps", diff: cr - pr };
+  }
+  const dv = Math.round(cur.volumeKg - prev.volumeKg);
+  if (Math.abs(dv) >= 1) return { kind: "volume", diffKg: dv };
+  return { kind: "same" };
+}
+
+// Entry index for a given session inside a history (or -1).
+export function entryIndexForSession(hist: ExerciseHistory, sessionId: number): number {
+  return hist.entries.findIndex((e) => e.sessionId === sessionId);
+}
+
+// Compact one-line set summary: "20×12 · 30×10 · 40×8".
+export function setsSummary(sets: GymSet[]): string {
+  return sets
+    .map((s) => (s.weightKg != null ? `${formatKg(s.weightKg)}×${s.reps}` : `×${s.reps}`))
+    .join(" · ");
+}

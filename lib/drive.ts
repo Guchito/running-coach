@@ -185,7 +185,7 @@ export async function importDriveFiles(
         const type = guessGymType(parsed.summary.sport, parsed.summary.subSport);
         const session = await insertGymSession(
           userId,
-          { name, type, rpe: null, notes: null },
+          { name, type, rpe: parsed.summary.rpe, notes: null },
           parsed.summary,
           f.id
         );

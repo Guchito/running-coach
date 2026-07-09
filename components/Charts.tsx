@@ -554,6 +554,104 @@ export function PaceTrendChart({ trend }: { trend: TrendPoint[] }) {
   );
 }
 
+// ---- Exercise history: top-set progression for one movement ----
+export type ExercisePoint = {
+  date: string; // YYYY-MM-DD
+  value: number; // top-set weight kg (or reps for bodyweight movements)
+  reps: number | null; // reps at the top set
+  e1Rm: number | null;
+  volumeKg: number;
+};
+
+function ExerciseTooltip({
+  active,
+  payload,
+  label,
+  unit,
+}: {
+  active?: boolean;
+  payload?: { payload: ExercisePoint }[];
+  label?: string;
+  unit: "kg" | "reps";
+}) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  return (
+    <div className="rounded-[10px] border border-border bg-card text-xs px-2.5 py-2 shadow-sm">
+      <div className="font-medium mb-1">{formatDate(label ?? "")}</div>
+      <div className="text-muted">
+        Top set:{" "}
+        <span className="text-foreground tabular-nums">
+          {unit === "kg" ? `${p.value} kg${p.reps != null ? ` × ${p.reps}` : ""}` : `${p.value} reps`}
+        </span>
+      </div>
+      {p.e1Rm != null && (
+        <div className="text-muted">
+          Est. 1RM: <span className="text-foreground tabular-nums">{Math.round(p.e1Rm * 10) / 10} kg</span>
+        </div>
+      )}
+      {p.volumeKg > 0 && (
+        <div className="text-muted">
+          Volume: <span className="text-foreground tabular-nums">{Math.round(p.volumeKg).toLocaleString("en-GB")} kg</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ExerciseTrendChart({
+  points,
+  unit,
+}: {
+  points: ExercisePoint[];
+  unit: "kg" | "reps";
+}) {
+  if (points.length < 2) {
+    return (
+      <div className="h-55 grid place-items-center text-sm text-muted px-6 text-center">
+        Log this exercise in one more session and the trend draws itself.
+      </div>
+    );
+  }
+  return (
+    <InViewChart height={220}>
+      <LineChart data={points} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+        <CartesianGrid stroke={GRID} vertical={false} />
+        <XAxis
+          dataKey="date"
+          fontSize={11}
+          stroke="#9ca3af"
+          tick={{ fill: "#9ca3af" }}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={dayMonthTick}
+        />
+        <YAxis
+          tickFormatter={(v) => `${v}`}
+          fontSize={11}
+          stroke="#9ca3af"
+          tick={{ fill: "#9ca3af" }}
+          tickLine={false}
+          axisLine={false}
+          domain={[
+            (min: number) => Math.max(0, Math.floor(min - (min * 0.08 + 1))),
+            (max: number) => Math.ceil(max + (max * 0.08 + 1)),
+          ]}
+          width={44}
+        />
+        <Tooltip content={<ExerciseTooltip unit={unit} />} />
+        <Line
+          type="monotone"
+          dataKey="value"
+          stroke={ACCENT}
+          strokeWidth={2}
+          dot={{ r: 3, fill: ACCENT }}
+        />
+      </LineChart>
+    </InViewChart>
+  );
+}
+
 export function DistanceTrendChart({ trend }: { trend: TrendPoint[] }) {
   if (trend.length < 2) {
     return (

@@ -42,7 +42,9 @@ export async function POST(req: NextRequest) {
         ? providedType
         : guessGymType(summary.sport, summary.subSport);
 
-    let rpe: number | null = null;
+    // Explicit RPE from the form wins; otherwise the effort rating recorded
+    // on the watch (FIT workout_rpe).
+    let rpe: number | null = summary.rpe;
     if (rpeRaw) {
       const n = Math.round(Number(rpeRaw));
       if (!Number.isNaN(n)) rpe = Math.min(10, Math.max(1, n));

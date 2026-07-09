@@ -12,6 +12,7 @@ type FitSession = {
   totalCalories?: number;
   avgHeartRate?: number;
   maxHeartRate?: number;
+  workoutRpe?: number; // effort rating × 10 (Apple Watch via HealthFit)
   sport?: string | number;
   subSport?: string | number;
 };
@@ -47,6 +48,7 @@ export function gymSummaryFromMessages(messages: GymFitMessages): GymSummary {
   let avgHr: number | null = null;
   let maxHr: number | null = null;
   let calories: number | null = null;
+  let rpe: number | null = null;
   let sport: string | null = null;
   let subSport: string | null = null;
 
@@ -57,6 +59,10 @@ export function gymSummaryFromMessages(messages: GymFitMessages): GymSummary {
     avgHr = typeof s.avgHeartRate === "number" ? s.avgHeartRate : null;
     maxHr = typeof s.maxHeartRate === "number" ? s.maxHeartRate : null;
     calories = typeof s.totalCalories === "number" ? s.totalCalories : null;
+    // workout_rpe is the 1-10 effort rating × 10 (e.g. Apple Watch "Effort").
+    if (typeof s.workoutRpe === "number" && s.workoutRpe > 0) {
+      rpe = Math.min(10, Math.max(1, Math.round(s.workoutRpe / 10)));
+    }
     sport = s.sport != null ? String(s.sport) : null;
     subSport = s.subSport != null ? String(s.subSport) : null;
   }
@@ -81,7 +87,7 @@ export function gymSummaryFromMessages(messages: GymFitMessages): GymSummary {
     throw new Error("No timing data found in this .fit file.");
   }
 
-  return { startedAt, durationSec, avgHr, maxHr, calories, sport, subSport };
+  return { startedAt, durationSec, avgHr, maxHr, calories, rpe, sport, subSport };
 }
 
 // Lightweight summary extraction from a Garmin TCX (XML). Summary-only — we sum
@@ -121,6 +127,7 @@ export function parseGymTcx(xml: string): GymSummary {
     avgHr: avgHrs.length ? Math.round(avgHrs.reduce((a, b) => a + b, 0) / avgHrs.length) : null,
     maxHr: maxHrs.length ? Math.max(...maxHrs) : null,
     calories: hasCalories ? calories : null,
+    rpe: null, // TCX has no effort/RPE field
     sport,
     subSport: null,
   };
