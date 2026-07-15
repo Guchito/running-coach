@@ -25,10 +25,13 @@ const DAYS_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function DayHeader({ d, done }: { d: PlanDay; done: boolean }) {
   return (
-    <>
+    // min-w-0 all the way down: iOS Safari sizes grid tracks to a nowrap
+    // (truncate) title's full width unless every level can shrink — Chrome
+    // forgives this, WebKit doesn't, and the whole page overflows sideways.
+    <div className="min-w-0">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold w-8 text-muted">{d.day}</span>
-        <span className="font-medium truncate">{d.title}</span>
+        <span className="text-xs font-semibold w-8 shrink-0 text-muted">{d.day}</span>
+        <span className="font-medium truncate min-w-0">{d.title}</span>
         {done && (
           <span className="text-good text-sm shrink-0" title="Completed">
             ✓
@@ -50,7 +53,7 @@ function DayHeader({ d, done }: { d: PlanDay; done: boolean }) {
         {d.distanceKm ? <span>{d.distanceKm} km</span> : null}
       </div>
       {d.detail && <div className="text-sm text-muted/90 mt-1">{d.detail}</div>}
-    </>
+    </div>
   );
 }
 
@@ -68,12 +71,15 @@ export function WeeklyPlanDays({
   );
 
   return (
-    <div className="grid sm:grid-cols-2 gap-3">
+    // grid-cols-1 (not a bare `grid`): Tailwind's col classes use
+    // minmax(0,1fr) tracks, which stops WebKit from sizing the mobile column
+    // to the widest nowrap content and pushing the page sideways.
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {sorted.map((d) => {
         const exercises = d.exercises ?? [];
         if (exercises.length === 0) {
           return (
-            <div key={d.day} className="rounded-xl border border-border p-3">
+            <div key={d.day} className="min-w-0 rounded-xl border border-border p-3">
               <DayHeader d={d} done={done.has(d.day)} />
             </div>
           );
@@ -83,7 +89,7 @@ export function WeeklyPlanDays({
         return (
           <div
             key={d.day}
-            className={`rounded-xl border p-3 transition-[border-color] duration-150 ${
+            className={`min-w-0 rounded-xl border p-3 transition-[border-color] duration-150 ${
               open ? "border-accent/40" : "border-border"
             }`}
           >
