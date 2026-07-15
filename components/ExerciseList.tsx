@@ -199,7 +199,8 @@ export function ExerciseList({
           rel="noreferrer"
           className="inline-block mt-2 text-xs text-muted hover:text-foreground underline underline-offset-2"
         >
-          View in Strong
+          {/* The share link may come from any lifting app (Strong, Hevy, …). */}
+          View in {session.strongLink.includes("hevy.com") ? "Hevy" : "Strong"}
         </a>
       )}
     </Card>

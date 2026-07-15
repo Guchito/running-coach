@@ -79,9 +79,9 @@ export function PasteWorkoutForm() {
         </button>
       </div>
       <p className="text-sm text-muted mb-4">
-        In Strong: open the workout → share → copy as text, then paste the whole
-        thing here. It matches your watch session by date — no forms to fill in.
-        Pasting the same workout again updates it.
+        In Strong or Hevy: open the workout → share → copy as text, then paste
+        the whole thing here. It matches your watch session by date — no forms
+        to fill in. Pasting the same workout again updates it.
       </p>
 
       <form onSubmit={submit} className="space-y-3">
