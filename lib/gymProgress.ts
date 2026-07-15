@@ -5,10 +5,29 @@ import { topSet } from "./parseStrong";
 // extraction, previous-vs-current comparison, and formatting. All pure — the
 // session detail page and the per-exercise history page share them.
 
+// Strong and Hevy name the same movements differently; map every known
+// variant to one canonical key so an exercise's history survives switching
+// apps. Both sides are already normalized (lowercase, single spaces). The
+// canonical side is the Strong-era name only because that's what the oldest
+// stored sessions use — display always shows the newest spelling.
+const EXERCISE_ALIASES: Record<string, string> = {
+  // Pull
+  "seated cable row - bar grip": "seated row (cable)",
+  "dumbbell row": "bent over one arm row (dumbbell)",
+  "rear delt reverse fly (machine)": "reverse fly (machine)",
+  // Push
+  "cable fly crossovers": "cable crossover",
+  // The Jul 12 session was logged as "rope" by mistake, then the exercise was
+  // renamed to plain "Triceps Pushdown" in Hevy — all three are the same lift.
+  "triceps rope pushdown": "triceps pushdown (cable - straight bar)",
+  "triceps pushdown": "triceps pushdown (cable - straight bar)",
+};
+
 // Sessions log the same movement with slightly different casing/spacing;
 // progression must not fork on that.
 export function exerciseKey(name: string): string {
-  return name.trim().toLowerCase().replace(/\s+/g, " ");
+  const base = name.trim().toLowerCase().replace(/\s+/g, " ");
+  return EXERCISE_ALIASES[base] ?? base;
 }
 
 // Estimated one-rep max (Epley). Null for bodyweight/rep-only sets.
