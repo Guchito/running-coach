@@ -79,7 +79,11 @@ function ChartCard({
         <span className="text-xs text-muted text-right">{caption}</span>
       </div>
       {summary}
-      <div style={{ height: 220 }}>
+      {/* overflow-hidden: the chart svg gets an absolute pixel width from
+          ResponsiveContainer's measurement; without clipping, a too-wide
+          first render props the page open sideways on mobile and the
+          measurement never recovers. */}
+      <div className="min-w-0 overflow-hidden" style={{ height: 220 }}>
         <ResponsiveContainer width="100%" height={220}>
           {children as React.ReactElement}
         </ResponsiveContainer>
@@ -282,7 +286,10 @@ export function HealthCharts({ metrics }: { metrics: HealthMetric[] }) {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* *:min-w-0 — grid items default to min-width:auto, which lets a
+          chart's rendered svg width dictate the column width and overflow
+          the viewport on mobile. */}
+      <div className="grid gap-4 md:grid-cols-2 *:min-w-0">
         {has((m) => m.sleepMin) && (
           <ChartCard
             title="Sleep"
