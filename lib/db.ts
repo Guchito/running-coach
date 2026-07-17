@@ -15,7 +15,8 @@ import type {
   GymType,
   GymExercise,
   LthrTest,
-  BodyMetric,
+  HealthMetric,
+  HealthMetricInput,
 } from "./types";
 import { encryptSecret, decryptSecret } from "./secrets";
 
@@ -75,6 +76,34 @@ const SCHEMA = `
   ALTER TABLE users ADD COLUMN IF NOT EXISTS auto_name_runs BOOLEAN NOT NULL DEFAULT false;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS garmin_token_enc TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS garmin_last_sync TIMESTAMPTZ;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS health_sheet_id TEXT;
+
+  CREATE TABLE IF NOT EXISTS health_metrics (
+    id              SERIAL PRIMARY KEY,
+    user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    date            DATE NOT NULL,
+    active_kcal     INTEGER,
+    resting_kcal    INTEGER,
+    resting_hr      INTEGER,
+    hrv             INTEGER,
+    steps           INTEGER,
+    vo2_max         DOUBLE PRECISION,
+    exercise_min    INTEGER,
+    stand_hours     INTEGER,
+    sleep_min       INTEGER,
+    in_bed_min      INTEGER,
+    sleep_core_min  INTEGER,
+    sleep_deep_min  INTEGER,
+    sleep_rem_min   INTEGER,
+    sleep_awake_min INTEGER,
+    weight_kg       NUMERIC(5,1),
+    body_fat_pct    DOUBLE PRECISION,
+    notes           TEXT,
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (user_id, date)
+  );
+  ALTER TABLE health_metrics ADD COLUMN IF NOT EXISTS notes TEXT;
+  CREATE INDEX IF NOT EXISTS health_metrics_user_idx ON health_metrics(user_id, date DESC);
 
   CREATE TABLE IF NOT EXISTS lthr_tests (
     id          SERIAL PRIMARY KEY,
@@ -87,16 +116,26 @@ const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS lthr_tests_user_idx ON lthr_tests(user_id, tested_on DESC);
 
-  CREATE TABLE IF NOT EXISTS body_metrics (
-    id          SERIAL PRIMARY KEY,
-    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    recorded_on DATE NOT NULL,
-    resting_hr  INTEGER,
-    weight_kg   NUMERIC(5,1),
-    notes       TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-  );
-  CREATE INDEX IF NOT EXISTS body_metrics_user_idx ON body_metrics(user_id, recorded_on DESC);
+  -- body_metrics (manual resting HR / weight log) folded into health_metrics:
+  -- one-time idempotent migration, then the table is dropped for good. Existing
+  -- health values (device-measured, from the sheet) win over the manual log.
+  DO $$
+  BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'body_metrics') THEN
+      INSERT INTO health_metrics (user_id, date, resting_hr, weight_kg, notes)
+      SELECT user_id, recorded_on,
+             (array_remove(array_agg(resting_hr ORDER BY id DESC), NULL))[1],
+             (array_remove(array_agg(weight_kg  ORDER BY id DESC), NULL))[1],
+             (array_remove(array_agg(notes      ORDER BY id DESC), NULL))[1]
+      FROM body_metrics
+      GROUP BY user_id, recorded_on
+      ON CONFLICT (user_id, date) DO UPDATE SET
+        resting_hr = COALESCE(health_metrics.resting_hr, EXCLUDED.resting_hr),
+        weight_kg  = COALESCE(health_metrics.weight_kg,  EXCLUDED.weight_kg),
+        notes      = COALESCE(health_metrics.notes,      EXCLUDED.notes);
+      DROP TABLE body_metrics;
+    END IF;
+  END $$;
 
   CREATE TABLE IF NOT EXISTS runs (
     id            SERIAL PRIMARY KEY,
@@ -229,6 +268,7 @@ function rowToUser(r: Record<string, unknown>): User {
     garminLastSync: r.garmin_last_sync
       ? new Date(r.garmin_last_sync as string).toISOString()
       : null,
+    healthSheetId: (r.health_sheet_id as string) ?? null,
     createdAt: new Date(r.created_at as string).toISOString(),
   };
 }
@@ -356,55 +396,6 @@ export async function deleteLthrTest(userId: number, id: number): Promise<boolea
   return rows.length > 0;
 }
 
-// ---------- body metrics (resting HR / weight) ----------
-
-function rowToBodyMetric(r: Record<string, unknown>): BodyMetric {
-  return {
-    id: r.id as number,
-    recordedOn: new Date(r.recorded_on as string).toISOString().slice(0, 10),
-    restingHr: r.resting_hr === null || r.resting_hr === undefined ? null : Number(r.resting_hr),
-    weightKg: r.weight_kg === null || r.weight_kg === undefined ? null : Number(r.weight_kg),
-    notes: (r.notes as string) ?? null,
-    createdAt: new Date(r.created_at as string).toISOString(),
-  };
-}
-
-export async function listBodyMetrics(userId: number, limit = 60): Promise<BodyMetric[]> {
-  const rows = await q(
-    `SELECT * FROM body_metrics WHERE user_id = $1 ORDER BY recorded_on DESC, id DESC LIMIT $2`,
-    [userId, limit]
-  );
-  return rows.map(rowToBodyMetric);
-}
-
-export async function getLatestBodyMetric(userId: number): Promise<BodyMetric | null> {
-  const rows = await q(
-    `SELECT * FROM body_metrics WHERE user_id = $1 ORDER BY recorded_on DESC, id DESC LIMIT 1`,
-    [userId]
-  );
-  return rows[0] ? rowToBodyMetric(rows[0]) : null;
-}
-
-export async function insertBodyMetric(
-  userId: number,
-  input: { recordedOn: string; restingHr: number | null; weightKg: number | null; notes: string | null }
-): Promise<BodyMetric> {
-  const rows = await q(
-    `INSERT INTO body_metrics (user_id, recorded_on, resting_hr, weight_kg, notes)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [userId, input.recordedOn, input.restingHr, input.weightKg, input.notes]
-  );
-  return rowToBodyMetric(rows[0]);
-}
-
-export async function deleteBodyMetric(userId: number, id: number): Promise<boolean> {
-  const rows = await q(
-    `DELETE FROM body_metrics WHERE id = $1 AND user_id = $2 RETURNING id`,
-    [id, userId]
-  );
-  return rows.length > 0;
-}
-
 export async function setDriveFolder(userId: number, folderId: string | null): Promise<User> {
   const rows = await q(`UPDATE users SET drive_folder_id = $2 WHERE id = $1 RETURNING *`, [
     userId,
@@ -415,6 +406,164 @@ export async function setDriveFolder(userId: number, folderId: string | null): P
 
 export async function touchDriveSync(userId: number): Promise<void> {
   await q(`UPDATE users SET drive_last_sync = now() WHERE id = $1`, [userId]);
+}
+
+export async function setHealthSheet(userId: number, sheetId: string | null): Promise<User> {
+  const rows = await q(`UPDATE users SET health_sheet_id = $2 WHERE id = $1 RETURNING *`, [
+    userId,
+    sheetId,
+  ]);
+  return rowToUser(rows[0]);
+}
+
+// ---------- health metrics (HealthFit sheet sync) ----------
+
+function rowToHealthMetric(r: Record<string, unknown>): HealthMetric {
+  const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+  return {
+    id: r.id as number,
+    date: new Date(r.date as string).toISOString().slice(0, 10),
+    activeKcal: n(r.active_kcal),
+    restingKcal: n(r.resting_kcal),
+    restingHr: n(r.resting_hr),
+    hrv: n(r.hrv),
+    steps: n(r.steps),
+    vo2Max: n(r.vo2_max),
+    exerciseMin: n(r.exercise_min),
+    standHours: n(r.stand_hours),
+    sleepMin: n(r.sleep_min),
+    inBedMin: n(r.in_bed_min),
+    sleepCoreMin: n(r.sleep_core_min),
+    sleepDeepMin: n(r.sleep_deep_min),
+    sleepRemMin: n(r.sleep_rem_min),
+    sleepAwakeMin: n(r.sleep_awake_min),
+    weightKg: n(r.weight_kg),
+    bodyFatPct: n(r.body_fat_pct),
+    notes: (r.notes as string) ?? null,
+  };
+}
+
+// Merge days of values in bulk: nulls never overwrite existing data, so the
+// Daily Metrics, Sleep, and Weight tabs can each contribute their own columns
+// for the same date without clobbering each other. Batched multi-row inserts
+// keep a full-history backfill to a handful of round trips (per-row upserts
+// blew past the serverless time limit). Rows within one call MUST have unique
+// dates — ON CONFLICT can't update the same row twice in one statement — the
+// sheet sync merges per-date before calling. `notes` is never written here:
+// it belongs to the manual log (logDailyHealth) only.
+export async function upsertHealthMetrics(
+  userId: number,
+  metrics: HealthMetricInput[]
+): Promise<void> {
+  const CHUNK = 200; // 18 params/row → well under Postgres' 65k param cap
+  for (let at = 0; at < metrics.length; at += CHUNK) {
+    const chunk = metrics.slice(at, at + CHUNK);
+    const params: unknown[] = [userId];
+    const rows = chunk.map((m) => {
+      const base = params.length;
+      params.push(
+        m.date,
+        m.activeKcal,
+        m.restingKcal,
+        m.restingHr,
+        m.hrv,
+        m.steps,
+        m.vo2Max,
+        m.exerciseMin,
+        m.standHours,
+        m.sleepMin,
+        m.inBedMin,
+        m.sleepCoreMin,
+        m.sleepDeepMin,
+        m.sleepRemMin,
+        m.sleepAwakeMin,
+        m.weightKg,
+        m.bodyFatPct
+      );
+      const ph = Array.from({ length: 17 }, (_, i) => `$${base + i + 1}`);
+      return `($1, ${ph.join(",")})`;
+    });
+    await q(
+      `INSERT INTO health_metrics (
+         user_id, date, active_kcal, resting_kcal, resting_hr, hrv, steps, vo2_max,
+         exercise_min, stand_hours, sleep_min, in_bed_min, sleep_core_min,
+         sleep_deep_min, sleep_rem_min, sleep_awake_min, weight_kg, body_fat_pct
+       ) VALUES ${rows.join(",")}
+       ON CONFLICT (user_id, date) DO UPDATE SET
+         active_kcal     = COALESCE(EXCLUDED.active_kcal,     health_metrics.active_kcal),
+         resting_kcal    = COALESCE(EXCLUDED.resting_kcal,    health_metrics.resting_kcal),
+         resting_hr      = COALESCE(EXCLUDED.resting_hr,      health_metrics.resting_hr),
+         hrv             = COALESCE(EXCLUDED.hrv,             health_metrics.hrv),
+         steps           = COALESCE(EXCLUDED.steps,           health_metrics.steps),
+         vo2_max         = COALESCE(EXCLUDED.vo2_max,         health_metrics.vo2_max),
+         exercise_min    = COALESCE(EXCLUDED.exercise_min,    health_metrics.exercise_min),
+         stand_hours     = COALESCE(EXCLUDED.stand_hours,     health_metrics.stand_hours),
+         sleep_min       = COALESCE(EXCLUDED.sleep_min,       health_metrics.sleep_min),
+         in_bed_min      = COALESCE(EXCLUDED.in_bed_min,      health_metrics.in_bed_min),
+         sleep_core_min  = COALESCE(EXCLUDED.sleep_core_min,  health_metrics.sleep_core_min),
+         sleep_deep_min  = COALESCE(EXCLUDED.sleep_deep_min,  health_metrics.sleep_deep_min),
+         sleep_rem_min   = COALESCE(EXCLUDED.sleep_rem_min,   health_metrics.sleep_rem_min),
+         sleep_awake_min = COALESCE(EXCLUDED.sleep_awake_min, health_metrics.sleep_awake_min),
+         weight_kg       = COALESCE(EXCLUDED.weight_kg,       health_metrics.weight_kg),
+         body_fat_pct    = COALESCE(EXCLUDED.body_fat_pct,    health_metrics.body_fat_pct),
+         updated_at      = now()`,
+      params
+    );
+  }
+}
+
+export async function listHealthMetrics(userId: number, limit = 60): Promise<HealthMetric[]> {
+  const rows = await q(
+    `SELECT * FROM health_metrics WHERE user_id = $1 ORDER BY date DESC LIMIT $2`,
+    [userId, limit]
+  );
+  return rows.map(rowToHealthMetric);
+}
+
+// Manual daily log from the Profile page. Unlike the sheet sync, provided
+// values OVERWRITE what's stored (the runner is correcting or adding a
+// reading); fields left null keep their synced data.
+export async function logDailyHealth(
+  userId: number,
+  input: { date: string; restingHr: number | null; weightKg: number | null; notes: string | null }
+): Promise<HealthMetric> {
+  const rows = await q(
+    `INSERT INTO health_metrics (user_id, date, resting_hr, weight_kg, notes)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (user_id, date) DO UPDATE SET
+       resting_hr = COALESCE(EXCLUDED.resting_hr, health_metrics.resting_hr),
+       weight_kg  = COALESCE(EXCLUDED.weight_kg,  health_metrics.weight_kg),
+       notes      = COALESCE(EXCLUDED.notes,      health_metrics.notes),
+       updated_at = now()
+     RETURNING *`,
+    [userId, input.date, input.restingHr, input.weightKg, input.notes]
+  );
+  return rowToHealthMetric(rows[0]);
+}
+
+// Clear the manually-loggable fields for one day (the Profile list's delete).
+// Other synced columns stay; if nothing else remains the row is dropped. Note
+// a value that also lives in the sheet returns on the next sync.
+export async function clearDailyHealthLog(userId: number, date: string): Promise<boolean> {
+  const rows = await q(
+    `UPDATE health_metrics
+        SET resting_hr = NULL, weight_kg = NULL, notes = NULL, updated_at = now()
+      WHERE user_id = $1 AND date = $2
+      RETURNING id`,
+    [userId, date]
+  );
+  await q(
+    `DELETE FROM health_metrics
+      WHERE user_id = $1 AND date = $2
+        AND active_kcal IS NULL AND resting_kcal IS NULL AND hrv IS NULL
+        AND steps IS NULL AND vo2_max IS NULL AND exercise_min IS NULL
+        AND stand_hours IS NULL AND sleep_min IS NULL AND in_bed_min IS NULL
+        AND sleep_core_min IS NULL AND sleep_deep_min IS NULL
+        AND sleep_rem_min IS NULL AND sleep_awake_min IS NULL
+        AND body_fat_pct IS NULL`,
+    [userId, date]
+  );
+  return rows.length > 0;
 }
 
 // ---------- Garmin Connect ----------

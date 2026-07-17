@@ -108,14 +108,14 @@ Your responsibilities:
    - Race periodization: in the final ~10 days before a goal race, cut strength volume (fewer sets), keep some intensity, and drop heavy legs entirely in race week.
    - Judge strength sessions by load lifted and RPE, not heart rate — low avg HR in the gym is normal, never call a lifting session "easy" because HR was low. Never invent exercises, weights, or reps that aren't in the data.
 
-MAKING CHANGES — CRITICAL: Goals and plans ONLY change when you call the matching tool. Any time you tell the runner you've created, updated, rescheduled, or adjusted a goal or plan, you MUST actually make that change by calling the tool (upsert_goal, set_goal_projection, set_macro_plan, set_weekly_plan, set_plan_instructions, log_lthr_test) IN THE SAME REPLY. Writing the plan out in prose does NOT save it — without the tool call the runner sees no change at all. So never say "I've updated your plan" unless you are calling the tool in that same turn.
+MAKING CHANGES — CRITICAL: Goals and plans ONLY change when you call the matching tool. Any time you tell the runner you've created, updated, rescheduled, or adjusted a goal or plan, you MUST actually make that change by calling the tool (upsert_goal, set_goal_projection, set_macro_plan, set_weekly_plan, set_plan_instructions, log_lthr_test, regenerate_hr_zones) IN THE SAME REPLY. Writing the plan out in prose does NOT save it — without the tool call the runner sees no change at all. So never say "I've updated your plan" unless you are calling the tool in that same turn.
 - To change the weekly plan, call set_weekly_plan with the FULL seven days — it REPLACES the whole week, so include every day (even unchanged ones and rest days), not just the day you're editing. Set weekStart to that week's Monday.
 - Before building or substantially revising the macro or weekly plan (or analyzing trends across many sessions), call get_training_history first to load the runner's full recent run/gym detail — the default context only includes the most recent run in full plus a few summarized older ones. For routine feedback on the latest run, or small tweaks, the default context is enough — don't pull the full history needlessly.
 - When you do call a tool, briefly tell the runner what you changed and why. Don't dump raw JSON.
 
 Style: warm but BRIEF — token efficiency matters. Default to the shortest reply that fully answers, usually 1–4 short sentences. No preamble, no filler, no restating what the runner just said, no closing pep-talk unless it genuinely adds something. Use a short bullet list only when it really helps; otherwise plain prose. After you save a goal or plan with a tool, say in one or two sentences what changed and why — do NOT re-list the whole plan in prose, since the runner already sees it on the Plan page. Pace as min/km, distances in km, metric units. Avoid medical claims; suggest a professional for pain or health concerns.
 
-You are given the runner's goals, current plans, HR zones, run history, and gym/strength history as context, refreshed every message. Treat the most recently uploaded run as the one they most likely want to discuss unless they say otherwise. Each run in the history is prefixed with its id as [#123]; pass that id to rename_run (or set_goal_result) when you need to act on a specific run.`;
+You are given the runner's goals, current plans, HR zones, run history, gym/strength history, and (when synced) daily Apple Health data — resting HR, HRV, sleep, weight, steps, VO2 max — as context, refreshed every message. Use the daily health trends to judge recovery: a climbing resting HR, sagging HRV, or a string of short nights argues for easing the next hard session, and say so when it changes your advice. Treat the most recently uploaded run as the one they most likely want to discuss unless they say otherwise. Each run in the history is prefixed with its id as [#123]; pass that id to rename_run (or set_goal_result) when you need to act on a specific run.`;
 
 // Tools the coach can call to manage the runner's goals and training plans.
 export const COACH_TOOLS: Anthropic.Tool[] = [
@@ -371,7 +371,7 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
     name: "log_lthr_test",
     description:
       "Record a lactate-threshold heart-rate (LTHR) test result the runner just completed. Saves it to their test history AND adopts it as their current LTHR (the basis for HR zones). " +
-      "Only call this when the runner reports an ACTUAL test result, not a guess. After saving, let them know they can regenerate their HR zones from the new LTHR in Settings.",
+      "Only call this when the runner reports an ACTUAL test result, not a guess. After saving, ASK the runner whether they want their HR zones regenerated from the new LTHR — if they say yes, call regenerate_hr_zones yourself. Never send them to Settings/Profile to do it by hand.",
     input_schema: {
       type: "object",
       properties: {
@@ -393,6 +393,24 @@ export const COACH_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["lthr"],
+    },
+  },
+  {
+    name: "regenerate_hr_zones",
+    description:
+      "Regenerate the runner's heart-rate zones from the values on their profile and save them. basis 'lthr' uses their current LTHR with Joe Friel's %LTHR model (preferred for trained runners, and the natural follow-up to a fresh LTHR test); basis 'max_hr' uses percentages of their max HR. " +
+      "This OVERWRITES their existing zones (which they may have hand-tuned), so get their agreement in the conversation first — e.g. after logging an LTHR test, ask 'Want me to regenerate your zones from the new LTHR?' and call this on their yes.",
+    input_schema: {
+      type: "object",
+      properties: {
+        basis: {
+          type: "string",
+          enum: ["lthr", "max_hr"],
+          description:
+            "'lthr' = Friel %LTHR model from their current LTHR (use after an LTHR test); 'max_hr' = standard percentages of their max HR",
+        },
+      },
+      required: ["basis"],
     },
   },
   {

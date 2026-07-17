@@ -31,6 +31,7 @@ export function CoachChat({
   const [sending, setSending] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const askedRef = useRef(false);
   const router = useRouter();
 
@@ -126,6 +127,41 @@ export function CoachChat({
     scrollToBottom();
   }, [loaded, scrollToBottom]);
 
+  // The composer grows with its content (up to the max-h cap) instead of
+  // scrolling inside a one-line box.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+  }, [input]);
+
+  // iOS Safari overlays the keyboard instead of resizing the page, so a
+  // 100vh column gets scrolled up and the composer floats mid-screen with a
+  // dead gap above the keyboard. Track the visual viewport and expose the
+  // keyboard overlap as --kb; the column height and bottom padding subtract
+  // it so the composer hugs the keyboard.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty("--kb", `${Math.round(kb)}px`);
+      if (kb > 0) {
+        window.scrollTo(0, 0);
+        scrollToBottom();
+      }
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+      document.documentElement.style.removeProperty("--kb");
+    };
+  }, [scrollToBottom]);
+
   const [clearing, setClearing] = useState(false);
   async function clearChat() {
     setClearing(true);
@@ -137,7 +173,7 @@ export function CoachChat({
   const empty = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-1rem)] max-w-3xl mx-auto px-4 md:px-6 pt-16 md:pt-4 pb-20 md:pb-4">
+    <div className="flex flex-col h-[calc(100dvh-var(--kb,0px))] md:h-[calc(100vh-1rem)] max-w-3xl mx-auto px-4 md:px-6 pt-16 md:pt-4 pb-[max(0.5rem,calc(5rem-var(--kb,0px)))] md:pb-4">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <div className="flex items-center gap-3">
@@ -163,7 +199,7 @@ export function CoachChat({
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 space-y-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-4">
         {empty && loaded && (
           <div className="text-center mt-10 animate-in">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -196,7 +232,7 @@ export function CoachChat({
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm animate-in ${
+              className={`max-w-[85%] min-w-0 wrap-anywhere rounded-2xl px-4 py-2.5 text-sm animate-in ${
                 m.role === "user"
                   ? "bg-accent-soft text-foreground rounded-br-md"
                   : "bg-card border border-border rounded-bl-md"
@@ -230,6 +266,7 @@ export function CoachChat({
       >
         <div className="flex items-end gap-2 bg-card border border-border rounded-2xl px-3 py-2 transition-[border-color,box-shadow] duration-150 focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft)]">
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {

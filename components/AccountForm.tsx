@@ -51,7 +51,7 @@ export function AccountForm({
   }
 
   return (
-    <Card className="p-6 h-full">
+    <Card className="p-5 sm:p-6 h-full">
       <form onSubmit={submit} className="space-y-4">
         <label className="block text-sm">
           <span className="text-muted">Name</span>

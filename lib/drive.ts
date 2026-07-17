@@ -83,7 +83,7 @@ export function parseFolderId(input: string): string | null {
 }
 
 let _jwt: JWT | null = null;
-async function accessToken(): Promise<string> {
+export async function accessToken(): Promise<string> {
   const creds = loadCreds();
   if (!creds) throw new Error("Google Drive is not configured on the server.");
   if (!_jwt) {
@@ -128,6 +128,8 @@ export type SyncResult = {
   imported: { id: number; name: string; kind: "run" | "gym" }[];
   skipped: number;
   errors: { file: string; error: string }[];
+  // Health Metrics sheet sync (when the runner has linked one).
+  health?: { daysUpdated: number; error?: string };
   error?: string;
 };
 
@@ -216,8 +218,8 @@ export async function syncUserDrive(
   if (!base.configured) return base;
 
   const user = await getUserById(userId);
-  if (!user?.driveFolderId) return base;
-  base.folderSet = true;
+  if (!user || (!user.driveFolderId && !user.healthSheetId)) return base;
+  base.folderSet = !!user.driveFolderId;
 
   if (
     !opts.force &&
@@ -227,12 +229,32 @@ export async function syncUserDrive(
     return { ...base, throttled: true };
   }
 
+  await touchDriveSync(userId); // stamp first to throttle concurrent visits
+  const health = await syncHealth(user, !!opts.force);
+  if (!user.driveFolderId) return { ...base, health };
   try {
-    await touchDriveSync(userId); // stamp first to throttle concurrent visits
     const files = await listFolderFiles(user.driveFolderId);
     const res = await importDriveFiles(userId, files);
-    return { ...base, ...res };
+    return { ...base, ...res, health };
   } catch (e) {
-    return { ...base, error: e instanceof Error ? e.message : "Drive sync failed." };
+    return { ...base, health, error: e instanceof Error ? e.message : "Drive sync failed." };
+  }
+}
+
+// Piggyback the Health Metrics sheet on every activity sync. A sheet failure
+// never fails the sync — it's reported alongside. Forced syncs (the Settings
+// button) backfill the sheet's full history; routine auto-syncs only rewrite
+// recent days to stay cheap.
+async function syncHealth(
+  user: { id: number; healthSheetId: string | null },
+  full = false
+): Promise<SyncResult["health"]> {
+  if (!user.healthSheetId) return undefined;
+  try {
+    const { syncHealthSheet } = await import("./healthSheet");
+    const res = await syncHealthSheet(user.id, user.healthSheetId, full ? Infinity : 14);
+    return { daysUpdated: res.daysUpdated };
+  } catch (e) {
+    return { daysUpdated: 0, error: e instanceof Error ? e.message : "Health sync failed." };
   }
 }

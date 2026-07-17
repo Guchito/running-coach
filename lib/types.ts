@@ -176,6 +176,7 @@ export type User = {
   autoNameRuns: boolean;      // let the coach rename runs after analyzing them
   garminConnected: boolean;   // whether a Garmin Connect session token is stored
   garminLastSync: string | null;
+  healthSheetId: string | null; // Google Sheet the HealthFit daily metrics sync from
   createdAt: string;
 };
 
@@ -190,15 +191,35 @@ export type LthrTest = {
   createdAt: string;
 };
 
-// A quick daily recovery log: resting HR and/or body weight.
-export type BodyMetric = {
+// One day of health data: Apple Health values synced from the runner's
+// HealthFit Google Sheet (Daily Metrics / Sleep / Weight tabs merged by
+// date), plus anything logged by hand on the Profile page (which can also
+// attach a note). Every field is nullable: tabs cover different dates and
+// today's row is always partial.
+export type HealthMetric = {
   id: number;
-  recordedOn: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD
+  activeKcal: number | null;
+  restingKcal: number | null;
   restingHr: number | null;
+  hrv: number | null;
+  steps: number | null;
+  vo2Max: number | null;
+  exerciseMin: number | null;
+  standHours: number | null;
+  sleepMin: number | null; // time asleep
+  inBedMin: number | null;
+  sleepCoreMin: number | null;
+  sleepDeepMin: number | null;
+  sleepRemMin: number | null;
+  sleepAwakeMin: number | null;
   weightKg: number | null;
-  notes: string | null;
-  createdAt: string;
+  bodyFatPct: number | null;
+  notes: string | null; // manual log only — the sheet sync never writes this
 };
+
+// The nullable per-day values a sync writes (id is assigned by the DB).
+export type HealthMetricInput = Omit<HealthMetric, "id">;
 
 // ---- Gym / strength sessions ----
 

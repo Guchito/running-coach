@@ -9,7 +9,7 @@ import {
   getPlan,
   getUserById,
   getLatestLthrTest,
-  getLatestBodyMetric,
+  listHealthMetrics,
   getAnthropicApiKey,
   getNvidiaApiKey,
 } from "@/lib/db";
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
       try {
         // Rebuild fresh context each request (goals/plan/runs may have changed).
-        const [goals, plan, runs, gymSessions, user, lastLthrTest, bodyMetric, anthropicKey, nvidiaKey] =
+        const [goals, plan, runs, gymSessions, user, lastLthrTest, healthMetrics, anthropicKey, nvidiaKey] =
           await Promise.all([
             listGoals(userId),
             getPlan(userId),
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
             listGymSessions(userId),
             getUserById(userId),
             getLatestLthrTest(userId),
-            getLatestBodyMetric(userId),
+            listHealthMetrics(userId, 14),
             getAnthropicApiKey(userId),
             getNvidiaApiKey(userId),
           ]);
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
           hrZones: user?.hrZones,
           lastLthrTestOn: lastLthrTest?.testedOn ?? null,
           lthrTestIntervalWeeks: user?.lthrTestIntervalWeeks ?? null,
-          bodyMetric,
+          healthMetrics,
           lean: !cached,
         });
         // Auto-naming is handled reliably server-side (see /api/runs/[id]/autoname),

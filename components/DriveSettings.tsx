@@ -9,6 +9,7 @@ type Config = {
   configured: boolean;
   serviceAccountEmail: string | null;
   folderId: string | null;
+  healthSheetId: string | null;
   lastSync: string | null;
 };
 
@@ -19,6 +20,7 @@ type SyncResult = {
   imported: { id: number; name: string; kind: "run" | "gym" }[];
   skipped: number;
   errors: { file: string; error: string }[];
+  health?: { daysUpdated: number; error?: string };
   error?: string;
 };
 
@@ -26,7 +28,9 @@ export function DriveSettings({ initial }: { initial: Config }) {
   const router = useRouter();
   const [folder, setFolder] = useState(initial.folderId ?? "");
   const [savedFolder, setSavedFolder] = useState(initial.folderId);
-  const [busy, setBusy] = useState<"save" | "sync" | null>(null);
+  const [sheet, setSheet] = useState(initial.healthSheetId ?? "");
+  const [savedSheet, setSavedSheet] = useState(initial.healthSheetId);
+  const [busy, setBusy] = useState<"save" | "saveSheet" | "sync" | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [result, setResult] = useState<SyncResult | null>(null);
   const [lastSync, setLastSync] = useState(initial.lastSync);
@@ -51,6 +55,26 @@ export function DriveSettings({ initial }: { initial: Config }) {
     }
   }
 
+  async function saveSheet() {
+    setBusy("saveSheet");
+    setMsg(null);
+    try {
+      const res = await fetch("/api/drive/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ healthSheet: sheet }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Could not save.");
+      setSavedSheet(d.healthSheetId);
+      setMsg(d.healthSheetId ? "✓ Health sheet linked. Hit Sync now to import it." : "Health sheet unlinked.");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Could not save.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function syncNow() {
     setBusy("sync");
     setMsg(null);
@@ -61,12 +85,22 @@ export function DriveSettings({ initial }: { initial: Config }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ force: true }),
       });
-      const d: SyncResult = await res.json();
+      // A gateway timeout comes back with an empty body — don't let the JSON
+      // parse be the error the runner sees.
+      const d: SyncResult | null = await res.json().catch(() => null);
+      if (!res.ok || !d) {
+        throw new Error(
+          d?.error ||
+            (res.ok
+              ? "The server returned an unreadable response."
+              : `Sync failed (${res.status}) — it may have timed out; try again.`)
+        );
+      }
       setResult(d);
       setLastSync(new Date().toISOString());
       if (d.imported?.length) router.refresh();
-    } catch {
-      setMsg("Sync failed.");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Sync failed.");
     } finally {
       setBusy(null);
     }
@@ -135,12 +169,34 @@ export function DriveSettings({ initial }: { initial: Config }) {
         </div>
       </div>
 
+      <div>
+        <div className="text-sm font-medium mb-1">
+          3. Health Metrics sheet <span className="text-muted font-normal">(optional)</span>
+        </div>
+        <p className="text-sm text-muted mb-2">
+          To sync daily health data (resting HR, HRV, sleep, weight…), share your
+          HealthFit &ldquo;Health Metrics&rdquo; Google Sheet with the same service
+          account and paste its link.
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            value={sheet}
+            onChange={(e) => setSheet(e.target.value)}
+            placeholder="https://docs.google.com/spreadsheets/d/…"
+            className="flex-1 min-w-0 rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-accent bg-card"
+          />
+          <Button type="button" onClick={saveSheet} disabled={busy !== null}>
+            {busy === "saveSheet" ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </div>
+
       <div className="flex items-center gap-3 pt-2 border-t border-border">
         <Button
           type="button"
           variant="soft"
           onClick={syncNow}
-          disabled={busy !== null || !savedFolder}
+          disabled={busy !== null || (!savedFolder && !savedSheet)}
         >
           {busy === "sync" ? "Syncing…" : "Sync now"}
         </Button>
@@ -188,6 +244,15 @@ export function DriveSettings({ initial }: { initial: Config }) {
               {result.errors.map((e) => e.file).join(", ")}
             </div>
           )}
+          {result.health &&
+            (result.health.error ? (
+              <div className="text-warn mt-2">Health sheet: {result.health.error}</div>
+            ) : (
+              <div className="text-muted mt-2">
+                Health metrics: {result.health.daysUpdated} day
+                {result.health.daysUpdated === 1 ? "" : "s"} updated.
+              </div>
+            ))}
         </div>
       )}
     </Card>

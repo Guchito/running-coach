@@ -100,7 +100,20 @@ select:focus-visible:not(.no-ring) {
   outline: none;
 }
 
+/* Mobile: 16px floor on form controls. iOS Safari zooms the whole page when
+   a focused control's font is smaller, and that zoom is what gave the chat
+   (and every form) its sideways scroll. !important because utility classes
+   like text-sm are more specific than an element selector. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 1rem !important;
+  }
+}
+
 /* Markdown-ish styling for coach messages */
+.prose-coach { overflow-wrap: anywhere; }
 .prose-coach p { margin: 0 0 0.6rem; line-height: 1.6; }
 .prose-coach p:last-child { margin-bottom: 0; }
 .prose-coach ul { margin: 0.3rem 0 0.7rem; padding-left: 1.1rem; list-style: disc; }

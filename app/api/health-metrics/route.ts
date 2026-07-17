@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listBodyMetrics, insertBodyMetric } from "@/lib/db";
+import { listHealthMetrics, logDailyHealth } from "@/lib/db";
 import { getCurrentUserId, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -7,14 +7,16 @@ export const runtime = "nodejs";
 export async function GET() {
   const userId = await getCurrentUserId();
   if (!userId) return unauthorized();
-  return NextResponse.json({ metrics: await listBodyMetrics(userId) });
+  return NextResponse.json({ metrics: await listHealthMetrics(userId) });
 }
 
+// Manual daily log (resting HR / weight / note) from the Profile page —
+// merges into the same health_metrics day the sheet sync writes to.
 export async function POST(req: NextRequest) {
   const userId = await getCurrentUserId();
   if (!userId) return unauthorized();
 
-  let b: { recordedOn?: unknown; restingHr?: unknown; weightKg?: unknown; notes?: unknown };
+  let b: { date?: unknown; restingHr?: unknown; weightKg?: unknown; notes?: unknown };
   try {
     b = await req.json();
   } catch {
@@ -37,19 +39,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (restingHr === null && weightKg === null) {
-    return NextResponse.json({ error: "Enter a resting HR or a weight." }, { status: 400 });
+  const notes = typeof b.notes === "string" && b.notes.trim() ? b.notes.trim() : null;
+
+  if (restingHr === null && weightKg === null && notes === null) {
+    return NextResponse.json({ error: "Enter a resting HR, a weight, or a note." }, { status: 400 });
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const recordedOn =
-    typeof b.recordedOn === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.recordedOn) ? b.recordedOn : today;
-  if (recordedOn > today) {
+  const date =
+    typeof b.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.date) ? b.date : today;
+  if (date > today) {
     return NextResponse.json({ error: "Date can't be in the future." }, { status: 400 });
   }
 
-  const notes = typeof b.notes === "string" && b.notes.trim() ? b.notes.trim() : null;
-
-  const metric = await insertBodyMetric(userId, { recordedOn, restingHr, weightKg, notes });
+  const metric = await logDailyHealth(userId, { date, restingHr, weightKg, notes });
   return NextResponse.json({ metric });
 }

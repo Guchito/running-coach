@@ -54,6 +54,7 @@ export default async function SettingsPage() {
               configured: isDriveConfigured(),
               serviceAccountEmail: serviceAccountEmail(),
               folderId: user?.driveFolderId ?? null,
+              healthSheetId: user?.healthSheetId ?? null,
               lastSync: user?.driveLastSync ?? null,
             }}
           />

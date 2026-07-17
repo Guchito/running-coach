@@ -73,9 +73,12 @@ export function HrZonesForm({
     "w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-accent bg-card tabular-nums";
 
   return (
-    <Card className="p-6 max-w-xl">
-      <div className="flex items-end gap-3 mb-3">
-        <label className="block text-sm flex-1">
+    <Card className="p-5 sm:p-6 max-w-xl">
+      {/* minmax(0,1fr) grid + min-w-0 labels: number inputs have a wide
+          intrinsic width and would otherwise stretch the card past a phone
+          screen (they can't shrink inside a plain flex row). */}
+      <div className="grid grid-cols-2 gap-3 items-end mb-3">
+        <label className="block text-sm min-w-0">
           <span className="text-muted">Max heart rate (bpm)</span>
           <input
             value={maxHr}
@@ -90,7 +93,7 @@ export function HrZonesForm({
             className={`mt-1 ${inputCls}`}
           />
         </label>
-        <label className="block text-sm flex-1">
+        <label className="block text-sm min-w-0">
           <span className="text-muted">Lactate threshold HR (bpm)</span>
           <input
             value={lthr}
@@ -107,7 +110,9 @@ export function HrZonesForm({
         </label>
       </div>
 
-      <div className="flex items-center gap-2 mb-5">
+      {/* Full-width stacked buttons on mobile: comfortable tap targets, and
+          the long labels never force the card wider. */}
+      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 mb-5">
         <Button type="button" variant="ghost" onClick={regenerateFromMax}>
           Generate from max HR
         </Button>
@@ -119,17 +124,17 @@ export function HrZonesForm({
       <div className="text-xs uppercase tracking-wide text-muted mb-2">Zones (bpm)</div>
       <div className="space-y-2">
         {zones.map((z, i) => (
-          <div key={i} className="flex items-center gap-3">
+          <div key={i} className="flex items-center gap-2 sm:gap-3">
             <span
               className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: ZONE_COLORS[i] ?? "#cbd5e1" }}
             />
-            <span className="text-sm w-28 shrink-0">{z.name}</span>
+            <span className="text-sm w-24 sm:w-28 shrink-0">{z.name}</span>
             <input
               value={z.min}
               onChange={(e) => updateZone(i, "min", e.target.value)}
               type="number"
-              className={inputCls}
+              className={`min-w-0 ${inputCls}`}
               aria-label={`${z.name} min`}
             />
             <span className="text-muted text-sm">–</span>
@@ -137,7 +142,7 @@ export function HrZonesForm({
               value={z.max}
               onChange={(e) => updateZone(i, "max", e.target.value)}
               type="number"
-              className={inputCls}
+              className={`min-w-0 ${inputCls}`}
               aria-label={`${z.name} max`}
             />
           </div>

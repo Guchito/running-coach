@@ -94,7 +94,7 @@ export function LthrTestSection({
   }
 
   return (
-    <Card className="p-6 max-w-xl">
+    <Card className="p-5 sm:p-6 max-w-xl">
       <p className="text-sm text-muted mb-4">
         Log your lactate-threshold HR tests so your zones stay accurate as you get fitter. The latest
         result becomes your current LTHR
@@ -103,7 +103,7 @@ export function LthrTestSection({
       </p>
 
       {/* Cadence */}
-      <div className="flex items-end gap-3 mb-2">
+      <div className="flex flex-wrap items-end gap-3 mb-2">
         <label className="block text-sm">
           <span className="text-muted">Re-test every (weeks)</span>
           <input
@@ -135,8 +135,10 @@ export function LthrTestSection({
 
       {/* Log a result */}
       <div className="text-xs uppercase tracking-wide text-muted mb-2">Log a test result</div>
-      <div className="grid sm:grid-cols-3 gap-3">
-        <label className="block text-sm">
+      {/* Mobile: date on its own row, the two bpm fields share the second.
+          min-w-0 lets the number inputs shrink into the minmax(0,1fr) tracks. */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <label className="block text-sm min-w-0 col-span-2 sm:col-span-1">
           <span className="text-muted">Date</span>
           <input
             value={testedOn}
@@ -146,7 +148,7 @@ export function LthrTestSection({
             className={`mt-1 w-full ${inputCls}`}
           />
         </label>
-        <label className="block text-sm">
+        <label className="block text-sm min-w-0">
           <span className="text-muted">LTHR (bpm)</span>
           <input
             value={lthr}
@@ -158,7 +160,7 @@ export function LthrTestSection({
             className={`mt-1 w-full ${inputCls}`}
           />
         </label>
-        <label className="block text-sm">
+        <label className="block text-sm min-w-0">
           <span className="text-muted">Max HR (optional)</span>
           <input
             value={maxHr}

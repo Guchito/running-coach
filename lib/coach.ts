@@ -1,4 +1,4 @@
-import type { RunRow, Goal, Plan, HrZone, GymSession, BodyMetric } from "./types";
+import type { RunRow, Goal, Plan, HrZone, GymSession, HealthMetric } from "./types";
 import { formatPace, formatDuration, formatDistance } from "./parseRun";
 import { resolveZones } from "./hr";
 import { gymTypeLabel } from "./gym";
@@ -312,14 +312,30 @@ function buildAdherenceContext(plan: Plan, runs: RunRow[], gymSessions: GymSessi
   );
 }
 
-function buildBodyMetricContext(m: BodyMetric | null): string | null {
-  if (!m) return null;
-  const bits = [
-    m.restingHr != null ? `resting HR ${m.restingHr} bpm` : null,
-    m.weightKg != null ? `weight ${m.weightKg} kg` : null,
-  ].filter(Boolean);
-  if (bits.length === 0) return null;
-  return `BODY METRICS (latest, ${m.recordedOn}): ${bits.join(", ")}.`;
+// Daily Apple Health data synced from the runner's HealthFit sheet, one
+// compact line per day (newest first). Recovery signals the coach should
+// weigh when judging fatigue: resting HR and HRV trends, sleep, weight.
+function buildHealthContext(metrics: HealthMetric[], days: number): string | null {
+  if (!metrics.length) return null;
+  const fmtSleep = (min: number) => `${Math.floor(min / 60)}h${String(min % 60).padStart(2, "0")}`;
+  const lines = metrics.slice(0, days).map((m) => {
+    const bits = [
+      m.restingHr != null ? `RHR ${m.restingHr}` : null,
+      m.hrv != null ? `HRV ${m.hrv}` : null,
+      m.sleepMin != null
+        ? `sleep ${fmtSleep(m.sleepMin)}${m.sleepDeepMin != null ? ` (deep ${fmtSleep(m.sleepDeepMin)})` : ""}`
+        : null,
+      m.weightKg != null ? `${m.weightKg} kg` : null,
+      m.steps != null ? `${m.steps} steps` : null,
+      m.vo2Max != null ? `VO2max ${m.vo2Max}` : null,
+      m.activeKcal != null ? `${m.activeKcal} kcal active` : null,
+      m.notes ? `note: "${m.notes}"` : null,
+    ].filter(Boolean);
+    return bits.length ? `- ${m.date}: ${bits.join(", ")}` : null;
+  });
+  const body = lines.filter(Boolean).join("\n");
+  if (!body) return null;
+  return `DAILY HEALTH (Apple Health, newest first — today's row is partial). Watch resting HR / HRV / sleep for recovery:\n${body}`;
 }
 
 export function buildContextBlock(opts: {
@@ -333,7 +349,7 @@ export function buildContextBlock(opts: {
   hrZones?: HrZone[] | null;
   lastLthrTestOn?: string | null;
   lthrTestIntervalWeeks?: number | null;
-  bodyMetric?: BodyMetric | null;
+  healthMetrics?: HealthMetric[];
   // Leaner block for providers without prompt caching (free NVIDIA models),
   // where every agentic turn re-sends the whole context at full price. The
   // coach can still pull depth on demand via get_training_history.
@@ -354,7 +370,7 @@ export function buildContextBlock(opts: {
     "",
     buildHrContext(opts.maxHr ?? null, opts.lactateThresholdHr ?? null, zones),
     buildLthrTestContext(opts.lastLthrTestOn ?? null, opts.lthrTestIntervalWeeks ?? null, today),
-    buildBodyMetricContext(opts.bodyMetric ?? null),
+    buildHealthContext(opts.healthMetrics ?? [], opts.lean ? 5 : 14),
     "",
     buildLoadContext(opts.runs),
     buildRecordsContext(opts.runs),

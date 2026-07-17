@@ -1,4 +1,4 @@
-import { listRuns, listGoals, getPlan } from "@/lib/db";
+import { listRuns, listGoals, getPlan, listHealthMetrics } from "@/lib/db";
 import {
   computeStats,
   daysUntil,
@@ -27,6 +27,7 @@ import {
   interactiveRow,
 } from "@/components/ui";
 import { RevealOnView } from "@/components/RevealOnView";
+import { HealthCard } from "@/components/HealthCard";
 import { PaceTrendChart, DistanceTrendChart } from "@/components/Charts";
 import { requireUserId } from "@/lib/auth";
 import type { Goal, RunRow } from "@/lib/types";
@@ -36,10 +37,11 @@ export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
   const userId = await requireUserId();
-  const [runs, goals, plan] = await Promise.all([
+  const [runs, goals, plan, healthMetrics] = await Promise.all([
     listRuns(userId),
     listGoals(userId),
     getPlan(userId),
+    listHealthMetrics(userId, 14),
   ]);
   const stats = computeStats(runs);
   // Show active goals plus any raced in the last 30 days, so a fresh race result
@@ -149,6 +151,9 @@ export default async function Dashboard() {
             <TrainingLoadCard runs={runs} />
             <RecordsCard runs={runs} />
           </div>
+
+          {/* Daily health (only once the HealthFit sheet has synced) */}
+          <HealthCard metrics={healthMetrics} href="/health" />
 
           {/* Recent form: last 5 runs vs last 20 */}
           <RecentFormCard stats={stats} />

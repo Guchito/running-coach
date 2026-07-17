@@ -3,24 +3,33 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
-import type { BodyMetric } from "@/lib/types";
+import type { HealthMetric } from "@/lib/types";
 import { formatDate } from "@/lib/parseRun";
 
 const inputCls =
   "rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-accent bg-card tabular-nums";
 
-export function BodyMetricsSection({ initialMetrics }: { initialMetrics: BodyMetric[] }) {
+// Manual daily log (resting HR / weight / note) writing straight into the
+// same health_metrics day the HealthFit sheet syncs to. Manual values
+// overwrite synced ones (you're correcting the record); the delete button
+// clears only these manual fields, so synced data survives — and a value the
+// sheet also has returns on the next sync.
+export function HealthLogSection({ initialMetrics }: { initialMetrics: HealthMetric[] }) {
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
 
-  const [recordedOn, setRecordedOn] = useState(today);
+  const [date, setDate] = useState(today);
   const [restingHr, setRestingHr] = useState("");
   const [weightKg, setWeightKg] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const metrics = initialMetrics;
+  // Only days with something loggable are listed — with the sheet synced
+  // that's most days, so keep the list short.
+  const entries = initialMetrics
+    .filter((m) => m.restingHr != null || m.weightKg != null || m.notes)
+    .slice(0, 14);
 
   async function call(url: string, method: string, body?: unknown): Promise<boolean> {
     setBusy(true);
@@ -43,12 +52,12 @@ export function BodyMetricsSection({ initialMetrics }: { initialMetrics: BodyMet
   }
 
   async function log() {
-    if (!restingHr && !weightKg) {
-      setError("Enter a resting HR or a weight.");
+    if (!restingHr && !weightKg && !notes.trim()) {
+      setError("Enter a resting HR, a weight, or a note.");
       return;
     }
-    const ok = await call("/api/body-metrics", "POST", {
-      recordedOn,
+    const ok = await call("/api/health-metrics", "POST", {
+      date,
       restingHr: restingHr ? Number(restingHr) : null,
       weightKg: weightKg ? Number(weightKg) : null,
       notes: notes.trim() || null,
@@ -57,23 +66,25 @@ export function BodyMetricsSection({ initialMetrics }: { initialMetrics: BodyMet
       setRestingHr("");
       setWeightKg("");
       setNotes("");
-      setRecordedOn(today);
+      setDate(today);
     }
   }
 
   return (
-    <Card className="p-6">
+    <Card className="p-5 sm:p-6">
       <p className="text-sm text-muted mb-4">
-        Log your morning resting heart rate and body weight. A creeping resting HR is an early
-        fatigue signal — your coach watches the latest reading.
+        Your resting HR, weight and the rest of your daily health data sync
+        automatically from the Health Metrics sheet — log a value here to fill a
+        gap or correct a day, or add a note (sleep, soreness, illness…) for your
+        coach. Manual values overwrite synced ones.
       </p>
 
       <div className="grid sm:grid-cols-3 gap-3">
         <label className="block text-sm">
           <span className="text-muted">Date</span>
           <input
-            value={recordedOn}
-            onChange={(e) => setRecordedOn(e.target.value)}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
             type="date"
             max={today}
             className={`mt-1 w-full ${inputCls}`}
@@ -123,13 +134,13 @@ export function BodyMetricsSection({ initialMetrics }: { initialMetrics: BodyMet
         </Button>
       </div>
 
-      {metrics.length > 0 && (
+      {entries.length > 0 && (
         <>
-          <div className="text-xs uppercase tracking-wide text-muted mt-6 mb-2">History</div>
+          <div className="text-xs uppercase tracking-wide text-muted mt-6 mb-2">Recent days</div>
           <div className="divide-y divide-border border border-border rounded-xl">
-            {metrics.map((m) => (
-              <div key={m.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
-                <div className="w-24 shrink-0 text-muted">{formatDate(m.recordedOn)}</div>
+            {entries.map((m) => (
+              <div key={m.date} className="flex items-center gap-3 px-3 py-2.5 text-sm">
+                <div className="w-24 shrink-0 text-muted">{formatDate(m.date)}</div>
                 <div className="flex-1 min-w-0">
                   <span className="font-medium tabular-nums">
                     {m.restingHr != null ? `${m.restingHr} bpm` : ""}
@@ -139,12 +150,13 @@ export function BodyMetricsSection({ initialMetrics }: { initialMetrics: BodyMet
                   {m.notes ? <div className="text-xs text-muted truncate">{m.notes}</div> : null}
                 </div>
                 <button
-                  onClick={() => call(`/api/body-metrics/${m.id}`, "DELETE")}
+                  onClick={() => call(`/api/health-metrics/${m.date}`, "DELETE")}
                   disabled={busy}
                   className="text-xs text-muted hover:text-red-600 shrink-0"
-                  aria-label="Delete entry"
+                  title="Clears resting HR, weight and note for this day; sheet-synced values return on the next sync"
+                  aria-label="Clear entry"
                 >
-                  Delete
+                  Clear
                 </button>
               </div>
             ))}

@@ -11,12 +11,15 @@ import {
   setWeeklyPlan,
   getPlan,
   insertLthrTest,
+  getUserById,
+  updateUserHr,
   listRuns,
   listGymSessions,
 } from "./db";
 import { buildRunsContext, buildGymContext } from "./coach";
 import { formatDuration, parseRaceTime } from "./parseRun";
-import type { MacroPlan, WeeklyPlan } from "./types";
+import { lthrZones, defaultZones } from "./hr";
+import type { HrZone, MacroPlan, WeeklyPlan } from "./types";
 
 // COACH_TOOLS (the tool schemas) now live in the import-free lib/coachDefs.ts —
 // single source of truth, also used by the model bench. Re-exported here so
@@ -169,6 +172,34 @@ export async function executeTool(
       return {
         summary: `Logged LTHR test: ${lthr} bpm on ${testedOn} — now your current LTHR`,
         data: { test },
+      };
+    }
+    case "regenerate_hr_zones": {
+      const user = await getUserById(userId);
+      if (!user) return { summary: "User not found", data: { error: "not found" } };
+      const basis = input.basis === "max_hr" ? "max_hr" : "lthr";
+      let zones: HrZone[];
+      let from: string;
+      if (basis === "lthr") {
+        if (!user.lactateThresholdHr) {
+          return {
+            summary: "No LTHR on file — log an LTHR test first, or regenerate from max HR",
+            data: { error: "no lthr" },
+          };
+        }
+        zones = lthrZones(user.lactateThresholdHr, user.maxHr ?? null);
+        from = `LTHR ${user.lactateThresholdHr} bpm (Friel)`;
+      } else {
+        if (!user.maxHr) {
+          return { summary: "No max HR on file to generate zones from", data: { error: "no max hr" } };
+        }
+        zones = defaultZones(user.maxHr);
+        from = `max HR ${user.maxHr} bpm`;
+      }
+      await updateUserHr(userId, user.maxHr ?? null, user.lactateThresholdHr ?? null, zones);
+      return {
+        summary: `Regenerated your HR zones from ${from}`,
+        data: { zones },
       };
     }
     case "get_training_history": {
