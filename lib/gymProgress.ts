@@ -21,6 +21,10 @@ const EXERCISE_ALIASES: Record<string, string> = {
   // renamed to plain "Triceps Pushdown" in Hevy — all three are the same lift.
   "triceps rope pushdown": "triceps pushdown (cable - straight bar)",
   "triceps pushdown": "triceps pushdown (cable - straight bar)",
+  // Legs
+  "straight leg deadlift": "stiff leg deadlift (dumbbell)",
+  "calf press (machine)": "calf press on seated leg press",
+  "bulgarian split squat (dumbbell)": "bulgarian split squat",
 };
 
 // Sessions log the same movement with slightly different casing/spacing;
@@ -46,6 +50,13 @@ export function volumeOf(sets: GymSet[]): number {
 export function formatKg(v: number): string {
   const rounded = Math.round(v * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+// Timed holds: "3:38" (m:ss).
+export function formatHold(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 // One exercise's appearance in one session.
@@ -107,6 +118,7 @@ export function buildExerciseHistory(sessions: GymSession[]): Map<string, Exerci
 export type ProgressDelta =
   | { kind: "first" }
   | { kind: "weight"; diffKg: number }
+  | { kind: "duration"; diffSec: number }
   | { kind: "reps"; diff: number }
   | { kind: "volume"; diffKg: number }
   | { kind: "same" };
@@ -117,6 +129,12 @@ export function compareEntries(prev: ExerciseEntry | null, cur: ExerciseEntry): 
   const cw = cur.top?.weightKg ?? null;
   if (pw != null && cw != null && Math.abs(cw - pw) >= 0.05) {
     return { kind: "weight", diffKg: Math.round((cw - pw) * 10) / 10 };
+  }
+  // Timed holds progress on the longest hold.
+  const pd = prev.top?.durationSec ?? null;
+  const cd = cur.top?.durationSec ?? null;
+  if (pd != null && cd != null && cd !== pd) {
+    return { kind: "duration", diffSec: cd - pd };
   }
   const pr = prev.top?.reps ?? null;
   const cr = cur.top?.reps ?? null;
@@ -133,9 +151,15 @@ export function entryIndexForSession(hist: ExerciseHistory, sessionId: number): 
   return hist.entries.findIndex((e) => e.sessionId === sessionId);
 }
 
-// Compact one-line set summary: "20×12 · 30×10 · 40×8".
+// Compact one-line set summary: "20×12 · 30×10 · 40×8", holds as "3:38".
 export function setsSummary(sets: GymSet[]): string {
   return sets
-    .map((s) => (s.weightKg != null ? `${formatKg(s.weightKg)}×${s.reps}` : `×${s.reps}`))
+    .map((s) =>
+      s.weightKg != null
+        ? `${formatKg(s.weightKg)}×${s.reps}`
+        : s.durationSec != null
+        ? formatHold(s.durationSec)
+        : `×${s.reps}`
+    )
     .join(" · ");
 }

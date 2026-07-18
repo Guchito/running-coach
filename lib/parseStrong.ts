@@ -87,10 +87,19 @@ function parseSet(body: string): GymSet | null {
     if (/^lb/i.test(wr[2])) weight = Math.round(weight * 0.45359237 * 10) / 10;
     return { weightKg: weight, reps: Number(wr[3]) };
   }
+  // Timed holds: "3min 38s" / "1min 30s" / "45s" / "1h 2min" (planks etc.).
+  const dur = /^(?:(\d+)\s*h(?:ours?)?)?\s*(?:(\d+)\s*min)?\s*(?:(\d+)\s*s(?:ec)?)?$/i.exec(
+    body.trim()
+  );
+  if (dur && (dur[1] || dur[2] || dur[3])) {
+    const sec =
+      Number(dur[1] ?? 0) * 3600 + Number(dur[2] ?? 0) * 60 + Number(dur[3] ?? 0);
+    if (sec > 0) return { weightKg: null, reps: 0, durationSec: sec };
+  }
   // Rep-only sets: "12 reps" / "12 repeticiones" / "× 12".
   const r = /(?:^|[×x]\s*)(\d+)\s*(?:reps?|repeticiones)?\s*$/i.exec(body.trim());
   if (r) return { weightKg: null, reps: Number(r[1]) };
-  return null; // duration/distance sets etc. — skip, keep the exercise
+  return null; // distance sets etc. — skip, keep the exercise
 }
 
 // Best-effort split → GymType from the workout title.
@@ -176,8 +185,10 @@ export function exercisesVolumeKg(exercises: GymExercise[]): number {
   return Math.round(total);
 }
 
-// Heaviest set of an exercise (for "top set" summaries and coach context).
+// Best set of an exercise (for "top set" summaries and coach context):
+// heaviest by weight; for timed holds the longest; for rep-only the most reps.
 export function topSet(e: GymExercise): GymSet | null {
   if (e.sets.length === 0) return null;
-  return e.sets.reduce((best, s) => ((s.weightKg ?? 0) > (best.weightKg ?? 0) ? s : best));
+  const score = (s: GymSet) => s.weightKg ?? s.durationSec ?? s.reps;
+  return e.sets.reduce((best, s) => (score(s) > score(best) ? s : best));
 }

@@ -572,17 +572,23 @@ function ExerciseTooltip({
   active?: boolean;
   payload?: { payload: ExercisePoint }[];
   label?: string;
-  unit: "kg" | "reps";
+  unit: "kg" | "reps" | "time";
 }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
+  const holdFmt = (sec: number) =>
+    `${Math.floor(sec / 60)}:${String(Math.round(sec) % 60).padStart(2, "0")}`;
   return (
     <div className="rounded-[10px] border border-border bg-card text-xs px-2.5 py-2 shadow-sm">
       <div className="font-medium mb-1">{formatDate(label ?? "")}</div>
       <div className="text-muted">
         Top set:{" "}
         <span className="text-foreground tabular-nums">
-          {unit === "kg" ? `${p.value} kg${p.reps != null ? ` × ${p.reps}` : ""}` : `${p.value} reps`}
+          {unit === "kg"
+            ? `${p.value} kg${p.reps != null ? ` × ${p.reps}` : ""}`
+            : unit === "time"
+            ? holdFmt(p.value)
+            : `${p.value} reps`}
         </span>
       </div>
       {p.e1Rm != null && (
@@ -604,7 +610,7 @@ export function ExerciseTrendChart({
   unit,
 }: {
   points: ExercisePoint[];
-  unit: "kg" | "reps";
+  unit: "kg" | "reps" | "time";
 }) {
   if (points.length < 2) {
     return (
@@ -627,7 +633,7 @@ export function ExerciseTrendChart({
           tickFormatter={dayMonthTick}
         />
         <YAxis
-          tickFormatter={(v) => `${v}`}
+          tickFormatter={(v) => (unit === "time" ? paceTick(v) : `${v}`)}
           fontSize={11}
           stroke="#9ca3af"
           tick={{ fill: "#9ca3af" }}

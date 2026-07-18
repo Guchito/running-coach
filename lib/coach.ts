@@ -3,7 +3,7 @@ import { formatPace, formatDuration, formatDistance } from "./parseRun";
 import { resolveZones } from "./hr";
 import { gymTypeLabel } from "./gym";
 import { topSet, exercisesVolumeKg } from "./parseStrong";
-import { setsSummary } from "./gymProgress";
+import { formatHold, setsSummary } from "./gymProgress";
 import { trainingLoad, LOAD_STATUS_LABEL } from "./trainingLoad";
 import { runningRecords } from "./prs";
 import { weeklyAdherence } from "./adherence";
@@ -233,7 +233,13 @@ export function buildGymContext(sessions: GymSession[], limit = 12, fullSets = f
               if (fullSets) return `${e.name} ${setsSummary(e.sets)}`;
               const s = topSet(e);
               if (!s) return null;
-              return `${e.name} ${s.weightKg != null ? `${s.weightKg}kg×${s.reps}` : `${s.reps} reps`}`;
+              return `${e.name} ${
+                s.weightKg != null
+                  ? `${s.weightKg}kg×${s.reps}`
+                  : s.durationSec != null
+                  ? `${formatHold(s.durationSec)} hold`
+                  : `${s.reps} reps`
+              }`;
             })
             .filter(Boolean)
             .join("; ")

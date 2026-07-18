@@ -74,7 +74,8 @@ export function SyncNotifier({
 
   // The card shows everywhere except the coach page (redundant there). Report
   // visibility up so the stack can hide the standalone plan prompt meanwhile.
-  const visible = authed && !dismissed && imported.length > 0 && pathname !== "/coach";
+  const visible =
+    authed && !dismissed && imported.length > 0 && pathname !== "/coach";
   useEffect(() => {
     onVisibleChange?.(visible);
   }, [visible, onVisibleChange]);
@@ -118,7 +119,8 @@ export function SyncNotifier({
   }
   function onTouchEnd() {
     setDragging(false);
-    if (dragX < -60) setDismissed(true); // swiped far enough left → dismiss
+    if (dragX < -60)
+      setDismissed(true); // swiped far enough left → dismiss
     else setDragX(0); // spring back
   }
 
@@ -137,13 +139,25 @@ export function SyncNotifier({
     >
       <div className="flex items-start gap-3">
         <span className="grid place-items-center w-9 h-9 shrink-0 rounded-full bg-ink text-white">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 21V4m0 0h13l-2.5 4L18 12H5" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={1.8}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 21V4m0 0h13l-2.5 4L18 12H5"
+            />
           </svg>
         </span>
         <div className="min-w-0 flex-1">
           <div className="font-medium text-sm">
-            {one ? "New run synced" : `${imported.length} new runs synced`}
+            {one
+              ? "New workout synced"
+              : `${imported.length} new workouts synced`}
             {weekStatus?.reason === "complete" ? " · week complete 🎉" : ""}
           </div>
           <div className="text-xs text-muted truncate">

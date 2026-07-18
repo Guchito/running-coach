@@ -6,6 +6,7 @@ import {
   buildExerciseHistory,
   compareEntries,
   exerciseKey,
+  formatHold,
   formatKg,
   setsSummary,
 } from "@/lib/gymProgress";
@@ -44,14 +45,19 @@ export default async function ExercisePage({
   const entries = hist.entries; // oldest → newest
   const latest = entries[entries.length - 1];
   const hasWeight = entries.some((e) => e.top?.weightKg != null);
-  const unit: "kg" | "reps" = hasWeight ? "kg" : "reps";
+  const hasHold = entries.some((e) => e.top?.durationSec != null);
+  const unit: "kg" | "reps" | "time" = hasWeight ? "kg" : hasHold ? "time" : "reps";
 
-  // All-time best top set (by weight, reps break ties) + best estimated 1RM.
+  // The number a top set competes on: weight, else hold duration, else reps.
+  const topValue = (t: { weightKg: number | null; reps: number; durationSec?: number | null }) =>
+    t.weightKg ?? t.durationSec ?? t.reps;
+
+  // All-time best top set (by that value, reps break ties) + best estimated 1RM.
   const best = entries.reduce((b, e) => {
     if (!e.top) return b;
     if (!b?.top) return e;
-    const bw = b.top.weightKg ?? b.top.reps;
-    const ew = e.top.weightKg ?? e.top.reps;
+    const bw = topValue(b.top);
+    const ew = topValue(e.top);
     if (ew > bw || (ew === bw && e.top.reps > b.top.reps)) return e;
     return b;
   }, entries[0]);
@@ -64,14 +70,14 @@ export default async function ExercisePage({
   const prSessionIds = new Set<number>();
   let runningBest = -Infinity;
   entries.forEach((e, i) => {
-    const w = e.top?.weightKg ?? e.top?.reps ?? 0;
+    const w = e.top ? topValue(e.top) : 0;
     if (i > 0 && w > runningBest) prSessionIds.add(e.sessionId);
     if (w > runningBest) runningBest = w;
   });
 
   const points = entries.map((e) => ({
     date: e.date.slice(0, 10),
-    value: e.top ? Math.round((e.top.weightKg ?? e.top.reps) * 10) / 10 : 0,
+    value: e.top ? Math.round(topValue(e.top) * 10) / 10 : 0,
     reps: e.top?.reps ?? null,
     e1Rm: e.e1Rm,
     volumeKg: e.volumeKg,
@@ -81,8 +87,13 @@ export default async function ExercisePage({
     e.top
       ? e.top.weightKg != null
         ? `${formatKg(e.top.weightKg)} kg × ${e.top.reps}`
+        : e.top.durationSec != null
+        ? formatHold(e.top.durationSec)
         : `${e.top.reps} reps`
       : "—";
+
+  // For timed holds "volume in kg" is meaningless — show total hold time.
+  const latestHoldSec = latest.sets.reduce((t, s) => t + (s.durationSec ?? 0), 0);
 
   return (
     <PageShell
@@ -111,8 +122,12 @@ export default async function ExercisePage({
           appear={2}
         />
         <Stat
-          label="Last volume"
-          value={`${Math.round(latest.volumeKg).toLocaleString("en-GB")} kg`}
+          label={unit === "time" ? "Last total hold" : "Last volume"}
+          value={
+            unit === "time"
+              ? formatHold(latestHoldSec)
+              : `${Math.round(latest.volumeKg).toLocaleString("en-GB")} kg`
+          }
           sub={`${latest.sets.length} sets`}
           appear={3}
         />

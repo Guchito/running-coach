@@ -251,7 +251,9 @@ export type GymSummary = {
 
 // One set of an exercise, as logged in a lifting app (e.g. Strong). Weight is
 // null for bodyweight/rep-only sets.
-export type GymSet = { weightKg: number | null; reps: number };
+// A set is weight×reps, reps-only, or a timed hold (plank etc. — reps is 0
+// and durationSec carries the set).
+export type GymSet = { weightKg: number | null; reps: number; durationSec?: number | null };
 
 export type GymExercise = { name: string; sets: GymSet[] };
 

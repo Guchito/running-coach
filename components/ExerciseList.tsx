@@ -5,6 +5,7 @@ import {
   compareEntries,
   entryIndexForSession,
   exerciseKey,
+  formatHold,
   formatKg,
   volumeOf,
   type ExerciseEntry,
@@ -19,7 +20,7 @@ import type { GymSession, GymSet } from "@/lib/types";
 // Each set is a column scaled to its weight, so pyramid/backoff structure
 // reads at a glance. The heaviest set carries the accent — blue means data.
 function SetBars({ sets }: { sets: GymSet[] }) {
-  const values = sets.map((s) => s.weightKg ?? s.reps);
+  const values = sets.map((s) => s.weightKg ?? s.durationSec ?? s.reps);
   const max = Math.max(...values, 1);
   const topIdx = values.indexOf(Math.max(...values));
   return (
@@ -32,14 +33,18 @@ function SetBars({ sets }: { sets: GymSet[] }) {
         return (
           <div key={i} className="flex flex-col items-center gap-1 shrink-0">
             <span className="font-mono text-[10px] leading-none tabular-nums text-foreground/80">
-              {s.weightKg != null ? formatKg(s.weightKg) : s.reps}
+              {s.weightKg != null
+                ? formatKg(s.weightKg)
+                : s.durationSec != null
+                ? formatHold(s.durationSec)
+                : s.reps}
             </span>
             <div
               className={`w-7 rounded-t-[3px] bar-grow ${isTop ? "bg-accent" : "bg-accent-soft"}`}
               style={{ height: h, animationDelay: `${i * 50}ms` }}
             />
             <span className="font-mono text-[10px] leading-none tabular-nums text-muted">
-              ×{s.reps}
+              {s.durationSec != null ? "hold" : `×${s.reps}`}
             </span>
           </div>
         );
@@ -97,6 +102,8 @@ export function DeltaBadge({ delta, prevDate }: { delta: ProgressDelta; prevDate
   const value =
     delta.kind === "weight"
       ? { diff: delta.diffKg, unit: "kg" }
+      : delta.kind === "duration"
+      ? { diff: delta.diffSec, unit: "s hold" }
       : delta.kind === "reps"
       ? { diff: delta.diff, unit: delta.diff === 1 || delta.diff === -1 ? "rep" : "reps" }
       : { diff: delta.diffKg, unit: "kg vol" };
@@ -147,7 +154,7 @@ export function ExerciseList({
             ? hist.entries
                 .slice(0, idx + 1)
                 .slice(-8)
-                .map((e) => e.top?.weightKg ?? e.top?.reps ?? 0)
+                .map((e) => e.top?.weightKg ?? e.top?.durationSec ?? e.top?.reps ?? 0)
             : [];
           const top = entry?.top ?? null;
 
@@ -180,6 +187,8 @@ export function ExerciseList({
                         <span className="text-foreground font-medium">
                           {top.weightKg != null
                             ? `${formatKg(top.weightKg)} kg × ${top.reps}`
+                            : top.durationSec != null
+                            ? formatHold(top.durationSec)
                             : `${top.reps} reps`}
                         </span>
                       </div>
