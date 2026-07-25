@@ -17,6 +17,7 @@ import type {
   LthrTest,
   HealthMetric,
   HealthMetricInput,
+  ExerciseMedia,
 } from "./types";
 import { encryptSecret, decryptSecret } from "./secrets";
 
@@ -213,6 +214,55 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS gym_user_started_idx ON gym_sessions(user_id, started_at DESC);
   ALTER TABLE gym_sessions ADD COLUMN IF NOT EXISTS exercises_json JSONB;
   ALTER TABLE gym_sessions ADD COLUMN IF NOT EXISTS strong_link TEXT;
+
+  -- Resolved exercise media from AscendAPI, cached so a movement's video/gif and
+  -- muscle data are fetched once and reused across every session and plan that
+  -- names it. Global (not per-user): exercise reference data is the same for
+  -- everyone, and this app has one athlete. Keyed by exerciseKey(name).
+  CREATE TABLE IF NOT EXISTS exercise_catalog (
+    key TEXT PRIMARY KEY,
+    exercise_id TEXT,
+    source TEXT NOT NULL,
+    matched_name TEXT,
+    video_url TEXT,
+    gif_url TEXT,
+    image_url TEXT,
+    target_muscles JSONB NOT NULL DEFAULT '[]'::jsonb,
+    secondary_muscles JSONB NOT NULL DEFAULT '[]'::jsonb,
+    body_parts JSONB NOT NULL DEFAULT '[]'::jsonb,
+    equipments JSONB NOT NULL DEFAULT '[]'::jsonb,
+    instructions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    overview TEXT,
+    verified BOOLEAN NOT NULL DEFAULT false,
+    resolved_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  ALTER TABLE exercise_catalog ADD COLUMN IF NOT EXISTS video_checked BOOLEAN NOT NULL DEFAULT false;
+
+  -- A local mirror of the classic ExerciseDB catalog (~1,500 real gym movements
+  -- with GIFs, muscles and instructions). Synced once from the free host, then
+  -- all matching / search / browse runs against this table — reliable and
+  -- instant, instead of depending on that host's flaky, poorly-ranked search on
+  -- every lookup. Global reference data.
+  CREATE TABLE IF NOT EXISTS exercise_index (
+    exercise_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    name_key TEXT NOT NULL,
+    gif_url TEXT,
+    target_muscles JSONB NOT NULL DEFAULT '[]'::jsonb,
+    secondary_muscles JSONB NOT NULL DEFAULT '[]'::jsonb,
+    body_parts JSONB NOT NULL DEFAULT '[]'::jsonb,
+    equipments JSONB NOT NULL DEFAULT '[]'::jsonb,
+    instructions JSONB NOT NULL DEFAULT '[]'::jsonb
+  );
+
+  -- Small key/value store for global app state (e.g. the exercise-catalog sync
+  -- cursor + completion flag), so a sync that the flaky source interrupts can
+  -- resume where it left off instead of starting over.
+  CREATE TABLE IF NOT EXISTS app_state (
+    key TEXT PRIMARY KEY,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
 `;
 
 // Run schema creation once per process.
@@ -232,6 +282,231 @@ async function q<T = Record<string, unknown>>(
   await ensureSchema();
   const res = await pool().query(text, params);
   return res.rows as T[];
+}
+
+// ---------- exercise catalog (AscendAPI media cache) ----------
+
+function rowToExerciseMedia(r: Record<string, unknown>): ExerciseMedia {
+  return {
+    key: r.key as string,
+    exerciseId: (r.exercise_id as string) ?? null,
+    source: r.source as ExerciseMedia["source"],
+    matchedName: (r.matched_name as string) ?? null,
+    videoUrl: (r.video_url as string) ?? null,
+    gifUrl: (r.gif_url as string) ?? null,
+    imageUrl: (r.image_url as string) ?? null,
+    targetMuscles: jsonField<string[]>(r.target_muscles) ?? [],
+    secondaryMuscles: jsonField<string[]>(r.secondary_muscles) ?? [],
+    bodyParts: jsonField<string[]>(r.body_parts) ?? [],
+    equipments: jsonField<string[]>(r.equipments) ?? [],
+    instructions: jsonField<string[]>(r.instructions) ?? [],
+    overview: (r.overview as string) ?? null,
+    verified: r.verified === true,
+    videoChecked: r.video_checked === true,
+    resolvedAt: new Date(r.resolved_at as string).toISOString(),
+  };
+}
+
+export async function getExerciseMedia(key: string): Promise<ExerciseMedia | null> {
+  const rows = await q(`SELECT * FROM exercise_catalog WHERE key = $1`, [key]);
+  return rows[0] ? rowToExerciseMedia(rows[0]) : null;
+}
+
+// Batch cache read for a whole session or plan day, so rendering N exercises is
+// one round-trip, not N.
+export async function getExerciseMediaMany(
+  keys: string[]
+): Promise<Map<string, ExerciseMedia>> {
+  if (keys.length === 0) return new Map();
+  const rows = await q(`SELECT * FROM exercise_catalog WHERE key = ANY($1)`, [keys]);
+  const out = new Map<string, ExerciseMedia>();
+  for (const r of rows) {
+    const m = rowToExerciseMedia(r);
+    out.set(m.key, m);
+  }
+  return out;
+}
+
+export async function upsertExerciseMedia(m: ExerciseMedia): Promise<ExerciseMedia> {
+  const rows = await q(
+    `INSERT INTO exercise_catalog
+       (key, exercise_id, source, matched_name, video_url, gif_url, image_url,
+        target_muscles, secondary_muscles, body_parts, equipments, instructions,
+        overview, verified, video_checked, resolved_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,
+             $8::jsonb,$9::jsonb,$10::jsonb,$11::jsonb,$12::jsonb,$13,$14,$15, now())
+     ON CONFLICT (key) DO UPDATE SET
+       exercise_id = EXCLUDED.exercise_id,
+       source = EXCLUDED.source,
+       matched_name = EXCLUDED.matched_name,
+       video_url = EXCLUDED.video_url,
+       gif_url = EXCLUDED.gif_url,
+       image_url = EXCLUDED.image_url,
+       target_muscles = EXCLUDED.target_muscles,
+       secondary_muscles = EXCLUDED.secondary_muscles,
+       body_parts = EXCLUDED.body_parts,
+       equipments = EXCLUDED.equipments,
+       instructions = EXCLUDED.instructions,
+       overview = EXCLUDED.overview,
+       -- A confirmed/overridden match must survive a later automatic re-resolve.
+       verified = (exercise_catalog.verified OR EXCLUDED.verified),
+       video_checked = EXCLUDED.video_checked,
+       resolved_at = now()
+     RETURNING *`,
+    [
+      m.key,
+      m.exerciseId,
+      m.source,
+      m.matchedName,
+      m.videoUrl,
+      m.gifUrl,
+      m.imageUrl,
+      JSON.stringify(m.targetMuscles),
+      JSON.stringify(m.secondaryMuscles),
+      JSON.stringify(m.bodyParts),
+      JSON.stringify(m.equipments),
+      JSON.stringify(m.instructions),
+      m.overview,
+      m.verified,
+      m.videoChecked,
+    ]
+  );
+  return rowToExerciseMedia(rows[0]);
+}
+
+// Cached matches that still need a v2 video check (the check hasn't run or
+// failed), for the background backfill pass.
+export async function listPendingVideoChecks(limit: number): Promise<ExerciseMedia[]> {
+  const rows = await q(
+    `SELECT * FROM exercise_catalog WHERE source = 'v1' AND video_checked = false LIMIT $1`,
+    [limit]
+  );
+  return rows.map(rowToExerciseMedia);
+}
+
+export async function countPendingVideoChecks(): Promise<number> {
+  const rows = await q<{ count: number }>(
+    `SELECT count(*)::int AS count FROM exercise_catalog WHERE source = 'v1' AND video_checked = false`
+  );
+  return rows[0]?.count ?? 0;
+}
+
+// ---------- exercise index (local mirror of the ExerciseDB catalog) ----------
+
+export type ExerciseIndexRow = {
+  exerciseId: string;
+  name: string;
+  nameKey: string;
+  gifUrl: string | null;
+  targetMuscles: string[];
+  secondaryMuscles: string[];
+  bodyParts: string[];
+  equipments: string[];
+  instructions: string[];
+};
+
+function rowToIndex(r: Record<string, unknown>): ExerciseIndexRow {
+  return {
+    exerciseId: r.exercise_id as string,
+    name: r.name as string,
+    nameKey: r.name_key as string,
+    gifUrl: (r.gif_url as string) ?? null,
+    targetMuscles: jsonField<string[]>(r.target_muscles) ?? [],
+    secondaryMuscles: jsonField<string[]>(r.secondary_muscles) ?? [],
+    bodyParts: jsonField<string[]>(r.body_parts) ?? [],
+    equipments: jsonField<string[]>(r.equipments) ?? [],
+    instructions: jsonField<string[]>(r.instructions) ?? [],
+  };
+}
+
+export async function countExerciseIndex(): Promise<number> {
+  const rows = await q<{ count: number }>(`SELECT count(*)::int AS count FROM exercise_index`);
+  return rows[0]?.count ?? 0;
+}
+
+export async function bulkUpsertExerciseIndex(rows: ExerciseIndexRow[]): Promise<void> {
+  if (rows.length === 0) return;
+  const CHUNK = 400;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const slice = rows.slice(i, i + CHUNK);
+    const params: unknown[] = [];
+    const tuples = slice
+      .map((r, j) => {
+        const b = j * 9;
+        params.push(
+          r.exerciseId,
+          r.name,
+          r.nameKey,
+          r.gifUrl,
+          JSON.stringify(r.targetMuscles),
+          JSON.stringify(r.secondaryMuscles),
+          JSON.stringify(r.bodyParts),
+          JSON.stringify(r.equipments),
+          JSON.stringify(r.instructions)
+        );
+        return `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5}::jsonb,$${b + 6}::jsonb,$${b + 7}::jsonb,$${b + 8}::jsonb,$${b + 9}::jsonb)`;
+      })
+      .join(",");
+    await q(
+      `INSERT INTO exercise_index
+         (exercise_id, name, name_key, gif_url, target_muscles, secondary_muscles, body_parts, equipments, instructions)
+       VALUES ${tuples}
+       ON CONFLICT (exercise_id) DO UPDATE SET
+         name = EXCLUDED.name,
+         name_key = EXCLUDED.name_key,
+         gif_url = EXCLUDED.gif_url,
+         target_muscles = EXCLUDED.target_muscles,
+         secondary_muscles = EXCLUDED.secondary_muscles,
+         body_parts = EXCLUDED.body_parts,
+         equipments = EXCLUDED.equipments,
+         instructions = EXCLUDED.instructions`,
+      params
+    );
+  }
+}
+
+// Rows whose name contains any of the given words — a cheap pre-filter that
+// hands a small pool to the in-memory scorer (the table is tiny, so a scan is
+// nothing).
+export async function searchExerciseIndex(words: string[], limit = 250): Promise<ExerciseIndexRow[]> {
+  if (words.length === 0) return [];
+  const patterns = words.map((w) => `%${w}%`);
+  const rows = await q(
+    `SELECT * FROM exercise_index WHERE name ILIKE ANY($1::text[]) LIMIT $2`,
+    [patterns, limit]
+  );
+  return rows.map(rowToIndex);
+}
+
+export async function browseExerciseIndexByBodyPart(
+  bodyPart: string,
+  limit = 120
+): Promise<ExerciseIndexRow[]> {
+  const rows = await q(
+    `SELECT * FROM exercise_index WHERE body_parts ? $1 ORDER BY name LIMIT $2`,
+    [bodyPart, limit]
+  );
+  return rows.map(rowToIndex);
+}
+
+export async function getExerciseIndexById(id: string): Promise<ExerciseIndexRow | null> {
+  const rows = await q(`SELECT * FROM exercise_index WHERE exercise_id = $1`, [id]);
+  return rows[0] ? rowToIndex(rows[0]) : null;
+}
+
+// ---------- app state (key/value) ----------
+
+export async function getAppState<T>(key: string): Promise<T | null> {
+  const rows = await q<{ value: T }>(`SELECT value FROM app_state WHERE key = $1`, [key]);
+  return rows[0] ? rows[0].value : null;
+}
+
+export async function setAppState<T>(key: string, value: T): Promise<void> {
+  await q(
+    `INSERT INTO app_state (key, value, updated_at) VALUES ($1, $2::jsonb, now())
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+    [key, JSON.stringify(value)]
+  );
 }
 
 // ---------- users ----------

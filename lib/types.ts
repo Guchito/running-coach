@@ -281,3 +281,47 @@ export type ChatMessage = {
   content: string;
   createdAt: string;
 };
+
+// ---- Exercise media (AscendAPI / ExerciseDB) ----
+
+// One movement resolved against AscendAPI, cached so we never re-hit the API
+// (or the rate limit) for a name we've seen. Keyed globally by exerciseKey()
+// since exercise reference data is the same for every session and plan. The
+// media itself lives on AscendAPI's CDN; we only store the URLs plus the
+// metadata the app renders (muscles for the visualizer, steps for the guide).
+export type ExerciseMediaSource = "v2" | "v1" | "none";
+
+// One search/browse result the athlete can pick in the "fix the demo" UI.
+// Carries its source so an override knows which API to pull the full record
+// from. thumbUrl is a GIF (v1) or still image (v2) for the list.
+export type ExerciseCandidate = {
+  source: "v1" | "v2";
+  exerciseId: string;
+  name: string;
+  thumbUrl: string | null;
+};
+
+export type ExerciseMedia = {
+  key: string; // exerciseKey(name): the normalized lookup key
+  exerciseId: string | null; // AscendAPI id, null when nothing matched
+  source: ExerciseMediaSource; // where the record came from ("none" = no match)
+  matchedName: string | null; // canonical name AscendAPI returned
+  videoUrl: string | null; // v2 HD demo (watermarked on the free tier)
+  gifUrl: string | null; // v1 animated fallback when there's no video
+  imageUrl: string | null; // static poster (reduced-motion, video loading)
+  targetMuscles: string[]; // primary movers, in the visualizer's vocabulary
+  secondaryMuscles: string[]; // stabilizers, same vocabulary
+  bodyParts: string[];
+  equipments: string[];
+  instructions: string[]; // step-by-step guide
+  overview: string | null;
+  // True once the athlete has confirmed or hand-picked the match, so an
+  // automatic re-resolve never overwrites a correction.
+  verified: boolean;
+  // True once v2 has actually been asked for a video (whether or not it had
+  // one). False means the check hasn't happened yet or failed (rate limit /
+  // network) — so a background pass will retry it. Distinguishes "no video
+  // exists" from "we couldn't reach v2".
+  videoChecked: boolean;
+  resolvedAt: string;
+};

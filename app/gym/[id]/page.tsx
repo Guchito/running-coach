@@ -4,7 +4,9 @@ import { gymTypeLabel } from "@/lib/gym";
 import { PageShell, Card, Stat, Button } from "@/components/ui";
 import { DeleteGymButton } from "@/components/DeleteGymButton";
 import { ExerciseList } from "@/components/ExerciseList";
+import { SessionMuscleMap } from "@/components/SessionMuscleMap";
 import { RevealOnView } from "@/components/RevealOnView";
+import { resolveExercises, aggregateSessionMuscles } from "@/lib/exerciseDb";
 import { requireUserId } from "@/lib/auth";
 import { notFound } from "next/navigation";
 
@@ -21,6 +23,14 @@ export default async function GymSessionPage({
   if (!session) notFound();
   // Full history so each exercise can compare against its previous outing.
   const allSessions = session.exercises?.length ? await listGymSessions(userId) : [];
+
+  // Muscles worked across every exercise, for the "Muscles trained" diagram.
+  // Resolution is cached, so this is cheap after the first view.
+  const muscles = session.exercises?.length
+    ? aggregateSessionMuscles([
+        ...(await resolveExercises(session.exercises.map((e) => e.name))).values(),
+      ])
+    : { target: [], secondary: [] };
 
   const started = new Date(session.startedAt);
 
@@ -57,6 +67,12 @@ export default async function GymSessionPage({
         />
         <Stat label="Calories" value={session.calories != null ? Math.round(session.calories) : "—"} />
       </div>
+
+      {muscles.target.length > 0 && (
+        <RevealOnView threshold={0.1}>
+          <SessionMuscleMap target={muscles.target} secondary={muscles.secondary} />
+        </RevealOnView>
+      )}
 
       {session.exercises && session.exercises.length > 0 && (
         <RevealOnView threshold={0.1}>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui";
 import { SessionBadge } from "@/components/SessionIcon";
 import { dayKey, type SessionLite } from "@/lib/sessionMeta";
@@ -44,6 +45,7 @@ function timeOf(iso: string): string {
 }
 
 export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
+  const router = useRouter();
   // Group sessions by local day.
   const byDay = useMemo(() => {
     const m = new Map<string, SessionLite[]>();
@@ -147,7 +149,12 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
           return (
             <button
               key={cell.key}
-              onClick={() => has && setModalDay(cell.key)}
+              onClick={() => {
+                if (!has) return;
+                // Single session: skip the modal, go straight to it.
+                if (items.length === 1) router.push(items[0].href);
+                else setModalDay(cell.key);
+              }}
               disabled={!has}
               className={`h-12 rounded-lg border p-0.5 flex flex-col items-center justify-center gap-0.5 transition-colors ${
                 isToday ? "border-accent" : "border-transparent"

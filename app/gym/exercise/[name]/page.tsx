@@ -13,7 +13,9 @@ import {
 import { PageShell, Card, Stat, Button, interactiveRow } from "@/components/ui";
 import { DeltaBadge } from "@/components/ExerciseList";
 import { ExerciseTrendChart } from "@/components/Charts";
+import { ExerciseGuide } from "@/components/ExerciseGuide";
 import { RevealOnView } from "@/components/RevealOnView";
+import { resolveExercise } from "@/lib/exerciseDb";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,11 @@ export default async function ExercisePage({
   const sessions = await listGymSessions(userId);
   const hist = buildExerciseHistory(sessions).get(key);
   if (!hist) notFound();
+
+  // Demo video/GIF + muscles + instructions for this movement. Resolved from
+  // AscendAPI on first view, then cached — a miss returns an empty record, never
+  // throws, so a network blip can't take the page down.
+  const media = await resolveExercise(hist.name);
 
   const entries = hist.entries; // oldest → newest
   const latest = entries[entries.length - 1];
@@ -132,6 +139,8 @@ export default async function ExercisePage({
           appear={3}
         />
       </div>
+
+      <ExerciseGuide name={hist.name} media={media} />
 
       <Card className="p-5 mt-4">
         <div className="flex items-baseline justify-between gap-3 mb-2">
