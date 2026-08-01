@@ -11,8 +11,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 // The default model when the runner hasn't picked one. This is the free NVIDIA
 // model: Claude is paid and requires each runner to add their own API key in
 // Settings, so the out-of-the-box default must be a free option.
-export const COACH_MODEL =
-  process.env.COACH_MODEL || "mistralai/mistral-large-3-675b-instruct-2512";
+export const COACH_MODEL = process.env.COACH_MODEL || "z-ai/glm-5.2";
 
 export type CoachProviderId = "anthropic" | "nvidia";
 
@@ -20,7 +19,10 @@ export type CoachProviderId = "anthropic" | "nvidia";
 // - anthropic: Claude models (paid). Each runner adds their OWN Anthropic API key
 //   in Settings; requests are billed to that key. Without a key these are unusable.
 // - nvidia: free models on build.nvidia.com via NVIDIA_API_KEY (OpenAI-compatible).
-//   Ids were live-probed + tool-call benchmarked (see /bench) on 2026-06-27.
+//   Ids were live-probed + tool-call benchmarked (see /bench) on 2026-08-01, after
+//   the previous default (mistral-large-3) reached end of life and started 410ing.
+//   NVIDIA retires free models without warning, so when the coach starts failing,
+//   re-probe GET /v1/models and re-run the bench before swapping an id in here.
 export const COACH_MODELS = [
   {
     id: "claude-opus-4-8",
@@ -44,18 +46,18 @@ export const COACH_MODELS = [
       "Fastest and cheapest — good for quick chat, but less reliable at editing plans. Use Opus or Sonnet when you want it to build or change your plan.",
   },
   {
-    id: "mistralai/mistral-large-3-675b-instruct-2512",
+    id: "z-ai/glm-5.2",
     provider: "nvidia",
-    label: "Mistral Large 3 · Free",
+    label: "GLM 5.2 · Free",
     blurb:
       "Free — no API key needed. Fast and the most reliable free model at building and editing plans. Recommended free option.",
   },
   {
-    id: "nvidia/nvidia-nemotron-nano-9b-v2",
+    id: "deepseek-ai/deepseek-v4-pro",
     provider: "nvidia",
-    label: "Nemotron Nano 9B · Free",
+    label: "DeepSeek V4 Pro · Free",
     blurb:
-      "Free — no API key needed. Reliable at plans, but noticeably slower (it reasons before replying).",
+      "Free — no API key needed. Just as reliable at building and editing plans. Try it if GLM is busy or rate-limited.",
   },
 ] as const satisfies readonly {
   id: string;

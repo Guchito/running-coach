@@ -27,17 +27,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // reported as an error, not a crash). Only models that support tool/function
 // calling are worth testing. CLI args override this list.
 // ───────────────────────────────────────────────────────────────────────────
-// These ids were live-probed against build.nvidia.com on 2026-06-27 and confirmed
-// reachable. The catalog drifts (models get added / moved to 410 Gone), so
-// re-probe before trusting. A wrong id just reports as an error and the run continues.
+// These ids were live-probed against build.nvidia.com on 2026-08-01 (GET /v1/models
+// with the key) and confirmed reachable. The catalog drifts (models get added /
+// moved to 410 Gone), so re-probe before trusting. A wrong id just reports as an
+// error and the run continues. Note that catalog presence is NOT access: some ids
+// list fine but 404 per-account (moonshotai/kimi-k2.6 did on 2026-08-01).
 const DEFAULT_MODELS = [
-  "meta/llama-3.3-70b-instruct",
-  "nvidia/llama-3.3-nemotron-super-49b-v1",
-  "mistralai/mistral-large-3-675b-instruct-2512",
+  "z-ai/glm-5.2",
   "deepseek-ai/deepseek-v4-pro",
-  "qwen/qwen3-next-80b-a3b-instruct",
+  "deepseek-ai/deepseek-v4-flash",
+  "minimaxai/minimax-m3",
   "openai/gpt-oss-120b",
-  "meta/llama-4-maverick-17b-128e-instruct",
+  "nvidia/nemotron-3-super-120b-a12b",
+  "mistralai/mistral-medium-3.5-128b",
+  "meta/llama-3.3-70b-instruct",
   "nvidia/nvidia-nemotron-nano-9b-v2",
 ];
 
