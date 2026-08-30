@@ -36,8 +36,9 @@ export function guessGymType(sport: string | null, subSport: string | null): Gym
   return "other";
 }
 
-// Distance/endurance sports that are runs (or run-like cardio we still track as
-// runs), as reported by a FIT/TCX `sport` tag.
+// Distance/endurance sports, as reported by a FIT/TCX `sport` tag. Listed only so
+// they're never mistaken for strength work; the non-run ones (cycling, swimming,
+// rowing) are rejected later in parseFit, not stored as runs.
 const RUN_LIKE_SPORTS = [
   "running",
   "run",

@@ -44,6 +44,9 @@ yarn-error.log*
 /data
 /_hold
 
+# sample watch exports (.fit/.csv) — personal health data, keep local
+/examples
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

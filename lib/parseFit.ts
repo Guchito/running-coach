@@ -31,7 +31,23 @@ type FitLap = {
 export type FitMessages = {
   recordMesgs?: FitRecord[];
   lapMesgs?: FitLap[];
+  sessionMesgs?: { sport?: string | number }[];
+  sportMesgs?: { sport?: string | number }[];
 };
+
+// Sports the watch records with a full GPS/record stream but which are NOT runs.
+// Without this they sail past the strength check, produce rows, and get stored as
+// runs with meaningless pace/cadence/stride (a bike ride becomes an 11km "run").
+const NON_RUN_SPORTS = ["cycling", "biking", "swimming", "rowing"];
+
+// The file's sport tag if it names a non-run sport, else null. Sport lives on the
+// session message; older/partial files fall back to the sport message.
+function nonRunSport(messages: FitMessages): string | null {
+  const raw = messages.sessionMesgs?.[0]?.sport ?? messages.sportMesgs?.[0]?.sport;
+  if (raw == null) return null; // no tag (e.g. CSV-era files) -> assume run, as before
+  const s = String(raw).toLowerCase();
+  return NON_RUN_SPORTS.some((k) => s.includes(k)) ? String(raw) : null;
+}
 
 function intensityLabel(v: string | number | undefined): string {
   if (v === undefined || v === null) return "";
@@ -43,6 +59,12 @@ function intensityLabel(v: string | number | undefined): string {
 
 // Pure mapping from decoded FIT messages to time-samples. Exported for testing.
 export function fitMessagesToRows(messages: FitMessages): Row[] {
+  const sport = nonRunSport(messages);
+  if (sport) {
+    throw new Error(
+      `This is a ${sport} workout, not a run. This app tracks runs and gym sessions.`
+    );
+  }
   const records = (messages.recordMesgs ?? []).filter((r) => r.timestamp);
   if (records.length === 0) return [];
 
