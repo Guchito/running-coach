@@ -37,7 +37,7 @@ export default async function RootLayout({
           Skip to content
         </a>
         <div className="flex min-h-screen">
-          <Nav email={session?.email ?? null} />
+          <Nav email={session?.email ?? null} demo={session?.demo} />
           <main id="main" className="flex-1 min-w-0">{children}</main>
           <NotificationStack authed={!!session?.email} />
         </div>

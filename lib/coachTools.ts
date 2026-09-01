@@ -33,12 +33,31 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+// The only tool that doesn't mutate the runner's data. Everything else writes.
+const READ_ONLY_TOOLS = new Set(["get_training_history"]);
+
 // Execute a tool call against the database, scoped to one user.
+//
+// `readOnly` is for the public demo account: the coach still reasons, answers,
+// and decides which tool to call, but the write is dropped and it's told so, so
+// it reports the change honestly instead of claiming it saved something.
 export async function executeTool(
   userId: number,
   name: string,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  opts: { readOnly?: boolean } = {}
 ): Promise<ToolResult> {
+  if (opts.readOnly && !READ_ONLY_TOOLS.has(name)) {
+    return {
+      summary: `Demo — not saved (${name.replace(/_/g, " ")})`,
+      data: {
+        saved: false,
+        demo: true,
+        note:
+          "This is a read-only demo account, so that change was NOT saved. Tell the runner what you would have changed and that they need their own account to save it.",
+      },
+    };
+  }
   switch (name) {
     case "upsert_goal": {
       const payload = {

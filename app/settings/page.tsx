@@ -6,7 +6,8 @@ import { CoachModelForm } from "@/components/CoachModelForm";
 import { AnthropicKeyForm } from "@/components/AnthropicKeyForm";
 import { NvidiaKeyForm } from "@/components/NvidiaKeyForm";
 import { AutoNameRunsToggle } from "@/components/AutoNameRunsToggle";
-import { requireUserId } from "@/lib/auth";
+import { requireUserId, isDemoSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { isDriveConfigured, serviceAccountEmail } from "@/lib/drive";
 import { resolveCoachModel } from "@/lib/coach";
 
@@ -16,6 +17,8 @@ export const dynamic = "force-dynamic";
 // numbers (HR zones, LTHR, resting HR & weight) live on /profile.
 export default async function SettingsPage() {
   const userId = await requireUserId();
+  // Settings holds the owner's API keys and integrations — not the demo's to see.
+  if (await isDemoSession()) redirect("/");
   const user = await getUserById(userId);
 
   return (

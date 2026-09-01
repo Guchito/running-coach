@@ -13,10 +13,10 @@ import {
   getAnthropicApiKey,
   getNvidiaApiKey,
 } from "@/lib/db";
-import { resolveCoachModel, SYSTEM_PROMPT, buildContextBlock, providerFor } from "@/lib/coach";
+import { resolveCoachModel, COACH_MODEL, SYSTEM_PROMPT, buildContextBlock, providerFor } from "@/lib/coach";
 import { executeTool } from "@/lib/coachTools";
 import { resolveProvider, type ProviderMessage } from "@/lib/providers";
-import { getCurrentUserId, unauthorized } from "@/lib/auth";
+import { getCurrentUserId, isDemoSession, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -24,6 +24,9 @@ export const maxDuration = 120;
 export async function GET() {
   const userId = await getCurrentUserId();
   if (!userId) return unauthorized();
+  // The demo shares the owner's account, so its chat history is private: demo
+  // visitors always start from an empty thread (theirs lives in the browser).
+  if (await isDemoSession()) return NextResponse.json({ messages: [] });
   return NextResponse.json({ messages: await listMessages(userId) });
 }
 
@@ -44,14 +47,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Empty message." }, { status: 400 });
   }
 
-  await insertMessage(userId, "user", userText);
+  const demo = await isDemoSession();
+  if (!demo) await insertMessage(userId, "user", userText);
 
-  // Build the model conversation from stored plain-text history.
-  const history = (await listMessages(userId)).slice(-30);
+  // Build the model conversation. Normally that's the stored history; for the
+  // demo nothing is stored (visitors share one account and must not see each
+  // other's threads, or the owner's), so the client sends its own transcript
+  // back. It's untrusted input, hence the shape/'size caps.
+  const stored = demo ? [] : await listMessages(userId);
+  const clientHistory = demo
+    ? (Array.isArray(body.history) ? body.history : [])
+        .filter(
+          (m: unknown): m is { role: string; content: string } =>
+            !!m &&
+            typeof m === "object" &&
+            ((m as { role?: unknown }).role === "user" ||
+              (m as { role?: unknown }).role === "assistant") &&
+            typeof (m as { content?: unknown }).content === "string"
+        )
+        .slice(-30)
+        .map((m: { role: string; content: string }) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content.slice(0, 8000),
+        }))
+    : [];
+  const history = [...stored, ...clientHistory].slice(-30);
   const messages: ProviderMessage[] = history.map((m): ProviderMessage => ({
     role: m.role,
     text: m.content,
   }));
+  if (demo) messages.push({ role: "user", text: userText });
 
   const encoder = new TextEncoder();
   let persisted = ""; // text + action notes saved to history
@@ -77,7 +102,11 @@ export async function POST(req: NextRequest) {
             getAnthropicApiKey(userId),
             getNvidiaApiKey(userId),
           ]);
-        const model = resolveCoachModel(user?.coachModel);
+        // The demo shares the owner's account but must never spend their paid
+        // Claude credits, so it ignores their Anthropic key and always answers
+        // on the free default model.
+        const model = demo ? COACH_MODEL : resolveCoachModel(user?.coachModel);
+        const claudeKey = demo ? null : anthropicKey;
         // Anthropic caches the static prefix (tools + system + context), so
         // repeat reads in the agentic loop bill at ~10%. The other providers
         // re-send everything at full price each call — give them a leaner
@@ -103,7 +132,7 @@ export async function POST(req: NextRequest) {
         // models faking the rename and avoids double-renaming. The rename_run tool
         // stays available for explicit user requests ("rename run #3").
         const system = `${SYSTEM_PROMPT}\n\n---\nCURRENT CONTEXT (refreshed each message):\n${context}`;
-        const provider = resolveProvider(model, anthropicKey, nvidiaKey);
+        const provider = resolveProvider(model, claudeKey, nvidiaKey);
         const convo = cached ? messages : messages.slice(-12);
         const maxTurns = cached ? 6 : 4;
 
@@ -124,7 +153,7 @@ export async function POST(req: NextRequest) {
 
           const toolResults = [];
           for (const tc of result.toolCalls) {
-            const r = await executeTool(userId, tc.name, tc.input);
+            const r = await executeTool(userId, tc.name, tc.input, { readOnly: demo });
             send(`\n\n_✓ ${r.summary}_\n\n`);
             toolResults.push({ id: tc.id, content: JSON.stringify(r.data) });
           }
@@ -134,7 +163,7 @@ export async function POST(req: NextRequest) {
         const message = err instanceof Error ? err.message : "Coach failed to respond.";
         send(`\n\n[Error: ${message}]`);
       } finally {
-        if (persisted.trim()) await insertMessage(userId, "assistant", persisted);
+        if (!demo && persisted.trim()) await insertMessage(userId, "assistant", persisted);
         controller.close();
       }
     },

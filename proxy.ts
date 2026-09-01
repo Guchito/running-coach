@@ -1,37 +1,38 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "@/lib/session";
 
-// Public paths that don't require a session.
-const PUBLIC_PAGES = ["/login", "/signup"];
+// Keeps the public demo account read-only.
+//
+// Every write in this app is a non-GET request to /api/*, so one check here
+// covers all of them instead of a guard in ~34 route handlers. The demo flag is
+// carried by the session cookie itself (set only by /api/auth/demo), so this
+// needs no database lookup.
+const READ_ONLY_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 export async function proxy(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+  if (READ_ONLY_METHODS.has(req.method)) return NextResponse.next();
 
-  // Auth API endpoints are always reachable.
-  if (pathname.startsWith("/api/auth/")) return NextResponse.next();
+  // Auth routes stay open: a visitor must still be able to sign out, and to
+  // sign up or sign in to a real account of their own.
+  if (req.nextUrl.pathname.startsWith("/api/auth/")) return NextResponse.next();
 
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
-  const isPublicPage = PUBLIC_PAGES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  // Signed-in users shouldn't see login/signup.
-  if (session && isPublicPage) {
-    return NextResponse.redirect(new URL("/", req.url));
+  // The coach is the whole point of the demo, so POST /api/chat is allowed. It
+  // persists nothing and its write tools are disabled for demo sessions — see
+  // the readOnly path in app/api/chat/route.ts.
+  if (session?.demo && req.nextUrl.pathname === "/api/chat" && req.method === "POST") {
+    return NextResponse.next();
   }
 
-  if (!session && !isPublicPage) {
-    // API calls get a 401; page navigations get redirected to login.
-    if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-    }
-    const url = new URL("/login", req.url);
-    if (pathname !== "/") url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+  if (session?.demo) {
+    return NextResponse.json(
+      { error: "This is a read-only demo. Create your own account to upload data." },
+      { status: 403 }
+    );
   }
-
   return NextResponse.next();
 }
 
-export const config = {
-  // Run on everything except Next internals and static assets.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
-};
+export const config = { matcher: "/api/:path*" };

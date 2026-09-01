@@ -6,7 +6,11 @@ import { SignJWT, jwtVerify } from "jose";
 export const SESSION_COOKIE = "stride_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
-export type SessionPayload = { userId: number; email: string };
+// `demo` marks a session minted by the public, password-less demo sign-in.
+// It is what makes the shared demo account read-only (see proxy.ts). Signing in
+// to that same account through the normal form does NOT set it, so the owner
+// still has full write access.
+export type SessionPayload = { userId: number; email: string; demo?: boolean };
 
 function secret(): Uint8Array {
   const s = process.env.SESSION_SECRET;
@@ -19,7 +23,7 @@ function secret(): Uint8Array {
 }
 
 export async function signSession(payload: SessionPayload): Promise<string> {
-  return new SignJWT({ email: payload.email })
+  return new SignJWT({ email: payload.email, ...(payload.demo ? { demo: true } : {}) })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(payload.userId))
     .setIssuedAt()
@@ -33,7 +37,11 @@ export async function verifySession(token: string | undefined): Promise<SessionP
     const { payload } = await jwtVerify(token, secret());
     const userId = Number(payload.sub);
     if (!Number.isInteger(userId)) return null;
-    return { userId, email: String(payload.email ?? "") };
+    return {
+      userId,
+      email: String(payload.email ?? ""),
+      ...(payload.demo === true ? { demo: true as const } : {}),
+    };
   } catch {
     return null;
   }

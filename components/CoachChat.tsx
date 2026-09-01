@@ -54,7 +54,9 @@ export function CoachChat({
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: trimmed }),
+          // The demo account stores nothing server-side, so send the thread back
+        // with each turn to keep the conversation going. Ignored otherwise.
+        body: JSON.stringify({ message: trimmed, history: messages }),
         });
 
         if (!res.ok || !res.body) {

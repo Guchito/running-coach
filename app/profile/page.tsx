@@ -5,7 +5,7 @@ import { PasswordForm } from "@/components/PasswordForm";
 import { HrZonesForm } from "@/components/HrZonesForm";
 import { LthrTestSection } from "@/components/LthrTestSection";
 import { HealthLogSection } from "@/components/HealthLogSection";
-import { requireUserId } from "@/lib/auth";
+import { requireUserId, isDemoSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 // Settings; everything the training math knows about YOUR body lives here.
 export default async function ProfilePage() {
   const userId = await requireUserId();
+  const demo = await isDemoSession();
   const [user, lthrTests, healthMetrics] = await Promise.all([
     getUserById(userId),
     listLthrTests(userId),
@@ -37,17 +38,19 @@ export default async function ProfilePage() {
           <div className="flex-1 *:h-full">
             <AccountForm
               initialName={user.name}
-              initialEmail={user.email}
+              initialEmail={demo ? "demo@example.com" : user.email}
               memberSince={memberSince}
             />
           </div>
         </div>
-        <div className="flex flex-col min-w-0">
-          <h2 className="font-medium mb-3">Password</h2>
-          <div className="flex-1 *:h-full">
-            <PasswordForm />
+        {!demo && (
+          <div className="flex flex-col min-w-0">
+            <h2 className="font-medium mb-3">Password</h2>
+            <div className="flex-1 *:h-full">
+              <PasswordForm />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* HR zones + LTHR side by side, same matched-height treatment the

@@ -34,6 +34,13 @@ export async function requireUserId(): Promise<number> {
   return user.id;
 }
 
+// True when the caller is browsing through the public demo sign-in. Writes are
+// already blocked in proxy.ts; use this for read-side decisions, like not
+// showing the demo account's real login email to strangers.
+export async function isDemoSession(): Promise<boolean> {
+  return (await getSession())?.demo === true;
+}
+
 export function sessionCookieOptions() {
   return {
     httpOnly: true,

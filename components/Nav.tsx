@@ -60,10 +60,13 @@ const links = [
   },
 ];
 
-// The two links the mobile "You" popover groups together.
-const youLinks = links.filter((l) => l.href === "/profile" || l.href === "/settings");
-
-export function Nav({ email }: { email: string | null }) {
+export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
+  // Settings is the owner's API keys and integrations — no link for the demo.
+  const navLinks = demo ? links.filter((l) => l.href !== "/settings") : links;
+  // The links the mobile "You" popover groups together.
+  const youLinks = navLinks.filter(
+    (l) => l.href === "/profile" || l.href === "/settings"
+  );
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -192,7 +195,7 @@ export function Nav({ email }: { email: string | null }) {
           barsHidden ? "translate-y-full" : "translate-y-0"
         }`}
       >
-        {links
+        {navLinks
           .filter((l) => !l.hideOnMobile)
           .map((l) => {
             const active =
@@ -234,7 +237,7 @@ export function Nav({ email }: { email: string | null }) {
             <div className="text-xs text-muted">AI Running Coach</div>
           </div>
         </Link>
-        {links.map((l) => {
+        {navLinks.map((l) => {
           const active =
             l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
           return (
