@@ -4,7 +4,7 @@
 //   NODE_OPTIONS=--no-warnings node --env-file=.env.local bench/repro-projection.mts [model]
 const key = process.env.NVIDIA_API_KEY;
 if (!key) { console.error("NVIDIA_API_KEY not set"); process.exit(1); }
-const model = process.argv[2] || "z-ai/glm-5.2";
+const model = process.argv[2] || "openai/gpt-oss-120b";
 
 const SYSTEM = `You are an expert running coach. Use set_goal_projection to set the runner's realistic projected race-day finish. projectedTimeSec MUST be the finish time IN SECONDS. Also tell the runner the projected time in prose.
 

@@ -11,13 +11,20 @@ import { COACH_MODELS } from "@/lib/coachDefs";
 export function CoachModelPicker({
   initialModel,
   hasAnthropicKey,
+  demo,
+  onDemoChange,
 }: {
   initialModel: string;
   hasAnthropicKey: boolean;
+  demo?: boolean;
+  onDemoChange?: (model: string) => void;
 }) {
   const router = useRouter();
-  // Hide Claude (paid) models unless a key is set.
-  const options = COACH_MODELS.filter((m) => hasAnthropicKey || m.provider !== "anthropic");
+  // Hide Claude (paid) models unless a key is set — and always from the demo,
+  // which would otherwise spend the owner's Anthropic credits.
+  const options = COACH_MODELS.filter(
+    (m) => m.provider !== "anthropic" || (hasAnthropicKey && !demo)
+  );
   // If the saved model isn't selectable (e.g. a Claude model after the key was
   // removed), fall back to the first available option for display.
   const initialVisible = options.some((m) => m.id === initialModel)
@@ -31,6 +38,12 @@ export function CoachModelPicker({
   async function change(next: string) {
     const prev = model;
     setModel(next);
+    // Nothing to save for the demo: the choice is per-visit and travels with
+    // each chat request (saving would rewrite the owner's setting).
+    if (demo) {
+      onDemoChange?.(next);
+      return;
+    }
     setBusy(true);
     setError(false);
     try {
@@ -75,9 +88,11 @@ export function CoachModelPicker({
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </div>
-      <a href="/settings" className="text-accent hover:underline whitespace-nowrap">
-        View more
-      </a>
+      {!demo && (
+        <a href="/settings" className="text-accent hover:underline whitespace-nowrap">
+          View more
+        </a>
+      )}
       {error && <span className="text-red-600">Couldn&apos;t switch</span>}
     </div>
   );

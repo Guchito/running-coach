@@ -18,14 +18,19 @@ const SUGGESTIONS = [
 export function CoachChat({
   hasGoal,
   hasRuns,
-  model,
+  model: initialModel,
   hasAnthropicKey,
+  demo,
 }: {
   hasGoal: boolean;
   hasRuns: boolean;
   model: string;
   hasAnthropicKey: boolean;
+  demo?: boolean;
 }) {
+  // The demo can't save a model choice (it would overwrite the owner's), so its
+  // pick lives here and rides along with each request instead.
+  const [model, setModel] = useState(initialModel);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -56,7 +61,7 @@ export function CoachChat({
           headers: { "Content-Type": "application/json" },
           // The demo account stores nothing server-side, so send the thread back
         // with each turn to keep the conversation going. Ignored otherwise.
-        body: JSON.stringify({ message: trimmed, history: messages }),
+        body: JSON.stringify({ message: trimmed, history: messages, model }),
         });
 
         if (!res.ok || !res.body) {
@@ -184,7 +189,12 @@ export function CoachChat({
           <div>
             <div className="font-semibold leading-tight">Coach</div>
             <div className="mt-0.5">
-              <CoachModelPicker initialModel={model} hasAnthropicKey={hasAnthropicKey} />
+              <CoachModelPicker
+                initialModel={model}
+                hasAnthropicKey={hasAnthropicKey}
+                demo={demo}
+                onDemoChange={setModel}
+              />
             </div>
           </div>
         </div>

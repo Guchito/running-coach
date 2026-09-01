@@ -16,6 +16,7 @@ export {
   COACH_MODELS,
   isCoachModel,
   resolveCoachModel,
+  demoModel,
   providerFor,
   supportsEffort,
 } from "./coachDefs";

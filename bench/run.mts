@@ -27,21 +27,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // reported as an error, not a crash). Only models that support tool/function
 // calling are worth testing. CLI args override this list.
 // ───────────────────────────────────────────────────────────────────────────
-// These ids were live-probed against build.nvidia.com on 2026-08-01 (GET /v1/models
+// These ids were live-probed against build.nvidia.com on 2026-09-01 (GET /v1/models
 // with the key) and confirmed reachable. The catalog drifts (models get added /
 // moved to 410 Gone), so re-probe before trusting. A wrong id just reports as an
 // error and the run continues. Note that catalog presence is NOT access: some ids
-// list fine but 404 per-account (moonshotai/kimi-k2.6 did on 2026-08-01).
+// list fine but 404 per-account (moonshotai/kimi-k2.6 did on 2026-09-01).
 const DEFAULT_MODELS = [
-  "z-ai/glm-5.2",
-  "deepseek-ai/deepseek-v4-pro",
-  "deepseek-ai/deepseek-v4-flash",
-  "minimaxai/minimax-m3",
   "openai/gpt-oss-120b",
   "nvidia/nemotron-3-super-120b-a12b",
-  "mistralai/mistral-medium-3.5-128b",
-  "meta/llama-3.3-70b-instruct",
-  "nvidia/nvidia-nemotron-nano-9b-v2",
+  "nvidia/nemotron-3-ultra-550b-a55b",
+  "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "minimaxai/minimax-m3",
+  "moonshotai/kimi-k3",
+  "meta/muse-glimmer-30b",
+  "google/gemma-4-31b-it",
 ];
 
 // How many models to bench at once. Higher = faster, but more likely to hit the
@@ -257,6 +256,9 @@ function validate(schema: JsonSchema, value: unknown, path = ""): string[] {
       if (!(req in obj) || obj[req] === undefined) errs.push(`${path}.${req}: required, missing`);
     }
     for (const [key, sub] of Object.entries(schema.properties)) {
+      // Explicit null on an optional field == leaving it out: executeTool()
+      // stores both as null (a bodyweight exercise has no weightKg).
+      if (obj[key] === null && !(schema.required ?? []).includes(key)) continue;
       if (key in obj && obj[key] !== undefined) errs.push(...validate(sub, obj[key], `${path}.${key}`));
     }
   }

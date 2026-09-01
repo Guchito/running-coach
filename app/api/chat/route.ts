@@ -13,7 +13,7 @@ import {
   getAnthropicApiKey,
   getNvidiaApiKey,
 } from "@/lib/db";
-import { resolveCoachModel, COACH_MODEL, SYSTEM_PROMPT, buildContextBlock, providerFor } from "@/lib/coach";
+import { resolveCoachModel, demoModel, SYSTEM_PROMPT, buildContextBlock, providerFor } from "@/lib/coach";
 import { executeTool } from "@/lib/coachTools";
 import { resolveProvider, type ProviderMessage } from "@/lib/providers";
 import { getCurrentUserId, isDemoSession, unauthorized } from "@/lib/auth";
@@ -103,9 +103,9 @@ export async function POST(req: NextRequest) {
             getNvidiaApiKey(userId),
           ]);
         // The demo shares the owner's account but must never spend their paid
-        // Claude credits, so it ignores their Anthropic key and always answers
-        // on the free default model.
-        const model = demo ? COACH_MODEL : resolveCoachModel(user?.coachModel);
+        // Claude credits: it ignores their Anthropic key and their saved model,
+        // and may only pick (per request, nothing saved) among the free ones.
+        const model = demo ? demoModel(body.model) : resolveCoachModel(user?.coachModel);
         const claudeKey = demo ? null : anthropicKey;
         // Anthropic caches the static prefix (tools + system + context), so
         // repeat reads in the agentic loop bill at ~10%. The other providers

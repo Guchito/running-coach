@@ -11,7 +11,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 // The default model when the runner hasn't picked one. This is the free NVIDIA
 // model: Claude is paid and requires each runner to add their own API key in
 // Settings, so the out-of-the-box default must be a free option.
-export const COACH_MODEL = process.env.COACH_MODEL || "z-ai/glm-5.2";
+export const COACH_MODEL = process.env.COACH_MODEL || "openai/gpt-oss-120b";
 
 export type CoachProviderId = "anthropic" | "nvidia";
 
@@ -19,8 +19,9 @@ export type CoachProviderId = "anthropic" | "nvidia";
 // - anthropic: Claude models (paid). Each runner adds their OWN Anthropic API key
 //   in Settings; requests are billed to that key. Without a key these are unusable.
 // - nvidia: free models on build.nvidia.com via NVIDIA_API_KEY (OpenAI-compatible).
-//   Ids were live-probed + tool-call benchmarked (see /bench) on 2026-08-01, after
-//   the previous default (mistral-large-3) reached end of life and started 410ing.
+//   Ids were live-probed + tool-call benchmarked (see /bench) on 2026-09-01, after
+//   the previous pair (glm-5.2, deepseek-v4-pro) reached end of life and started
+//   410ing — the third such rotation, so expect to do it again.
 //   NVIDIA retires free models without warning, so when the coach starts failing,
 //   re-probe GET /v1/models and re-run the bench before swapping an id in here.
 export const COACH_MODELS = [
@@ -46,18 +47,18 @@ export const COACH_MODELS = [
       "Fastest and cheapest — good for quick chat, but less reliable at editing plans. Use Opus or Sonnet when you want it to build or change your plan.",
   },
   {
-    id: "z-ai/glm-5.2",
+    id: "openai/gpt-oss-120b",
     provider: "nvidia",
-    label: "GLM 5.2 · Free",
+    label: "GPT-OSS 120B · Free",
     blurb:
       "Free — no API key needed. Fast and the most reliable free model at building and editing plans. Recommended free option.",
   },
   {
-    id: "deepseek-ai/deepseek-v4-pro",
+    id: "nvidia/nemotron-3-super-120b-a12b",
     provider: "nvidia",
-    label: "DeepSeek V4 Pro · Free",
+    label: "Nemotron 3 Super · Free",
     blurb:
-      "Free — no API key needed. Just as reliable at building and editing plans. Try it if GLM is busy or rate-limited.",
+      "Free — no API key needed. Builds and edits plans just as correctly, but it is slower and NVIDIA's capacity for it comes and goes — if it errors, switch back to GPT-OSS.",
   },
 ] as const satisfies readonly {
   id: string;
@@ -75,6 +76,15 @@ export function isCoachModel(id: unknown): id is CoachModelId {
 // Resolve the model to actually call: the runner's choice if valid, else the default.
 export function resolveCoachModel(model: string | null | undefined): string {
   return isCoachModel(model) ? model : COACH_MODEL;
+}
+
+// Free models only, for the read-only demo: it shares the owner's row, so a
+// Claude id (or junk, or nothing) must fall back to the default rather than
+// bill the owner's Anthropic key.
+export function demoModel(model: unknown): string {
+  return COACH_MODELS.some((m) => m.id === model && m.provider === "nvidia")
+    ? (model as string)
+    : COACH_MODEL;
 }
 
 // Which provider serves a given model id (defaults to anthropic for unknown ids).
