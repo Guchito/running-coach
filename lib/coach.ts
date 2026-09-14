@@ -4,6 +4,7 @@ import { resolveZones } from "./hr";
 import { gymTypeLabel } from "./gym";
 import { topSet, exercisesVolumeKg } from "./parseStrong";
 import { formatHold, setsSummary } from "./gymProgress";
+import { estimateIntensity } from "./gymIntensity";
 import { trainingLoad, LOAD_STATUS_LABEL } from "./trainingLoad";
 import { runningRecords } from "./prs";
 import { weeklyAdherence } from "./adherence";
@@ -249,7 +250,15 @@ export function buildGymContext(sessions: GymSession[], limit = 12, fullSets = f
       `- ${g.startedAt.slice(0, 10)} "${g.name}"${tag}: ${gymTypeLabel(g.type)}, ${
         g.durationSec > 0 ? formatDuration(g.durationSec) : "duration n/a"
       }`,
-      g.rpe != null ? `RPE ${g.rpe}/10` : null,
+      // Almost no session carries a recorded RPE, which left the coach with no
+      // read on effort at all. Fall back to the estimate, flagged as one so the
+      // coach weighs it as inference rather than something the runner reported.
+      g.rpe != null
+        ? `RPE ${g.rpe}/10`
+        : (() => {
+            const e = estimateIntensity(g, sessions);
+            return e ? `RPE ~${e.rpe}/10 (estimated from ${e.basis.join(", ")}, not reported)` : null;
+          })(),
       g.avgHr != null ? `HR avg ${Math.round(g.avgHr)}` : null,
       g.calories != null ? `${Math.round(g.calories)} kcal` : null,
       lifts,

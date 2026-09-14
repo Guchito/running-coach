@@ -5,6 +5,7 @@ import { gymTypeLabel } from "./gym";
 // Runs are a single category; each gym type gets its own colour.
 
 export const RUN_COLOR = "#2563eb"; // electric blue
+export const RACE_COLOR = "#7c3aed"; // violet — a race is not another training run
 
 export const GYM_TYPE_COLOR: Record<GymType, string> = {
   push: "#e11d48", // rose
@@ -18,13 +19,29 @@ export const GYM_TYPE_COLOR: Record<GymType, string> = {
   other: "#94a3b8", // slate
 };
 
-export function sessionColor(kind: "run" | "gym", type?: string | null): string {
-  if (kind === "run") return RUN_COLOR;
+export function sessionColor(
+  kind: "run" | "gym",
+  type?: string | null,
+  isRace = false
+): string {
+  if (kind === "run") return isRace ? RACE_COLOR : RUN_COLOR;
   return GYM_TYPE_COLOR[type as GymType] ?? GYM_TYPE_COLOR.other;
 }
 
-export function sessionTypeLabel(kind: "run" | "gym", type?: string | null): string {
-  return kind === "run" ? "Run" : gymTypeLabel(type ?? "other");
+export function sessionTypeLabel(
+  kind: "run" | "gym",
+  type?: string | null,
+  isRace = false
+): string {
+  if (kind === "run") return isRace ? "Race" : "Run";
+  return gymTypeLabel(type ?? "other");
+}
+
+// Races group and filter on their own, so one race in the list can't repaint
+// the "Run" chip violet (the chip list takes its colour from the first match).
+export function sessionFilterKey(s: Pick<SessionLite, "kind" | "type" | "isRace">): string {
+  if (s.kind !== "run") return s.type;
+  return s.isRace ? "race" : "run";
 }
 
 // Flat, serialisable shape passed from the server page into client components.
@@ -38,6 +55,8 @@ export type SessionLite = {
   startedAt: string; // ISO
   href: string; // detail page
   meta: string; // secondary line, e.g. "5.0 km · 24:30 · 4:54 /km"
+  // Runs only — the run a goal was raced on. Shown in violet with a medal.
+  isRace?: boolean;
   distanceM?: number; // runs only — for distance filtering
   paceSecPerKm?: number; // runs only — for pace filtering
 };

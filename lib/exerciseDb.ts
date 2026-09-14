@@ -642,9 +642,13 @@ export async function fetchWorkoutVisualization(
 ): Promise<{ bytes: ArrayBuffer; contentType: string }> {
   const key = rapidKey();
   if (!key) throw new Error("RAPIDAPI_KEY not set");
+  // Deliberately uncached at this layer: the caller stores successful renders in
+  // the DB, and Next's data cache would otherwise be free to hold a rate-limit
+  // or 5xx response under the same key — which fails every later render without
+  // ever reaching the API, so the quota looks untouched while nothing draws.
   const res = await fetch(`https://${VIZ_HOST}${workoutVisualizationPath(opts)}`, {
     headers: { "X-RapidAPI-Key": key, "X-RapidAPI-Host": VIZ_HOST },
-    next: { revalidate: 60 * 60 * 24 * 30 },
+    cache: "no-store",
   });
   if (!res.ok) throw new Error(`muscle-visualizer → ${res.status}`);
   return {

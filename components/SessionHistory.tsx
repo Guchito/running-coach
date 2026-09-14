@@ -7,7 +7,7 @@ import { DeleteRunButton } from "@/components/DeleteRunButton";
 import { DeleteGymButton } from "@/components/DeleteGymButton";
 import { SessionCalendar } from "@/components/SessionCalendar";
 import { SessionBadge } from "@/components/SessionIcon";
-import type { SessionLite } from "@/lib/sessionMeta";
+import { sessionFilterKey, type SessionLite } from "@/lib/sessionMeta";
 
 // "4:30" or "4" (minutes) → seconds. Empty/invalid → null.
 function parsePace(v: string): number | null {
@@ -46,22 +46,23 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
   const types = useMemo(() => {
     const seen = new Map<
       string,
-      { key: string; label: string; color: string; kind: "run" | "gym" }
+      { key: string; label: string; color: string; kind: "run" | "gym"; isRace?: boolean }
     >();
     for (const s of sessions) {
-      const key = s.kind === "run" ? "run" : s.type;
+      const key = sessionFilterKey(s);
       if (!seen.has(key))
         seen.set(key, {
           key,
           label: s.typeLabel,
           color: s.color,
           kind: s.kind,
+          isRace: s.isRace,
         });
     }
     return Array.from(seen.values());
   }, [sessions]);
 
-  const isRun = type === "run";
+  const isRun = type === "run" || type === "race";
 
   const filtered = useMemo(() => {
     const minP = parsePace(minPace);
@@ -69,10 +70,7 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
     const minD = minKm ? Number(minKm) : null;
     const maxD = maxKm ? Number(maxKm) : null;
     return sessions.filter((s) => {
-      if (type !== "all") {
-        const key = s.kind === "run" ? "run" : s.type;
-        if (key !== type) return false;
-      }
+      if (type !== "all" && sessionFilterKey(s) !== type) return false;
       if (isRun) {
         const km = (s.distanceM ?? 0) / 1000;
         if (minD != null && km < minD) return false;
@@ -110,6 +108,7 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
                   color: t.color,
                   typeLabel: t.label,
                   name: t.label,
+                  isRace: t.isRace,
                 }}
               />
               {t.label}

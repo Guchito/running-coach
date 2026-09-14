@@ -1,7 +1,31 @@
 import type { SessionLite } from "@/lib/sessionMeta";
 
-// Filled glyphs (Material): a runner for runs, a barbell for gym sessions.
-export function SessionGlyph({ kind, className }: { kind: "run" | "gym"; className?: string }) {
+// Filled glyphs (Material): a runner for runs, a barbell for gym sessions, and
+// a medal for the runs that were actual races.
+export function SessionGlyph({
+  kind,
+  isRace,
+  className,
+}: {
+  kind: "run" | "gym";
+  isRace?: boolean;
+  className?: string;
+}) {
+  if (kind === "run" && isRace) {
+    // Ribbon pair over a medallion, the star knocked out of the disc so the
+    // glyph still reads at 12px.
+    return (
+      <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+        <path d="M9.6 2H6.1l3.3 5.9c.8-.5 1.6-.8 2.6-.9L9.6 2z" />
+        <path d="M14.4 2h3.5l-3.3 5.9c-.8-.5-1.6-.8-2.6-.9L14.4 2z" />
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M12 8.6a6.7 6.7 0 100 13.4 6.7 6.7 0 000-13.4zm0 2.8l1.2 2.4 2.7.4-1.95 1.9.46 2.66L12 17.5l-2.41 1.26.46-2.66L8.1 14.2l2.7-.4L12 11.4z"
+        />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
       {kind === "run" ? (
@@ -19,7 +43,7 @@ export function SessionBadge({
   s,
   size = "sm",
 }: {
-  s: Pick<SessionLite, "kind" | "color" | "typeLabel" | "name">;
+  s: Pick<SessionLite, "kind" | "color" | "typeLabel" | "name"> & { isRace?: boolean };
   size?: "sm" | "md" | "lg";
 }) {
   const box = size === "lg" ? "w-9 h-9" : size === "md" ? "w-7 h-7" : "w-5 h-5";
@@ -30,7 +54,7 @@ export function SessionBadge({
       style={{ borderColor: s.color, color: s.color }}
       title={`${s.typeLabel} · ${s.name}`}
     >
-      <SessionGlyph kind={s.kind} className={icon} />
+      <SessionGlyph kind={s.kind} isRace={s.isRace} className={icon} />
     </span>
   );
 }

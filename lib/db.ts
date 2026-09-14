@@ -263,6 +263,18 @@ const SCHEMA = `
     value JSONB NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
   );
+
+  -- Rendered muscle diagrams, keyed by the exact muscle set + body they draw.
+  -- The visualizer's free tier allows only 100 renders a MONTH, so each distinct
+  -- diagram is fetched once and served from here forever after. Without this,
+  -- ordinary browsing spends the month's quota and every session's diagram then
+  -- fails until the quota resets.
+  CREATE TABLE IF NOT EXISTS muscle_map_cache (
+    key TEXT PRIMARY KEY,
+    content_type TEXT NOT NULL,
+    bytes BYTEA NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
 `;
 
 // Run schema creation once per process.
@@ -506,6 +518,33 @@ export async function setAppState<T>(key: string, value: T): Promise<void> {
     `INSERT INTO app_state (key, value, updated_at) VALUES ($1, $2::jsonb, now())
      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
     [key, JSON.stringify(value)]
+  );
+}
+
+// ---------- muscle diagram cache ----------
+
+// A rendered diagram is deterministic for its muscle set, so it only ever needs
+// fetching once — see the table comment for why that matters.
+export async function getMuscleMap(
+  key: string
+): Promise<{ bytes: Buffer; contentType: string } | null> {
+  const rows = await q<{ bytes: Buffer; content_type: string }>(
+    `SELECT bytes, content_type FROM muscle_map_cache WHERE key = $1`,
+    [key]
+  );
+  return rows[0] ? { bytes: rows[0].bytes, contentType: rows[0].content_type } : null;
+}
+
+export async function putMuscleMap(
+  key: string,
+  contentType: string,
+  bytes: Buffer
+): Promise<void> {
+  await q(
+    `INSERT INTO muscle_map_cache (key, content_type, bytes)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (key) DO NOTHING`,
+    [key, contentType, bytes]
   );
 }
 
