@@ -282,7 +282,7 @@ export function summarizeRows(rows: Row[]): RunSummary {
   };
 }
 
-function computeSplits(rows: Row[]): Split[] {
+export function computeSplits(rows: Row[]): Split[] {
   const splits: Split[] = [];
   // Build a clean (time, distance) list.
   const pts = rows

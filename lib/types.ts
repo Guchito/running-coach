@@ -58,7 +58,14 @@ export type RunSummary = {
   hrHistogram: Record<string, number>;         // bpm -> seconds (for custom HR zones)
   sampleCount: number;
   series: SeriesPoint[];      // downsampled for charting
+  // Set when the runner trimmed GPS overshoot off a race (see lib/trimRun.ts).
+  // untrimmed is the original summary, so the trim can be redone or undone.
+  trim?: RunTrim;
+  untrimmed?: RunSummary;
 };
+
+// Meters cut off the start / end of a recorded run.
+export type RunTrim = { startM: number; endM: number };
 
 export type RunRow = {
   id: number;

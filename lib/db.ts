@@ -1457,6 +1457,16 @@ export async function setGoalResult(
   return rows[0] ? rowToGoal(rows[0]) : null;
 }
 
+// Re-copy a run's finish time onto any goal that recorded it as its race
+// result (after the run is trimmed).
+export async function syncGoalResultTime(userId: number, runId: number, timeSec: number) {
+  await q(
+    `UPDATE goals SET result_time_s = $3, updated_at = now()
+     WHERE user_id = $1 AND result_run_id = $2`,
+    [userId, runId, timeSec]
+  );
+}
+
 // Undo a recorded race result and reactivate the goal.
 export async function clearGoalResult(userId: number, goalId: number): Promise<Goal | null> {
   const rows = await q(

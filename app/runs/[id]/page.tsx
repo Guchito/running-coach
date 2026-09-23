@@ -4,6 +4,7 @@ import { PageShell, Card, Stat } from "@/components/ui";
 import { CombinedChart } from "@/components/Charts";
 import { SplitsSection } from "@/components/SplitsSection";
 import { AddSplitsCard } from "@/components/AddSplitsCard";
+import { TrimRunButton } from "@/components/TrimRunButton";
 import { HrZonesCard } from "@/components/HrZonesCard";
 import { RunReview } from "@/components/RunReview";
 import { DeleteRunButton } from "@/components/DeleteRunButton";
@@ -58,6 +59,7 @@ export default async function RunDetail({
       })}
       action={
         <div className="flex items-center gap-3">
+          <TrimRunButton runId={run.id} original={s.untrimmed ?? s} trim={s.trim ?? null} />
           {/* On mobile the delete action moves to the bottom of the page. */}
           <span className="hidden md:block">
             <DeleteRunButton id={run.id} redirectTo="/runs" />
