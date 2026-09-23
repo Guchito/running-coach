@@ -45,3 +45,13 @@ assert.equal(t.untrimmed, s);
 assert.equal(t.series[0].t >= 0, true);
 
 console.log("trim-check ok:", s.durationSec, "→", Math.round(t.durationSec), "s");
+
+// Auto-laps (every ~1 km, one intensity) aren't intervals; real workouts are.
+const { hasRealIntervals } = await import("../lib/splits.ts");
+const lap = (distanceM: number, intensity = "active") =>
+  ({ lap: 0, intensity, distanceM, durationSec: 300, paceSecPerKm: 300, avgHr: null, maxHr: null, avgCadence: null, elevGainM: 0 });
+assert.equal(hasRealIntervals([1003, 998, 1001, 999, 100].map((d) => lap(d))), false);
+assert.equal(hasRealIntervals([lap(2000, "warmup"), lap(400), lap(200, "rest"), lap(400)]), true);
+assert.equal(hasRealIntervals([400, 200, 400, 200, 400].map((d) => lap(d))), true);
+assert.equal(hasRealIntervals([lap(5000)]), false);
+console.log("auto-lap check ok");

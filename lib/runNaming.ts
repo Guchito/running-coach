@@ -1,6 +1,7 @@
 import { resolveProvider } from "./providers";
 import { formatDistance, formatDuration, formatPace } from "./parseRun";
 import type { RunRow } from "./types";
+import { hasRealIntervals } from "./splits";
 
 // A focused, single-purpose naming call. Unlike the coach's rename_run TOOL
 // (which weak models fail to invoke), this only asks the model to emit a name as
@@ -77,7 +78,7 @@ export async function generateRunName(
   // Watch-defined laps (warmup/active/recovery…) describe intervals directly.
   const laps = run.summary.laps ?? [];
   const lapsLine =
-    laps.length > 1
+    hasRealIntervals(laps)
       ? `\nWorkout laps: ${laps
           .map((l) => `${l.intensity} ${formatDistance(l.distanceM)} @ ${formatPace(l.paceSecPerKm)}`)
           .join("; ")}`

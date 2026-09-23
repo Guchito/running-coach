@@ -1,4 +1,4 @@
-import type { Split } from "./types";
+import type { Split, LapSplit } from "./types";
 
 // Shared helpers for manually entered per-km splits (the upload form's manual
 // entry and the add-splits-later flow on a run page). Client-safe, pure.
@@ -59,4 +59,13 @@ export function buildSplitsFromDurations(
 // 10 seconds, whichever is larger.
 export function splitsMatchDuration(sumSec: number, durationSec: number): boolean {
   return Math.abs(sumSec - durationSec) <= Math.max(10, durationSec * 0.03);
+}
+
+// Real workout intervals vs watch auto-laps. Auto-laps (every 1 km / 1 mi) are
+// all one intensity and the same distance bar the final partial lap — just the
+// km splits again, so they shouldn't be shown or described as intervals.
+export function hasRealIntervals(laps: LapSplit[]): boolean {
+  if (laps.length < 2) return false;
+  if (new Set(laps.map((l) => l.intensity)).size > 1) return true;
+  return !laps.slice(0, -1).every((l) => Math.abs(l.distanceM - laps[0].distanceM) <= 20);
 }

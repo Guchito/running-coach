@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Split, LapSplit } from "@/lib/types";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import { SplitsChart, LapsChart, intensityColor } from "@/components/Charts";
+import { hasRealIntervals } from "@/lib/splits";
 
 export function SplitsSection({
   splits,
@@ -12,9 +13,9 @@ export function SplitsSection({
   splits: Split[];
   laps: LapSplit[];
 }) {
-  // Only offer the Intervals view when the run actually has more than one lap —
-  // a single-lap (or lap-less) run has no interval structure to show.
-  const hasIntervals = laps.length > 1;
+  // Only offer the Intervals view for real workout laps — not a single lap,
+  // no laps, or watch auto-laps that just repeat the km splits.
+  const hasIntervals = hasRealIntervals(laps);
   // Default to intervals when the workout also has structure (more than one
   // distinct intensity, e.g. warmup/active/recovery), else kilometers.
   const hasStructure = new Set(laps.map((l) => l.intensity)).size > 1;
