@@ -11,7 +11,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 // The default model when the runner hasn't picked one. This is the free NVIDIA
 // model: Claude is paid and requires each runner to add their own API key in
 // Settings, so the out-of-the-box default must be a free option.
-export const COACH_MODEL = process.env.COACH_MODEL || "openai/gpt-oss-120b";
+export const COACH_MODEL = process.env.COACH_MODEL || "nvidia/nemotron-3-super-120b-a12b";
 
 export type CoachProviderId = "anthropic" | "nvidia";
 
@@ -19,9 +19,9 @@ export type CoachProviderId = "anthropic" | "nvidia";
 // - anthropic: Claude models (paid). Each runner adds their OWN Anthropic API key
 //   in Settings; requests are billed to that key. Without a key these are unusable.
 // - nvidia: free models on build.nvidia.com via NVIDIA_API_KEY (OpenAI-compatible).
-//   Ids were live-probed + tool-call benchmarked (see /bench) on 2026-09-01, after
-//   the previous pair (glm-5.2, deepseek-v4-pro) reached end of life and started
-//   410ing — the third such rotation, so expect to do it again.
+//   Ids were live-probed + tool-call benchmarked (see /bench) on 2026-10-09, after
+//   gpt-oss-120b reached end of life and started 410ing — the fourth such
+//   rotation, so expect to do it again.
 //   NVIDIA retires free models without warning, so when the coach starts failing,
 //   re-probe GET /v1/models and re-run the bench before swapping an id in here.
 export const COACH_MODELS = [
@@ -47,18 +47,18 @@ export const COACH_MODELS = [
       "Fastest and cheapest — good for quick chat, but less reliable at editing plans. Use Opus or Sonnet when you want it to build or change your plan.",
   },
   {
-    id: "openai/gpt-oss-120b",
-    provider: "nvidia",
-    label: "GPT-OSS 120B · Free",
-    blurb:
-      "Free — no API key needed. Fast and the most reliable free model at building and editing plans. Recommended free option.",
-  },
-  {
     id: "nvidia/nemotron-3-super-120b-a12b",
     provider: "nvidia",
     label: "Nemotron 3 Super · Free",
     blurb:
-      "Free — no API key needed. Builds and edits plans just as correctly, but it is slower and NVIDIA's capacity for it comes and goes — if it errors, switch back to GPT-OSS.",
+      "Free — no API key needed. Fast and the most reliable free model at building and editing plans. Recommended free option.",
+  },
+  {
+    id: "openai/gpt-oss-20b",
+    provider: "nvidia",
+    label: "GPT-OSS 20B · Free",
+    blurb:
+      "Free — no API key needed. Builds and edits plans just as correctly, but it is slower — use it if Nemotron errors.",
   },
 ] as const satisfies readonly {
   id: string;

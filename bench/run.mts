@@ -33,7 +33,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // error and the run continues. Note that catalog presence is NOT access: some ids
 // list fine but 404 per-account (moonshotai/kimi-k2.6 did on 2026-09-01).
 const DEFAULT_MODELS = [
-  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
   "nvidia/nemotron-3-super-120b-a12b",
   "nvidia/nemotron-3-ultra-550b-a55b",
   "nvidia/nemotron-3.5-lightning-30b-a3b",

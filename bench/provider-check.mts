@@ -6,7 +6,7 @@
 //   NODE_OPTIONS=--no-warnings node --env-file=.env.local bench/provider-check.mts [model]
 const key = process.env.NVIDIA_API_KEY;
 if (!key) { console.error("NVIDIA_API_KEY not set"); process.exit(1); }
-const model = process.argv[2] || "openai/gpt-oss-120b";
+const model = process.argv[2] || "nvidia/nemotron-3-super-120b-a12b";
 
 const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
   method: "POST",

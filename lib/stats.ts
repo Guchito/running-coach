@@ -1,4 +1,5 @@
 import type { RunRow, Goal } from "./types";
+import { runningRecords } from "./prs";
 
 export type DashboardStats = {
   totalRuns: number;
@@ -84,12 +85,18 @@ export function daysUntil(dateStr: string | null): number | null {
   return Math.round((target - today) / (24 * 3600 * 1000));
 }
 
-// Estimate the equivalent finish time for the goal distance from a recent run,
-// using Riegel's formula T2 = T1 * (D2/D1)^1.06.
+// Estimate the equivalent finish time for the goal distance from the best
+// recent effort, using Riegel's formula T2 = T1 * (D2/D1)^1.06. Best efforts
+// (fastest km stretches), not whole runs, so easy and long runs don't count as
+// race fitness.
 export function projectGoalTime(runs: RunRow[], goal: Goal | null): number | null {
-  if (!goal?.targetDistanceM) return null;
-  // Use the longest of the last 5 runs as the basis.
-  const basis = runs.slice(0, 5).sort((a, b) => b.distanceM - a.distanceM)[0];
-  if (!basis || basis.distanceM < 1000) return null;
-  return basis.durationSec * Math.pow(goal.targetDistanceM / basis.distanceM, 1.06);
+  const target = goal?.targetDistanceM;
+  if (!target) return null;
+  const since = Date.now() - 42 * 24 * 3600 * 1000;
+  const recent = runs.filter((r) => new Date(r.startedAt).getTime() >= since);
+  // ponytail: 5K+ efforts only — Riegel from a 1K split overpredicts long races.
+  const times = runningRecords(recent)
+    .efforts.filter((e) => e.meters >= 5000)
+    .map((e) => e.timeSec * Math.pow(target / e.meters, 1.06));
+  return times.length ? Math.min(...times) : null;
 }
