@@ -4,7 +4,14 @@ import type { RunRow } from "./types";
 // distance. 0.8–1.3 is the healthy band; within it, 1.0–1.1 is the sweet spot
 // (steady build ≈ the classic +10%/week); >1.5 flags a risky ramp.
 
-export type WeekVolume = { weekStart: string; km: number };
+// Slim per-run fields for the week detail modal (no summary series — this
+// crosses to the client).
+export type WeekRun = Pick<
+  RunRow,
+  "id" | "name" | "startedAt" | "distanceM" | "durationSec" | "avgPaceSecPerKm" | "avgHr" | "elevGainM"
+>;
+
+export type WeekVolume = { weekStart: string; km: number; runs: WeekRun[] };
 
 export type TrainingLoad = {
   acuteKm: number; // last 7 days
@@ -36,13 +43,16 @@ function lastNWeeks(runs: RunRow[], n: number, now: number): WeekVolume[] {
   for (let i = n - 1; i >= 0; i--) {
     const ws = new Date(cur);
     ws.setDate(ws.getDate() - 7 * i);
-    buckets.push({ weekStart: isoDate(ws), km: 0 });
+    buckets.push({ weekStart: isoDate(ws), km: 0, runs: [] });
   }
   const idxByKey = new Map(buckets.map((b, i) => [b.weekStart, i]));
   for (const r of runs) {
     const key = isoDate(startOfWeek(new Date(r.startedAt)));
     const i = idxByKey.get(key);
-    if (i != null) buckets[i].km += r.distanceM / 1000;
+    if (i == null) continue;
+    buckets[i].km += r.distanceM / 1000;
+    const { id, name, startedAt, distanceM, durationSec, avgPaceSecPerKm, avgHr, elevGainM } = r;
+    buckets[i].runs.push({ id, name, startedAt, distanceM, durationSec, avgPaceSecPerKm, avgHr, elevGainM });
   }
   return buckets.map((b) => ({ ...b, km: round1(b.km) }));
 }

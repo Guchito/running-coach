@@ -26,7 +26,7 @@ import {
   EmptyState,
   interactiveRow,
 } from "@/components/ui";
-import { RevealOnView } from "@/components/RevealOnView";
+import { TrainingLoadBars } from "@/components/TrainingLoadBars";
 import { HealthCard } from "@/components/HealthCard";
 import { PaceTrendChart, DistanceTrendChart } from "@/components/Charts";
 import { requireUserId } from "@/lib/auth";
@@ -295,7 +295,6 @@ function RecentFormCard({ stats }: { stats: DashboardStats }) {
 
 function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
   const load = trainingLoad(runs);
-  const max = Math.max(1, ...load.weeks.map((w) => w.km));
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between mb-3">
@@ -325,23 +324,9 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
             {load.acuteKm} km last 7 days vs {load.chronicKm} km/wk avg · good
             0.8–1.3 · sweet spot 1.0–1.1
           </div>
-          <RevealOnView className="flex items-end gap-1.5 h-16 mt-4">
-            {load.weeks.map((w, i) => (
-              <div
-                key={w.weekStart}
-                className="flex-1 rounded-t bar-grow"
-                style={{
-                  height: `${Math.max(4, (w.km / max) * 100)}%`,
-                  backgroundColor:
-                    i === load.weeks.length - 1 ? "#2563eb" : "#dbeafe",
-                  animationDelay: `${i * 40}ms`,
-                }}
-                title={`Week of ${w.weekStart}: ${w.km} km`}
-              />
-            ))}
-          </RevealOnView>
+          <TrainingLoadBars weeks={load.weeks} />
           <div className="text-[10px] text-muted mt-1 text-right">
-            last 6 weeks → now
+            last 6 weeks → now · click a week for details
           </div>
         </>
       )}

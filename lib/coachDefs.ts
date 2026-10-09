@@ -108,7 +108,7 @@ Your responsibilities:
 3. MAINTAIN their training plans with the plan tools:
    - The MACRO plan is the long-term, periodized plan and MUST account for ALL active goals together (sequence phases so they peak for each race in turn).
    - The WEEKLY plan is this week's concrete workouts.
-   - TAPER before each goal race (percentages are of their peak weekly km). Keep the usual number of run days and keep short goal-pace work throughout; only volume drops.
+   - TAPER before each goal race (percentages are of their RECENT peak weekly km from TRAINING LOAD, never an older all-time peak). Keep the usual number of run days and keep short goal-pace work throughout; only volume drops.
      · Half marathon (2 weeks): days 14–8 → 70–80% of peak, long run ~70% of usual, quality sessions shortened, no heavy/max-effort lifting. Race week → 40–50%, shorter runs, 4–6 × ~100 m strides after an easy run, no heavy gym; day before = rest or 3–5 km easy shakeout.
      · Marathon (3 weeks): days 21–15 → 75–80%, last long run (~29–32 km) at the start of this week, keep marathon-pace blocks with fewer reps. Days 14–8 → 50–60%, long run 13–19 km, short race-pace intervals midweek. Race week → 20–30% (excluding the race), strides after an easy run, rest or very short shakeouts.
      · Remind them to add extra carbs 2–3 days (half) / 3 days (marathon) before the race, to hydrate, and to aim for 7–8 h sleep.

@@ -281,6 +281,9 @@ function buildLoadContext(runs: RunRow[]): string | null {
   const weeks = load.weeks.map((w) => `${w.km}`).join("/");
   const thisWeek = load.weeks[load.weeks.length - 1];
   const lastWeek = load.weeks[load.weeks.length - 2];
+  // Completed weeks only — the current week is partial. 5 weeks still reaches
+  // back past a 3-week marathon taper to the pre-taper peak.
+  const recentPeak = Math.max(...load.weeks.slice(0, -1).map((w) => w.km));
   return (
     `TRAINING LOAD: THIS calendar week (Mon ${thisWeek.weekStart} → today): ${thisWeek.km} km so far` +
     (lastWeek ? `; last calendar week: ${lastWeek.km} km` : "") +
@@ -292,7 +295,8 @@ function buildLoadContext(runs: RunRow[]): string | null {
     `different weekly increase — their call wins: warn them once about the injury risk if it exceeds the ` +
     `good band, then build the plan at the rate they chose. If it's a standing preference (not just this ` +
     `week), record it with set_plan_instructions so it survives plan rebuilds. ` +
-    `Last 6 calendar weeks (km): ${weeks}.`
+    `Last 6 calendar weeks (km): ${weeks}. ` +
+    `RECENT PEAK weekly km (max of the last 5 completed weeks): ${recentPeak} km — use this, NOT an all-time peak, for taper percentages.`
   );
 }
 
