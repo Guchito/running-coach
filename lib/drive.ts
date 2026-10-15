@@ -198,7 +198,7 @@ export async function importDriveFiles(
           result.skipped++;
           continue; // same run already exists (e.g. uploaded manually)
         }
-        const name = runNameFromFile(f.name, parsed.summary.startedAt);
+        const name = runNameFromFile(f.name, parsed.summary.startedAt, parsed.summary.sport);
         const run = await insertRun(userId, name, parsed.summary, f.id);
         runStartKeys.add(key);
         result.imported.push({ id: run.id, name: run.name, kind: "run" });

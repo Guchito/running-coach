@@ -156,6 +156,7 @@ const SCHEMA = `
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
   );
   ALTER TABLE runs ADD COLUMN IF NOT EXISTS source_file_id TEXT;
+  ALTER TABLE runs ADD COLUMN IF NOT EXISTS sport TEXT NOT NULL DEFAULT 'running';
   CREATE INDEX IF NOT EXISTS runs_user_started_idx ON runs(user_id, started_at DESC);
   CREATE UNIQUE INDEX IF NOT EXISTS runs_user_source_idx
     ON runs(user_id, source_file_id) WHERE source_file_id IS NOT NULL;
@@ -1000,6 +1001,7 @@ function rowToRun(r: Record<string, unknown>): RunRow {
     : r.summary_json) as RunSummary;
   return {
     id: r.id as number,
+    sport: ((r.sport as string) || "running") as RunRow["sport"],
     name: r.name as string,
     startedAt: new Date(r.started_at as string).toISOString(),
     distanceM: Number(r.distance_m),
@@ -1023,8 +1025,8 @@ export async function insertRun(
 ): Promise<RunRow> {
   const rows = await q(
     `INSERT INTO runs (user_id, name, started_at, distance_m, duration_s, avg_pace_s,
-       avg_hr, max_hr, avg_cadence, avg_power, elev_gain_m, summary_json, source_file_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+       avg_hr, max_hr, avg_cadence, avg_power, elev_gain_m, summary_json, source_file_id, sport)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
     [
       userId,
       name,
@@ -1039,6 +1041,7 @@ export async function insertRun(
       summary.elevGainM,
       JSON.stringify(summary),
       sourceFileId,
+      summary.sport ?? "running",
     ]
   );
   return rowToRun(rows[0]);
@@ -1102,9 +1105,20 @@ export async function updateRunSummary(
   return rows[0] ? rowToRun(rows[0]) : null;
 }
 
+// Only actual runs: everything that computes stats, load, PRs or coach context
+// goes through here, so walks/rides never leak into running numbers.
 export async function listRuns(userId: number): Promise<RunRow[]> {
   const rows = await q(
-    `SELECT * FROM runs WHERE user_id = $1 ORDER BY started_at DESC`,
+    `SELECT * FROM runs WHERE user_id = $1 AND sport = 'running' ORDER BY started_at DESC`,
+    [userId]
+  );
+  return rows.map(rowToRun);
+}
+
+// Walks, rides, swims, rows — same table and detail page, shown in History only.
+export async function listCrossTraining(userId: number): Promise<RunRow[]> {
+  const rows = await q(
+    `SELECT * FROM runs WHERE user_id = $1 AND sport <> 'running' ORDER BY started_at DESC`,
     [userId]
   );
   return rows.map(rowToRun);

@@ -2,6 +2,8 @@ import { getRun, getUserById } from "@/lib/db";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import { PageShell, Card, Stat } from "@/components/ui";
 import { CombinedChart } from "@/components/Charts";
+import { RouteMap } from "@/components/RouteMap";
+import { trackOf } from "@/lib/sessionMeta";
 import { SplitsSection } from "@/components/SplitsSection";
 import { AddSplitsCard } from "@/components/AddSplitsCard";
 import { TrimRunButton } from "@/components/TrimRunButton";
@@ -87,6 +89,13 @@ export default async function RunDetail({
           appear={3}
         />
       </div>
+
+      {trackOf(s.series).length > 1 && (
+        <Card className="p-5 mb-6">
+          <h2 className="font-medium mb-3">Route</h2>
+          <RouteMap tracks={[trackOf(s.series)]} />
+        </Card>
+      )}
 
       {/* All metrics on one chart, each line toggleable */}
       <Card className="p-5 mb-6">

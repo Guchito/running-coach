@@ -24,6 +24,7 @@ export async function POST(
   ]);
   if (!user?.autoNameRuns) return NextResponse.json({ skipped: true });
   if (!run) return NextResponse.json({ error: "Run not found." }, { status: 404 });
+  if (run.sport !== "running") return NextResponse.json({ skipped: true }); // namer is run-only
 
   try {
     const model = resolveCoachModel(user.coachModel);

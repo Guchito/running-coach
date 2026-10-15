@@ -46,13 +46,14 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
   const types = useMemo(() => {
     const seen = new Map<
       string,
-      { key: string; label: string; color: string; kind: "run" | "gym"; isRace?: boolean }
+      { key: string; type: string; label: string; color: string; kind: "run" | "gym"; isRace?: boolean }
     >();
     for (const s of sessions) {
       const key = sessionFilterKey(s);
       if (!seen.has(key))
         seen.set(key, {
           key,
+          type: s.type,
           label: s.typeLabel,
           color: s.color,
           kind: s.kind,
@@ -105,6 +106,7 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
               <SessionBadge
                 s={{
                   kind: t.kind,
+                  type: t.type,
                   color: t.color,
                   typeLabel: t.label,
                   name: t.label,

@@ -1,6 +1,7 @@
 import { Decoder, Stream } from "@garmin/fitsdk";
 import { summarizeRows, type Row } from "./parseRun";
 import type { RunSummary } from "./types";
+import { sportFromTag } from "./sessionMeta";
 
 // Parses Garmin/ANT .fit files (e.g. HealthFit exports). Uses the official
 // Garmin FIT SDK to decode, then maps record/lap messages into the same Row
@@ -20,7 +21,11 @@ type FitRecord = {
   stepLength?: number; // mm
   verticalOscillation?: number; // mm
   stanceTime?: number; // ms
+  positionLat?: number; // semicircles
+  positionLong?: number;
 };
+
+const SEMI_TO_DEG = 180 / 2 ** 31;
 
 type FitLap = {
   startTime?: Date;
@@ -35,18 +40,11 @@ export type FitMessages = {
   sportMesgs?: { sport?: string | number }[];
 };
 
-// Sports the watch records with a full GPS/record stream but which are NOT runs.
-// Without this they sail past the strength check, produce rows, and get stored as
-// runs with meaningless pace/cadence/stride (a bike ride becomes an 11km "run").
-const NON_RUN_SPORTS = ["cycling", "biking", "swimming", "rowing"];
-
-// The file's sport tag if it names a non-run sport, else null. Sport lives on the
-// session message; older/partial files fall back to the sport message.
-function nonRunSport(messages: FitMessages): string | null {
+// The file's sport tag. Lives on the session message; older/partial files fall
+// back to the sport message. Untagged (CSV-era) files are runs.
+export function fitSport(messages: FitMessages) {
   const raw = messages.sessionMesgs?.[0]?.sport ?? messages.sportMesgs?.[0]?.sport;
-  if (raw == null) return null; // no tag (e.g. CSV-era files) -> assume run, as before
-  const s = String(raw).toLowerCase();
-  return NON_RUN_SPORTS.some((k) => s.includes(k)) ? String(raw) : null;
+  return sportFromTag(raw == null ? null : String(raw));
 }
 
 function intensityLabel(v: string | number | undefined): string {
@@ -59,12 +57,6 @@ function intensityLabel(v: string | number | undefined): string {
 
 // Pure mapping from decoded FIT messages to time-samples. Exported for testing.
 export function fitMessagesToRows(messages: FitMessages): Row[] {
-  const sport = nonRunSport(messages);
-  if (sport) {
-    throw new Error(
-      `This is a ${sport} workout, not a run. This app tracks runs and gym sessions.`
-    );
-  }
   const records = (messages.recordMesgs ?? []).filter((r) => r.timestamp);
   if (records.length === 0) return [];
 
@@ -113,6 +105,8 @@ export function fitMessagesToRows(messages: FitMessages): Row[] {
       lap: lap ? lap.num : null,
       intensity: lap ? lap.intensity : "",
       since: (t - start) / 1000,
+      lat: r.positionLat != null ? r.positionLat * SEMI_TO_DEG : null,
+      lng: r.positionLong != null ? r.positionLong * SEMI_TO_DEG : null,
     } satisfies Row;
   });
 }
@@ -133,5 +127,5 @@ export function parseRunFit(buffer: Buffer | Uint8Array): RunSummary {
   if (rows.length === 0) {
     throw new Error("No GPS/record data found in this .fit file.");
   }
-  return summarizeRows(rows);
+  return { ...summarizeRows(rows), sport: fitSport(messages as FitMessages) };
 }

@@ -1,9 +1,10 @@
 import { Decoder, Stream } from "@garmin/fitsdk";
 import { parseRunCsv, summarizeRows } from "./parseRun";
-import { parseRunFit, fitMessagesToRows, type FitMessages } from "./parseFit";
+import { parseRunFit, fitMessagesToRows, fitSport, type FitMessages } from "./parseFit";
 import { parseGymFit, parseGymTcx, gymSummaryFromMessages, type GymFitMessages } from "./parseGym";
 import { isStrengthSport } from "./gym";
-import type { RunSummary, GymSummary } from "./types";
+import type { RunSummary, GymSummary, Sport } from "./types";
+import { SPORT_LABEL } from "./sessionMeta";
 
 // Server-only: pick the right parser by file extension. Kept out of
 // parseRun.ts because parseFit pulls in the Node-only Garmin SDK, and
@@ -23,12 +24,14 @@ export function parseRunFile(filename: string, data: Buffer | Uint8Array | strin
   return parseRunCsv(text);
 }
 
-// Friendly run name from a source filename + start date.
-export function runNameFromFile(filename: string, startedAt: string): string {
+// Friendly name from a source filename + start date, e.g. "Outdoor Run · 2026-10-14"
+// or "Walk · 2026-10-14" for the other sports.
+export function runNameFromFile(filename: string, startedAt: string, sport: Sport = "running"): string {
   const base = filename.replace(/\.(csv|fit)$/i, "").trim();
   const date = startedAt.slice(0, 10);
-  if (/outdoor running/i.test(base)) return `Outdoor Run · ${date}`;
-  return base.length > 40 || base.length === 0 ? `Run · ${date}` : base;
+  const label = SPORT_LABEL[sport];
+  if (/outdoor (running|walking|cycling|swimming|rowing)/i.test(base)) return `Outdoor ${label} · ${date}`;
+  return base.length > 40 || base.length === 0 ? `${label} · ${date}` : base;
 }
 
 // Server-only: pick the right gym parser by file extension (.fit or .tcx).
@@ -111,7 +114,9 @@ export function parseActivityFile(
     if (rows.length === 0) {
       return { kind: "gym", summary: gymSummaryFromMessages(m) };
     }
-    return { kind: "run", summary: summarizeRows(rows) };
+    // Walks/rides/swims keep the full run-style data but carry their sport so
+    // they're stored alongside runs without feeding the running stats.
+    return { kind: "run", summary: { ...summarizeRows(rows), sport: fitSport(m as FitMessages) } };
   }
 
   if (ext === "tcx") {

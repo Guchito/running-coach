@@ -45,6 +45,8 @@ export type Row = {
   lap: number | null;
   intensity: string;
   since: number;
+  lat: number | null; // degrees
+  lng: number | null;
 };
 
 function num(raw: string | undefined): number | null {
@@ -99,6 +101,8 @@ export function parseRunCsv(text: string): RunSummary {
       gct: num(at(cells, "gct")),
       lap: num(at(cells, "lap")),
       intensity: (at(cells, "intensity") ?? "").trim(),
+      lat: num(at(cells, "lat")),
+      lng: num(at(cells, "lon")),
       since,
     });
   }
@@ -425,6 +429,9 @@ function downsample(rows: Row[], target: number): SeriesPoint[] {
       elevM: r.elev,
       cadence: r.cadence,
       speed: r.speed,
+      // ponytail: the route rides on the 200-point chart series (~45 m apart on a
+      // 9 km walk); store a denser track if twisty routes look jagged.
+      ...(r.lat != null && r.lng != null ? { lat: r.lat, lng: r.lng } : {}),
     });
   }
   return out;

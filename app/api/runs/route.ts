@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await (file as File).arrayBuffer());
     const summary = parseRunFile(filename, buffer);
 
-    const name = providedName || runNameFromFile(filename, summary.startedAt);
+    const name = providedName || runNameFromFile(filename, summary.startedAt, summary.sport);
     const run = await insertRun(userId, name, summary);
     return NextResponse.json({ run });
   } catch (err) {

@@ -27,7 +27,7 @@ for (let t = 0; d < 5060; t++) {
   rows.push({
     iso: t === 0 ? "2026-09-20T09:00:00Z" : "", hr: 170, power: null, cadence: 88,
     elev: 10, dist: d, speed: d < 60 ? 1 : 3.4, stride: null, vo: null, gct: null,
-    lap: null, intensity: "", since: t,
+    lap: null, intensity: "", since: t, lat: null, lng: null,
   });
   d = Math.min(5060, d + (d < 60 ? 1 : 3.4));
 }

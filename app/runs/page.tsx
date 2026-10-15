@@ -1,4 +1,4 @@
-import { listRuns, listGymSessions, listGoals } from "@/lib/db";
+import { listRuns, listCrossTraining, listGymSessions, listGoals } from "@/lib/db";
 import { formatPace, formatDuration, formatDistance, formatDatesInText } from "@/lib/parseRun";
 import { PageShell, Button, EmptyState } from "@/components/ui";
 import { SessionHistory } from "@/components/SessionHistory";
@@ -10,8 +10,9 @@ export const dynamic = "force-dynamic";
 
 export default async function RunsPage() {
   const userId = await requireUserId();
-  const [runs, gymSessions, goals] = await Promise.all([
+  const [runs, crossTraining, gymSessions, goals] = await Promise.all([
     listRuns(userId),
+    listCrossTraining(userId),
     listGymSessions(userId),
     listGoals(userId),
   ]);
@@ -24,14 +25,14 @@ export default async function RunsPage() {
 
   // One flat, colour-coded list of every session, newest first.
   const sessions: SessionLite[] = [
-    ...runs.map(
+    ...[...runs, ...crossTraining].map(
       (r): SessionLite => ({
         id: r.id,
         kind: "run",
-        type: "run",
+        type: r.sport,
         isRace: raceRunIds.has(r.id),
-        typeLabel: sessionTypeLabel("run", null, raceRunIds.has(r.id)),
-        color: sessionColor("run", null, raceRunIds.has(r.id)),
+        typeLabel: sessionTypeLabel("run", r.sport, raceRunIds.has(r.id)),
+        color: sessionColor("run", r.sport, raceRunIds.has(r.id)),
         name: formatDatesInText(r.name),
         startedAt: r.startedAt,
         href: `/runs/${r.id}`,

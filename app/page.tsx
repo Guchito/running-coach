@@ -30,6 +30,8 @@ import { TrainingLoadBars } from "@/components/TrainingLoadBars";
 import { HealthCard } from "@/components/HealthCard";
 import { PaceTrendChart, DistanceTrendChart } from "@/components/Charts";
 import { requireUserId } from "@/lib/auth";
+import { RouteMap } from "@/components/RouteMap";
+import { trackOf } from "@/lib/sessionMeta";
 import type { Goal, RunRow } from "@/lib/types";
 import Link from "next/link";
 
@@ -177,6 +179,9 @@ export default async function Dashboard() {
             </div>
             <DistanceTrendChart trend={stats.trend} />
           </Card>
+
+          {/* Heat map: every run's route stacked, darker where they overlap */}
+          <HeatMapCard runs={runs} />
 
           {/* Recent runs */}
           <Card className="p-5">
@@ -493,5 +498,21 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
         )
       )}
     </div>
+  );
+}
+
+function HeatMapCard({ runs }: { runs: RunRow[] }) {
+  const tracks = runs.map((r) => trackOf(r.summary.series)).filter((t) => t.length > 1);
+  if (tracks.length === 0) return null;
+  return (
+    <Card className="p-5 mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-medium">Where you run</h2>
+        <span className="text-xs text-muted">
+          {tracks.length} run{tracks.length === 1 ? "" : "s"} · darker = more often
+        </span>
+      </div>
+      <RouteMap tracks={tracks} heat />
+    </Card>
   );
 }

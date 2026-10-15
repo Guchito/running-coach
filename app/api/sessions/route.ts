@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         }
         return NextResponse.json({ kind: "run", id: existing.id, duplicate: true });
       }
-      const name = providedName || runNameFromFile(filename, parsed.summary.startedAt);
+      const name = providedName || runNameFromFile(filename, parsed.summary.startedAt, parsed.summary.sport);
       const run = await insertRun(userId, name, parsed.summary);
       return NextResponse.json({ kind: "run", id: run.id });
     }

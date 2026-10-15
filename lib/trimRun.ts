@@ -68,6 +68,7 @@ export function trimSummary(s: RunSummary, cut: RunTrim): RunSummary {
   const toRow = (p: Pick<SeriesPoint, "t" | "distM" | "hr" | "elevM" | "cadence">): Row => ({
     iso: "", hr: p.hr, power: null, cadence: p.cadence, elev: p.elevM, dist: p.distM,
     speed: null, stride: null, vo: null, gct: null, lap: null, intensity: "", since: p.t,
+    lat: null, lng: null,
   });
   const edge = { hr: null, elevM: null, cadence: null };
   const rows = [

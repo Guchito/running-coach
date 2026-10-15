@@ -32,9 +32,16 @@ export type SeriesPoint = {
   elevM: number | null;
   cadence: number | null;
   speed: number | null;  // m/s
+  lat?: number;          // degrees; only when the sample had a GPS fix
+  lng?: number;
 };
 
+// Which endurance activity a runs-table row is. Only "running" feeds the
+// stats/coach/PRs; the rest are logged with the same data but kept out.
+export type Sport = "running" | "walking" | "cycling" | "swimming" | "rowing";
+
 export type RunSummary = {
+  sport?: Sport;              // absent on older rows -> "running"
   startedAt: string;          // ISO8601 of first sample
   durationSec: number;
   movingSec: number;          // seconds with speed above walking threshold
@@ -69,6 +76,7 @@ export type RunTrim = { startM: number; endM: number };
 
 export type RunRow = {
   id: number;
+  sport: Sport;
   name: string;
   startedAt: string;
   distanceM: number;
