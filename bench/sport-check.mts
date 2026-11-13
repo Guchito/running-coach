@@ -26,6 +26,7 @@ const rec = [{ timestamp: new Date("2026-08-26T15:32:56Z"), distance: 0, speed: 
 const expect: Record<string, string> = {
   walking: "walking", hiking: "walking", cycling: "cycling", biking: "cycling",
   swimming: "swimming", rowing: "rowing", running: "running",
+  tennis: "sports", pickleball: "sports", unrecognized_sport: "sports",
 };
 for (const [tag, sport] of Object.entries(expect)) {
   assert.equal(fitMessagesToRows({ sessionMesgs: [{ sport: tag }], recordMesgs: rec }).length, 1, tag);
@@ -38,11 +39,13 @@ assert.equal(fitSport({ sportMesgs: [{ sport: "walking" }] }), "walking");
 assert.equal(fitSport({}), "running");
 assert.equal(sportFromTag(null), "running");
 assert.equal(sportFromTag("Outdoor Walking"), "walking");
+assert.equal(sportFromTag("Tennis"), "sports");
 
 
 const { runNameFromFile } = await import("../lib/ingest.ts");
 assert.equal(runNameFromFile("2026-10-14-110009-Outdoor Walking-Apple Watch de Agustin.fit", "2026-10-14T09:00:09Z", "walking"), "Outdoor Walk · 2026-10-14");
 assert.equal(runNameFromFile("x".repeat(50) + ".fit", "2026-10-14T09:00:09Z", "cycling"), "Bike · 2026-10-14");
+assert.equal(runNameFromFile("x".repeat(50) + ".fit", "2026-10-14T09:00:09Z", "sports"), "Sports · 2026-10-14");
 assert.equal(runNameFromFile("x".repeat(50) + ".fit", "2026-10-14T09:00:09Z"), "Run · 2026-10-14");
 
 console.log("ok");

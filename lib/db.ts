@@ -78,6 +78,8 @@ const SCHEMA = `
   ALTER TABLE users ADD COLUMN IF NOT EXISTS garmin_token_enc TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS garmin_last_sync TIMESTAMPTZ;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS health_sheet_id TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS home_lat DOUBLE PRECISION;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS home_lng DOUBLE PRECISION;
 
   CREATE TABLE IF NOT EXISTS health_metrics (
     id              SERIAL PRIMARY KEY,
@@ -584,6 +586,7 @@ function rowToUser(r: Record<string, unknown>): User {
       ? new Date(r.garmin_last_sync as string).toISOString()
       : null,
     healthSheetId: (r.health_sheet_id as string) ?? null,
+    home: r.home_lat != null && r.home_lng != null ? [Number(r.home_lat), Number(r.home_lng)] : null,
     createdAt: new Date(r.created_at as string).toISOString(),
   };
 }
@@ -592,6 +595,16 @@ export async function setAutoNameRuns(userId: number, enabled: boolean): Promise
   const rows = await q(`UPDATE users SET auto_name_runs = $2 WHERE id = $1 RETURNING *`, [
     userId,
     enabled,
+  ]);
+  return rowToUser(rows[0]);
+}
+
+// Where suggested routes start; null = wherever most runs start.
+export async function setHome(userId: number, home: [number, number] | null): Promise<User> {
+  const rows = await q(`UPDATE users SET home_lat = $2, home_lng = $3 WHERE id = $1 RETURNING *`, [
+    userId,
+    home?.[0] ?? null,
+    home?.[1] ?? null,
   ]);
   return rowToUser(rows[0]);
 }

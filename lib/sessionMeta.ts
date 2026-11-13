@@ -13,6 +13,7 @@ export const SPORT_LABEL: Record<Sport, string> = {
   cycling: "Bike",
   swimming: "Swim",
   rowing: "Rowing",
+  sports: "Sports",
 };
 
 export const SPORT_COLOR: Record<Sport, string> = {
@@ -21,17 +22,20 @@ export const SPORT_COLOR: Record<Sport, string> = {
   cycling: "#f97316", // orange
   swimming: "#06b6d4", // cyan
   rowing: "#6366f1", // indigo
+  sports: "#64748b", // slate
 };
 
 // Map a raw FIT/TCX sport tag ("walking", "Outdoor Walking", "cycling", ...)
-// onto our Sport. Anything unrecognised — including no tag at all — is a run.
+// onto our Sport. Missing tags are legacy runs; unrecognised sports stay separate.
 export function sportFromTag(tag: string | null | undefined): Sport {
   const s = (tag ?? "").toLowerCase();
+  if (!s) return "running";
   if (s.includes("walk") || s.includes("hik")) return "walking";
   if (s.includes("cycl") || s.includes("bik")) return "cycling";
   if (s.includes("swim")) return "swimming";
   if (s.includes("row")) return "rowing";
-  return "running";
+  if (s.includes("run")) return "running";
+  return "sports";
 }
 
 export const GYM_TYPE_COLOR: Record<GymType, string> = {

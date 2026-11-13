@@ -1,4 +1,4 @@
-import { getUserById } from "@/lib/db";
+import { getUserById, listRuns } from "@/lib/db";
 import { PageShell } from "@/components/ui";
 import { DriveSettings } from "@/components/DriveSettings";
 import { GarminSettings } from "@/components/GarminSettings";
@@ -6,6 +6,9 @@ import { CoachModelForm } from "@/components/CoachModelForm";
 import { AnthropicKeyForm } from "@/components/AnthropicKeyForm";
 import { NvidiaKeyForm } from "@/components/NvidiaKeyForm";
 import { AutoNameRunsToggle } from "@/components/AutoNameRunsToggle";
+import { HomeSetting } from "@/components/HomeSetting";
+import { homeStart } from "@/lib/routeSuggest";
+import { trackOf } from "@/lib/sessionMeta";
 import { requireUserId, isDemoSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { isDriveConfigured, serviceAccountEmail } from "@/lib/drive";
@@ -19,7 +22,8 @@ export default async function SettingsPage() {
   const userId = await requireUserId();
   // Settings holds the owner's API keys and integrations — not the demo's to see.
   if (await isDemoSession()) redirect("/");
-  const user = await getUserById(userId);
+  const [user, runs] = await Promise.all([getUserById(userId), listRuns(userId)]);
+  const usualStart = homeStart(runs.map((r) => trackOf(r.summary.series)).filter((t) => t.length > 1));
 
   return (
     <PageShell
@@ -34,6 +38,9 @@ export default async function SettingsPage() {
 
       <h2 className="font-medium mb-3 mt-8">Run naming</h2>
       <AutoNameRunsToggle initial={user?.autoNameRuns ?? false} />
+
+      <h2 className="font-medium mb-3 mt-8">Home</h2>
+      <HomeSetting initial={user?.home ?? null} usual={usualStart} />
 
       <h2 className="font-medium mb-3 mt-8">Your Anthropic API key</h2>
       <AnthropicKeyForm initialHasKey={user?.hasAnthropicKey ?? false} />

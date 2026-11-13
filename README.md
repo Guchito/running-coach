@@ -28,6 +28,7 @@ and full run history and gives you tailored feedback after every run.
    DATABASE_URL=postgresql://user@host:5432/dbname     # your Postgres
    SESSION_SECRET=<long random string>                 # signs login cookies
    # DATABASE_SSL=disable                               # only for a plain local Postgres
+   # ORS_API_KEY=...                                    # optional, openrouteservice.org: new route loops on the plan page
    ```
 
    Generate a session secret with:

@@ -8,7 +8,7 @@ import { coreBounds, homeTracks, type LatLng } from "@/lib/sessionMeta";
 // no key, OSM data). One track: the route with a white casing and start/finish
 // dots. `heat`: every track as a translucent line in one layer, so streets you
 // run often stack up darker. MapLibre needs `window`, so it's loaded in the effect.
-const STYLE = "https://tiles.openfreemap.org/styles/positron";
+export const STYLE = "https://tiles.openfreemap.org/styles/positron";
 
 export function RouteMap({ tracks, heat = false }: { tracks: LatLng[][]; heat?: boolean }) {
   const el = useRef<HTMLDivElement>(null);

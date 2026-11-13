@@ -3,6 +3,9 @@
 import { useState } from "react";
 import type { PlanDay } from "@/lib/types";
 import { formatKg } from "@/lib/gymProgress";
+import { toGpx } from "@/lib/routeSuggest";
+import type { LatLng } from "@/lib/sessionMeta";
+import { RouteMap } from "./RouteMap";
 
 // The weekly plan's day grid. Days that carry a strength prescription expand
 // on tap to show exactly what to lift; every other day stays a static card.
@@ -57,6 +60,90 @@ function DayHeader({ d, done }: { d: PlanDay; done: boolean }) {
   );
 }
 
+type Suggestion = {
+  source: "past" | "generated";
+  runId?: number;
+  name?: string;
+  distanceM: number;
+  track: LatLng[];
+};
+
+const NO_ROUTE = new Set(["rest", "cross", "strength"]);
+const linkBtn = "text-xs font-medium text-accent hover:underline cursor-pointer disabled:opacity-50";
+
+// "Route" on a running day: a past run of about that distance, or a new loop
+// from the usual start (see app/api/route-suggest). "Another" asks for a
+// different loop; the GPX file is for watch apps that import routes.
+function DayRoute({ km }: { km: number }) {
+  const [route, setRoute] = useState<Suggestion | null>(null);
+  const [seed, setSeed] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load(nextSeed: number) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/route-suggest?km=${km}&seed=${nextSeed}`);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? "Could not suggest a route.");
+      setRoute(body);
+      setSeed(nextSeed);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not suggest a route.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function downloadGpx(r: Suggestion) {
+    const url = URL.createObjectURL(
+      new Blob([toGpx(r.track, `${km} km route`)], { type: "application/gpx+xml" })
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `route-${km}km.gpx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="mt-2">
+      {!route && (
+        <button type="button" className={linkBtn} disabled={loading} onClick={() => load(0)}>
+          {loading ? "Finding a route…" : "Route"}
+        </button>
+      )}
+      {route && (
+        <div className="space-y-2">
+          <RouteMap tracks={[route.track]} />
+          <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-muted">
+            <span className="min-w-0 truncate">
+              {route.source === "past" ? (
+                <a href={`/runs/${route.runId}`} className="text-accent hover:underline">
+                  {route.name}
+                </a>
+              ) : (
+                "New loop"
+              )}{" "}
+              · {(route.distanceM / 1000).toFixed(1)} km
+            </span>
+            <span className="flex items-center gap-3 shrink-0">
+              <button type="button" className={linkBtn} disabled={loading} onClick={() => load(seed + 1)}>
+                {loading ? "Finding…" : "Another"}
+              </button>
+              <button type="button" className={linkBtn} onClick={() => downloadGpx(route)}>
+                Download GPX
+              </button>
+            </span>
+          </div>
+        </div>
+      )}
+      {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
+    </div>
+  );
+}
+
 export function WeeklyPlanDays({
   days,
   doneDays,
@@ -81,6 +168,9 @@ export function WeeklyPlanDays({
           return (
             <div key={d.day} className="min-w-0 rounded-xl border border-border p-3">
               <DayHeader d={d} done={done.has(d.day)} />
+              {d.distanceKm && d.distanceKm > 0 && !NO_ROUTE.has(d.type) ? (
+                <DayRoute km={d.distanceKm} />
+              ) : null}
             </div>
           );
         }

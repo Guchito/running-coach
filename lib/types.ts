@@ -38,7 +38,7 @@ export type SeriesPoint = {
 
 // Which endurance activity a runs-table row is. Only "running" feeds the
 // stats/coach/PRs; the rest are logged with the same data but kept out.
-export type Sport = "running" | "walking" | "cycling" | "swimming" | "rowing";
+export type Sport = "running" | "walking" | "cycling" | "swimming" | "rowing" | "sports";
 
 export type RunSummary = {
   sport?: Sport;              // absent on older rows -> "running"
@@ -192,6 +192,7 @@ export type User = {
   garminConnected: boolean;   // whether a Garmin Connect session token is stored
   garminLastSync: string | null;
   healthSheetId: string | null; // Google Sheet the HealthFit daily metrics sync from
+  home: [number, number] | null; // [lat, lng] where suggested routes start; null = the usual start
   createdAt: string;
 };
 
