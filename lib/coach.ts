@@ -142,7 +142,15 @@ function buildLthrTestContext(
 // Full per-run detail (HR, cadence, elevation, intervals, km splits).
 function runDetail(r: RunRow, opts: { tag?: string; intervals?: boolean } = {}): string {
   const s = r.summary;
-  const splits = s.splits.map((sp) => formatPace(sp.paceSecPerKm).replace("/km", "")).join(", ");
+  // pace/HR/spm per km — ~4 extra tokens per km over pace alone.
+  const splits = s.splits
+    .map(
+      (sp) =>
+        `${formatPace(sp.paceSecPerKm).replace("/km", "")}/${sp.avgHr ? Math.round(sp.avgHr) : "—"}/${
+          sp.avgCadence ? Math.round(sp.avgCadence * 2) : "—"
+        }`
+    )
+    .join(", ");
   const spm = r.avgCadence ? Math.round(r.avgCadence * 2) : null; // watch logs per-leg
 
   const laps = s.laps ?? [];
@@ -168,7 +176,7 @@ function runDetail(r: RunRow, opts: { tag?: string; intervals?: boolean } = {}):
     `, elev +${Math.round(r.elevGainM)}m`,
     s.avgVoMm ? `, VO ${s.avgVoMm.toFixed(0)}mm, GCT ${s.avgGctMs?.toFixed(0)}ms` : "",
     lapLine,
-    splits ? `\n    km splits (min:sec): ${splits}` : "",
+    splits ? `\n    km splits (pace/HR/spm): ${splits}` : "",
   ].join("");
 }
 
