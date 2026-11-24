@@ -72,9 +72,11 @@ export async function POST(req: NextRequest) {
         }))
     : [];
   const history = [...stored, ...clientHistory].slice(-30);
+  // Strip the server-emitted "_✓ <tool summary>_" notes from history: left in,
+  // the model learns to type them itself and claims saves it never made.
   const messages: ProviderMessage[] = history.map((m): ProviderMessage => ({
     role: m.role,
-    text: m.content,
+    text: m.role === "assistant" ? m.content.replace(/\n*_✓ [^_\n]*_\n*/g, "\n\n").trim() || "(done)" : m.content,
   }));
   if (demo) messages.push({ role: "user", text: userText });
 
