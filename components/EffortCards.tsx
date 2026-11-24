@@ -140,7 +140,7 @@ export function WeeklyEffort({
             {week.days.map((v, i) => (
               <div
                 key={i}
-                className="w-3.5 bg-foreground/80 max-md:bg-white max-md:w-5 rounded-t-sm transition-[height,opacity] duration-300 ease-out motion-reduce:transition-none"
+                className="w-3.5 bg-[var(--week)] max-md:bg-white max-md:w-5 rounded-t-sm transition-[height,opacity] duration-300 ease-out motion-reduce:transition-none"
                 // Rest days keep a visible stub so an empty week still reads as a chart.
                 style={{ height: `${v ? Math.max(6, (v / max) * 100) : 5}%`, opacity: v ? 1 : 0.35 }}
                 title={`${v}`}
