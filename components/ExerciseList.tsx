@@ -142,7 +142,8 @@ export function ExerciseList({
         </div>
       </div>
 
-      <ul className="mt-2 divide-y divide-border">
+      {/* Desktop: two columns — a full-width row was mostly empty middle. */}
+      <ul className="mt-2 divide-y divide-border lg:divide-y-0 lg:grid lg:grid-cols-2 lg:gap-x-10">
         {exercises.map((ex) => {
           const hist = history.get(exerciseKey(ex.name));
           const idx = hist ? entryIndexForSession(hist, session.id) : -1;
@@ -159,7 +160,7 @@ export function ExerciseList({
           const top = entry?.top ?? null;
 
           return (
-            <li key={ex.name}>
+            <li key={ex.name} className="lg:border-b lg:border-border">
               <Link
                 href={`/gym/exercise/${encodeURIComponent(exerciseKey(ex.name))}`}
                 className={`group block -mx-2 rounded-lg px-2 py-4 ${interactiveRow}`}

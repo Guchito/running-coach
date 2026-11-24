@@ -77,7 +77,7 @@ export function HealthCard({
   if (!rows.length) return null;
 
   return (
-    <Card className="p-5 mb-2 md:mb-6">
+    <Card className="@container p-5 mb-2 md:mb-6">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-medium">{title}</h2>
         {href ? (
@@ -88,7 +88,7 @@ export function HealthCard({
           <span className="text-xs text-muted">daily from Apple Health · {latestDate}</span>
         )}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+      <div className="grid grid-cols-2 @md:grid-cols-3 gap-x-6 gap-y-4">
         {rows.map(({ def, latest, delta }) => {
           const show = delta != null && Math.abs(delta) >= def.minDelta;
           const improving = show && (def.goodWhenLower ? delta! < 0 : delta! > 0);

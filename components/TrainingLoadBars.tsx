@@ -45,7 +45,12 @@ export function TrainingLoadBars({ weeks }: { weeks: WeekVolume[] }) {
                 animationDelay: `${i * 40}ms`,
               }}
             />
-            <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[11px] text-white font-mono tabular-nums opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 z-10">
+            {/* Edge bars anchor their tooltip inward: a centered one on the
+                last bar poked past the card and gave phones a sideways scroll
+                (invisible at opacity 0, but still layout). */}
+            <span className={`pointer-events-none absolute bottom-full mb-1 ${
+              i === 0 ? "left-0" : i === weeks.length - 1 ? "right-0" : "left-1/2 -translate-x-1/2"
+            } whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[11px] text-white font-mono tabular-nums opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 z-10`}>
               {w.km} km · {formatDate(w.weekStart)}
             </span>
           </button>

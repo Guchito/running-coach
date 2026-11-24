@@ -79,15 +79,18 @@ export function PlanInstructions({ initial }: { initial: string | null }) {
         </div>
       ) : saved ? (
         <>
-          <p className={`text-sm whitespace-pre-wrap ${expanded ? "" : "max-md:line-clamp-4"}`}>{saved}</p>
+          <p className={`text-sm whitespace-pre-wrap ${expanded ? "" : "line-clamp-4 lg:line-clamp-[14]"}`}>{saved}</p>
+          {/* ponytail: length heuristic for "is it clamped"; measure scrollHeight if it misfires. */}
+          {(saved.length > 280 || saved.split("\n").length > 4) && (
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
-            className="tap md:hidden mt-2 text-sm text-accent"
+            className="tap mt-2 text-sm text-accent"
           >
             {expanded ? "Show less" : "Show all"}
           </button>
+          )}
         </>
       ) : (
         <p className="text-sm text-muted italic">No instructions yet.</p>

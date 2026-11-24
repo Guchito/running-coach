@@ -34,6 +34,7 @@ import { HealthCard } from "@/components/HealthCard";
 import { PaceTrendChart, DistanceTrendChart, FitnessPanel } from "@/components/Charts";
 import { requireUserId } from "@/lib/auth";
 import { RouteMap } from "@/components/RouteMap";
+import { FitRows } from "@/components/FitRows";
 import { trackOf } from "@/lib/sessionMeta";
 import type { Goal, RunRow, WeeklyPlan } from "@/lib/types";
 import Link from "next/link";
@@ -70,43 +71,18 @@ export default async function Dashboard() {
 
   return (
     <PageShell
+      wide
       title="Dashboard"
       subtitle="Your training at a glance."
-      action={<Button href="/upload">+ Upload session</Button>}
     >
-      {/* Goals */}
-      {dashboardGoals.length > 0 ? (
-        <div className="mb-2 md:mb-6">
-          <SectionHead title="Your goals" href="/goals" link="Manage →" />
-          <div className="grid gap-2 md:gap-4 md:grid-cols-2">
-            {dashboardGoals.map((g) => (
-              <GoalCard key={g.id} goal={g} runs={runs} />
-            ))}
-          </div>
-        </div>
-      ) : (
-        <Card className="p-6 mb-2 md:mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="text-lg font-medium">No goals set yet</div>
-            <p className="text-muted text-sm mt-1">
-              Set one or more target races so your coach can build a plan around
-              them.
-            </p>
-          </div>
-          <Button href="/goals">Set a goal</Button>
-        </Card>
-      )}
-
-      {runs.length === 0 ? (
-        <EmptyState
-          title="No runs yet"
-          body="Upload your first Apple Watch run export (.csv) to get a full breakdown and your first coaching feedback."
-          action={<Button href="/upload">Upload your first run</Button>}
-        />
-      ) : (
-        <>
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 mb-2 md:mb-6">
+      {/* Phones: one column in the order set by max-lg:order-*.
+          Desktop: stats strip on top, then a wide column for trends and
+          charts beside a narrow one for goals, plan, records and recent runs.
+          The two column wrappers are display:contents below lg, so their
+          children join the single flex column and take their mobile order. */}
+      <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-6 lg:items-start">
+        {runs.length > 0 && (
+          <div className="max-lg:order-2 lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-x-4 mb-2 md:mb-6">
             <Stat
               label="Total runs"
               value={stats.totalRuns}
@@ -132,49 +108,108 @@ export default async function Dashboard() {
               appear={3}
             />
           </div>
+        )}
 
-          {/* Plan and progress first; the history-ish material (fitness,
-              effort, health, recent runs) closes the page, newest runs last. */}
-
-          {/* Recent form: last 5 runs vs last 20 */}
-          <RecentFormCard stats={stats} />
-
-          {plan.weekly && <ThisWeekCard weekly={plan.weekly} />}
-
-          {/* Training load + personal records */}
-          <div className="grid md:grid-cols-2 gap-2 md:gap-4 mb-2 md:mb-6">
-            <TrainingLoadCard runs={runs} />
-            <RecordsCard runs={runs} />
-          </div>
-
-          {/* Trend */}
-          <Card className="p-5 mb-2 md:mb-6">
-            <SectionHead title="Pace trend" note="avg pace per run · higher is faster" />
-            <PaceTrendChart trend={stats.trend} />
-          </Card>
-
-          {/* Distance trend */}
-          <Card className="p-5 mb-2 md:mb-6">
-            <SectionHead title="Distance trend" note="distance per run" />
-            <DistanceTrendChart trend={stats.trend} />
-          </Card>
-
-          {/* Heat map: every run's route stacked, darker where they overlap */}
-          <HeatMapCard runs={runs} />
-
-          <FitnessCard days={fitness} />
-          {efforts.length > 0 && (
-            <Card className="p-5 mb-2 md:mb-6">
-              <WeeklyEffort data={weeklyEffort(efforts)} />
-            </Card>
+        {/* Main column */}
+        <div className="max-lg:contents lg:col-start-1 lg:row-start-2 min-w-0">
+          {runs.length === 0 ? (
+            <div className="max-lg:order-3">
+              <EmptyState
+                title="No runs yet"
+                body="Upload your first Apple Watch run export (.csv) to get a full breakdown and your first coaching feedback."
+                action={<Button href="/upload">Upload your first run</Button>}
+              />
+            </div>
+          ) : (
+            <>
+              {efforts.length > 0 && (
+                <div className="max-lg:order-9">
+                  <Card className="p-5 mb-2 md:mb-6">
+                    <WeeklyEffort data={weeklyEffort(efforts)} />
+                  </Card>
+                </div>
+              )}
+              <div className="max-lg:order-10">
+                <FitnessCard days={fitness} />
+              </div>
+              <div className="max-lg:order-3">
+                <RecentFormCard stats={stats} />
+              </div>
+              <div className="max-lg:order-7">
+                <Card className="p-5 mb-2 md:mb-6">
+                  <SectionHead title="Pace trend" note="avg pace per run · higher is faster" />
+                  <PaceTrendChart trend={stats.trend} />
+                </Card>
+              </div>
+              <div className="max-lg:order-8">
+                <Card className="p-5 mb-2 md:mb-6">
+                  <SectionHead title="Distance trend" note="distance per run" />
+                  <DistanceTrendChart trend={stats.trend} />
+                </Card>
+              </div>
+              {/* Heat map: every run's route stacked, darker where they overlap */}
+              <div className="max-lg:order-11">
+                <HeatMapCard runs={runs} />
+              </div>
+            </>
           )}
+        </div>
 
-          {/* Daily health (only once the HealthFit sheet has synced) */}
-          <HealthCard metrics={healthMetrics} href="/health" />
-
-          <RecentRunsCard runs={runs} />
-        </>
-      )}
+        {/* Side column */}
+        {/* Stretches to the main column's height (self-stretch), so Recent
+            runs can fill down to the bottom of the map. */}
+        <div className="max-lg:contents lg:col-start-2 lg:row-start-2 min-w-0 lg:self-stretch lg:flex lg:flex-col">
+          <div className="max-lg:order-1">
+            {dashboardGoals.length > 0 ? (
+              <div className="mb-2 md:mb-6">
+                {/* No heading: it pushed the goal card below the top edge of
+                    the card beside it. The goal card speaks for itself. */}
+                <div className="grid gap-2 md:gap-4 md:grid-cols-2 lg:grid-cols-1">
+                  {dashboardGoals.map((g) => (
+                    <GoalCard key={g.id} goal={g} runs={runs} />
+                  ))}
+                </div>
+                <Button href="/goals" variant="ghost" className="w-full mt-2 md:mt-3 min-h-11">
+                  Manage your goals
+                </Button>
+              </div>
+            ) : (
+              <Card className="p-6 mb-2 md:mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div className="text-lg font-medium">No goals set yet</div>
+                  <p className="text-muted text-sm mt-1">
+                    Set one or more target races so your coach can build a plan around
+                    them.
+                  </p>
+                </div>
+                <Button href="/goals">Set a goal</Button>
+              </Card>
+            )}
+          </div>
+          {plan.weekly && (
+            <div className="max-lg:order-4">
+              <ThisWeekCard weekly={plan.weekly} />
+            </div>
+          )}
+          {runs.length > 0 && (
+            <>
+              <div className="max-lg:order-5">
+                <TrainingLoadCard runs={runs} />
+              </div>
+              <div className="max-lg:order-6">
+                <RecordsCard runs={runs} />
+              </div>
+              {/* Daily health (only once the HealthFit sheet has synced) */}
+              <div className="max-lg:order-12">
+                <HealthCard metrics={healthMetrics} href="/health" />
+              </div>
+              <div className="max-lg:order-13 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
+                <RecentRunsCard runs={runs} />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </PageShell>
   );
 }
@@ -228,10 +263,16 @@ function ThisWeekCard({
 
 function RecentRunsCard({ runs }: { runs: RunRow[] }) {
   return (
-    <Card className="p-5 mb-2 md:mb-6">
+    <Card className="p-5 mb-2 md:mb-6 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
       <SectionHead title="Recent runs" href="/runs" link="View all →" />
-      <div className="divide-y divide-border">
-        {runs.slice(0, 5).map((r) => (
+      {/* Desktop: as many whole rows as fit beside the main column (min 3 rows
+          tall). Smaller screens: the first 5, capped in CSS. */}
+      {/* The list is absolutely positioned on desktop so its 40 rows add
+          nothing to the column's height — the main column sets the height,
+          and the list fills what's left. */}
+      <div className="lg:relative lg:flex-1 lg:min-h-[12rem]">
+      <FitRows className="divide-y divide-border lg:absolute lg:inset-0 lg:overflow-hidden max-lg:[&>*:nth-child(n+6)]:hidden">
+        {runs.slice(0, 40).map((r) => (
           <Link
             key={r.id}
             href={`/runs/${r.id}`}
@@ -243,7 +284,7 @@ function RecentRunsCard({ runs }: { runs: RunRow[] }) {
             </div>
             <div className="flex items-center gap-3 sm:gap-5 text-sm font-mono tabular-nums whitespace-nowrap shrink-0">
               <span className="font-medium">{formatDistance(r.distanceM)}</span>
-              <span className="text-muted hidden sm:inline">
+              <span className="text-muted hidden sm:inline lg:hidden">
                 {formatDuration(r.durationSec)}
               </span>
               <span className="text-accent sm:w-20 text-right">
@@ -252,6 +293,7 @@ function RecentRunsCard({ runs }: { runs: RunRow[] }) {
             </div>
           </Link>
         ))}
+      </FitRows>
       </div>
     </Card>
   );
@@ -340,7 +382,7 @@ function RecentFormCard({ stats }: { stats: DashboardStats }) {
 function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
   const load = trainingLoad(runs);
   return (
-    <Card className="p-5">
+    <Card className="p-5 mb-2 md:mb-6">
       <SectionHead title="Training load" href="/coach" link="Ask coach →" />
       {load.ratio == null ? (
         <p className="text-sm text-muted">
@@ -376,7 +418,7 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
 function RecordsCard({ runs }: { runs: RunRow[] }) {
   const { efforts, predictions } = runningRecords(runs);
   return (
-    <Card className="p-5">
+    <Card className="p-5 mb-2 md:mb-6">
       <h2 className="font-medium mb-3">Personal records</h2>
       {efforts.length === 0 ? (
         <p className="text-sm text-muted">

@@ -55,9 +55,12 @@ export function SplitsSection({
       </div>
 
       {view === "km" ? (
-        <>
-          <SplitsChart splits={splits} />
-          <div className={`mt-3 text-sm ${expanded ? "" : "max-h-56 overflow-auto"}`}>
+        // Desktop: chart and table side by side — the table's four short
+        // columns stretched across the whole card read as scattered.
+        <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-8 lg:items-start">
+          <div className="min-w-0"><SplitsChart splits={splits} /></div>
+          <div className="min-w-0">
+          <div className={`mt-3 text-sm lg:mt-0 ${expanded ? "" : "max-h-56 overflow-auto"}`}>
             <table className="w-full">
               <tbody className="divide-y divide-border">
                 {splits.map((sp, i) => (
@@ -93,11 +96,15 @@ export function SplitsSection({
               onToggle={() => setExpanded((e) => !e)}
             />
           )}
-        </>
+          </div>
+        </div>
       ) : laps.length > 0 ? (
-        <>
-          <LapsChart laps={laps} />
-          <div className={`mt-3 text-sm -mx-1 ${expanded ? "" : "max-h-72 overflow-auto"}`}>
+        // Desktop: chart and table side by side — the table's four short
+        // columns stretched across the whole card read as scattered.
+        <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-8 lg:items-start">
+          <div className="min-w-0"><LapsChart laps={laps} /></div>
+          <div className="min-w-0">
+          <div className={`mt-3 text-sm -mx-1 lg:mt-0 ${expanded ? "" : "max-h-72 overflow-auto"}`}>
             <table className="w-full">
               <tbody className="divide-y divide-border">
                 {laps.map((l) => (
@@ -153,7 +160,8 @@ export function SplitsSection({
           <p className="text-xs text-muted mt-3">
             Intervals come from the laps set in your watch workout.
           </p>
-        </>
+          </div>
+        </div>
       ) : (
         <div className="py-10 text-center text-sm text-muted">
           This run has no interval/lap structure — it was recorded as one

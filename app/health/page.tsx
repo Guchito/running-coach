@@ -53,6 +53,9 @@ const fmtSleep = (min: number) =>
 
 function RecentDaysTable({ metrics }: { metrics: HealthMetric[] }) {
   const dash = <span className="text-muted/50">—</span>;
+  // Columns nobody syncs (no scale, no notes) are just a wall of dashes.
+  const hasWeight = metrics.some((m) => m.weightKg != null);
+  const hasNotes = metrics.some((m) => m.notes);
   return (
     <Card className="p-5 mt-2 md:mt-4">
       <div className="flex items-baseline justify-between gap-3 mb-3">
@@ -69,8 +72,8 @@ function RecentDaysTable({ metrics }: { metrics: HealthMetric[] }) {
               <th className="font-medium py-2 pr-4 text-right">Sleep</th>
               <th className="font-medium py-2 pr-4 text-right">Steps</th>
               <th className="font-medium py-2 pr-4 text-right">Active</th>
-              <th className="font-medium py-2 pr-4 text-right">Weight</th>
-              <th className="font-medium py-2">Note</th>
+              {hasWeight && <th className="font-medium py-2 pr-4 text-right">Weight</th>}
+              {hasNotes && <th className="font-medium py-2">Note</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border tabular-nums">
@@ -82,8 +85,8 @@ function RecentDaysTable({ metrics }: { metrics: HealthMetric[] }) {
                 <td className="py-2 pr-4 text-right">{m.sleepMin != null ? fmtSleep(m.sleepMin) : dash}</td>
                 <td className="py-2 pr-4 text-right">{m.steps != null ? m.steps.toLocaleString("en-GB") : dash}</td>
                 <td className="py-2 pr-4 text-right">{m.activeKcal != null ? `${m.activeKcal} kcal` : dash}</td>
-                <td className="py-2 pr-4 text-right">{m.weightKg != null ? `${m.weightKg.toFixed(1)} kg` : dash}</td>
-                <td className="py-2 text-xs text-muted max-w-48 truncate">{m.notes ?? ""}</td>
+                {hasWeight && <td className="py-2 pr-4 text-right">{m.weightKg != null ? `${m.weightKg.toFixed(1)} kg` : dash}</td>}
+                {hasNotes && <td className="py-2 text-xs text-muted max-w-48 truncate">{m.notes ?? ""}</td>}
               </tr>
             ))}
           </tbody>

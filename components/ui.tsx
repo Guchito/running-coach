@@ -54,15 +54,18 @@ export function PageShell({
   title,
   subtitle,
   action,
+  wide,
   children,
 }: {
   title: React.ReactNode;
   subtitle?: string;
   action?: React.ReactNode;
+  // Multi-column pages (dashboard, plan) use more of a desktop screen.
+  wide?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="max-w-5xl mx-auto px-5 md:px-8 py-8 pt-[calc(5rem+env(safe-area-inset-top))] md:pt-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
+    <div className={`${wide ? "max-w-6xl" : "max-w-5xl"} mx-auto px-5 md:px-8 py-8 pt-[calc(5rem+env(safe-area-inset-top))] md:pt-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8`}>
       {/* Wraps: an action marked max-md:w-full drops under the title on phones. */}
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3 mb-6">
         <div className="min-w-0">

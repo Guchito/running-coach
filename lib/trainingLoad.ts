@@ -103,11 +103,13 @@ export const LOAD_STATUS_LABEL: Record<TrainingLoad["status"], string> = {
   high: "Spike — injury risk",
 };
 
+// Pill backgrounds behind white text: every shade clears 4.5:1 (the old
+// 500-level greens/ambers sat around 2.5:1).
 export const LOAD_STATUS_COLOR: Record<TrainingLoad["status"], string> = {
-  none: "#94a3b8",
-  detraining: "#0ea5e9",
-  good: "#10b981",
-  optimal: "#059669",
-  caution: "#f59e0b",
-  high: "#e11d48",
+  none: "#475569",
+  detraining: "#0369a1",
+  good: "#047857",
+  optimal: "#065f46",
+  caution: "#b45309",
+  high: "#be123c",
 };

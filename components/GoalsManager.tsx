@@ -118,7 +118,7 @@ export function GoalsManager({
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold">{g.title}</h3>
+                  <h2 className="font-semibold">{g.title}</h2>
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full ${
                       g.status === "active"
@@ -141,7 +141,7 @@ export function GoalsManager({
                     : ""}
                 </div>
                 {g.notes && (
-                  <p className="text-sm text-muted mt-2">{g.notes}</p>
+                  <p className="text-sm text-muted mt-2 max-w-prose">{g.notes}</p>
                 )}
               </div>
               <div className="flex flex-col items-start md:items-end gap-2 shrink-0 text-sm w-full md:w-auto">
