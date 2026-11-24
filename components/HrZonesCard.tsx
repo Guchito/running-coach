@@ -23,7 +23,7 @@ export function HrZonesCard({
         <div className="text-xs uppercase tracking-wide text-muted">
           Heart-rate zones
         </div>
-        <a href="/settings" className="text-xs text-accent">
+        <a href="/profile" className="tap text-xs text-accent">
           {customized ? "Edit zones" : "Set your zones"}
         </a>
       </div>

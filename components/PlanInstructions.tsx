@@ -10,6 +10,9 @@ export function PlanInstructions({ initial }: { initial: string | null }) {
   const router = useRouter();
   const saved = initial ?? "";
   const [editing, setEditing] = useState(false);
+  // Phones: clamp the standing instructions so the plan itself isn't buried
+  // a screen and a half down.
+  const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(saved);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +46,7 @@ export function PlanInstructions({ initial }: { initial: string | null }) {
               setDraft(saved);
               setEditing(true);
             }}
-            className="text-sm text-accent hover:underline"
+            className="tap text-sm text-accent hover:underline"
           >
             {saved ? "Edit" : "Add"}
           </button>
@@ -75,9 +78,19 @@ export function PlanInstructions({ initial }: { initial: string | null }) {
           </div>
         </div>
       ) : saved ? (
-        <p className="text-sm whitespace-pre-wrap">{saved}</p>
+        <>
+          <p className={`text-sm whitespace-pre-wrap ${expanded ? "" : "max-md:line-clamp-4"}`}>{saved}</p>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            className="tap md:hidden mt-2 text-sm text-accent"
+          >
+            {expanded ? "Show less" : "Show all"}
+          </button>
+        </>
       ) : (
-        <p className="text-sm text-muted/80 italic">No instructions yet.</p>
+        <p className="text-sm text-muted italic">No instructions yet.</p>
       )}
     </Card>
   );

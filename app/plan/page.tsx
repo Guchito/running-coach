@@ -31,7 +31,8 @@ export default async function PlanPage() {
       subtitle="Built and maintained by your coach around all your goals."
       action={<Button href="/coach">Talk to coach</Button>}
     >
-      <div className="space-y-6">
+      {/* Flex column (not space-y) so phones can lift "This week" to the top. */}
+      <div className="flex flex-col gap-2 md:gap-6">
         <PlanInstructions initial={plan.macro?.instructions ?? null} />
 
         {!hasPlan ? (
@@ -73,7 +74,7 @@ export default async function PlanPage() {
                       <div className="flex items-baseline justify-between gap-3 flex-wrap">
                         <div className="font-medium">{p.name}</div>
                         <div className="text-xs text-muted">
-                          {p.start ? `${p.start} → ${p.end ?? "?"}` : ""}
+                          {p.start ? `${formatDate(p.start)} → ${p.end ? formatDate(p.end) : "?"}` : ""}
                           {p.weeklyKm ? ` · ~${p.weeklyKm} km/wk` : ""}
                         </div>
                       </div>
@@ -91,7 +92,7 @@ export default async function PlanPage() {
 
             {/* Weekly plan */}
             {plan.weekly && (
-              <Card className="p-6">
+              <Card className="p-6 max-md:order-first">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="font-semibold text-lg">This week</h2>
                   <div className="flex items-center gap-2">
@@ -114,7 +115,7 @@ export default async function PlanPage() {
                       ))}
                     <span className="text-xs text-muted">
                       {plan.weekly.weekStart
-                        ? `week of ${plan.weekly.weekStart}`
+                        ? `week of ${formatDate(plan.weekly.weekStart)}`
                         : ""}
                     </span>
                   </div>

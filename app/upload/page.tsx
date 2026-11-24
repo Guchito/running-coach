@@ -15,7 +15,7 @@ export default function UploadPage() {
 
       <ManualEntryForm />
 
-      <Card className="p-5 mt-6 text-sm text-muted">
+      <Card className="p-5 mt-2 md:mt-6 text-sm text-muted">
         <div className="font-medium text-foreground mb-2">Supported files</div>
         <ul className="list-disc pl-5 space-y-1">
           <li>

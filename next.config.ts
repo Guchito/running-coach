@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(__dirname),
   },
+  // The "N" badge sits bottom-left — exactly on the mobile Home tab, where it
+  // swallows taps. Compile/runtime errors still surface without it.
+  devIndicators: false,
 };
 
 export default nextConfig;

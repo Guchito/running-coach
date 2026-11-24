@@ -102,7 +102,7 @@ export default async function GymSessionPage({
       )}
 
       {session.notes && (
-        <Card className="p-5 mt-4">
+        <Card className="p-5 mt-2 md:mt-4">
           <div className="text-xs uppercase tracking-wide text-muted mb-1">Notes</div>
           <p className="text-sm whitespace-pre-wrap">{session.notes}</p>
         </Card>

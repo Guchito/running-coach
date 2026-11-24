@@ -37,8 +37,9 @@ const RANGES = [
 type RangeKey = (typeof RANGES)[number]["key"];
 
 function dayMonthTick(d: string): string {
+  // "22 Nov": a dd-mm tick (22-11) reads like a score, not a date.
   const [, m, day] = d.split("-");
-  return `${day}-${m}`;
+  return `${Number(day)} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(m) - 1] ?? m}`;
 }
 
 const fmtSleep = (min: number) =>
@@ -233,7 +234,7 @@ function SleepSummary({ metrics }: { metrics: HealthMetric[] }) {
         </table>
       </div>
       {delta !== 0 && (
-        <div className={`text-xs mt-2 ${delta > 0 ? "text-emerald-600" : "text-rose-600"}`}>
+        <div className={`text-xs mt-2 ${delta > 0 ? "text-good" : "text-rose-600"}`}>
           {delta > 0 ? "↑" : "↓"} {Math.abs(delta)} min {delta > 0 ? "more" : "less"} sleep per night
           this week than your 30-day average.
         </div>
@@ -289,7 +290,7 @@ export function HealthCharts({ metrics }: { metrics: HealthMetric[] }) {
       {/* *:min-w-0 — grid items default to min-width:auto, which lets a
           chart's rendered svg width dictate the column width and overflow
           the viewport on mobile. */}
-      <div className="grid gap-4 md:grid-cols-2 *:min-w-0">
+      <div className="grid gap-2 md:gap-4 md:grid-cols-2 *:min-w-0">
         {has((m) => m.sleepMin) && (
           <ChartCard
             title="Sleep"
@@ -336,7 +337,7 @@ export function HealthCharts({ metrics }: { metrics: HealthMetric[] }) {
             <ComposedChart data={data} margin={{ top: 8, right: 0, left: -8, bottom: 0 }}>
               <CartesianGrid stroke={GRID} vertical={false} />
               <XAxis dataKey="date" {...axisProps} tickFormatter={dayMonthTick} minTickGap={24} />
-              <YAxis yAxisId="kg" {...axisProps} domain={["dataMin - 1", "dataMax + 1"]} tickFormatter={(v) => `${v}`} width={36} />
+              <YAxis yAxisId="kg" {...axisProps} domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} allowDecimals={false} width={36} />
               <YAxis yAxisId="fat" orientation="right" {...axisProps} stroke={AMBER} tick={{ fill: AMBER }} domain={["dataMin - 2", "dataMax + 2"]} tickFormatter={(v) => `${v}%`} width={36} />
               <Tooltip
                 contentStyle={tooltipStyle}
@@ -378,7 +379,7 @@ export function HealthCharts({ metrics }: { metrics: HealthMetric[] }) {
             <ComposedChart data={data} margin={{ top: 8, right: 0, left: -8, bottom: 0 }}>
               <CartesianGrid stroke={GRID} vertical={false} />
               <XAxis dataKey="date" {...axisProps} tickFormatter={dayMonthTick} minTickGap={24} />
-              <YAxis {...axisProps} domain={["dataMin - 1", "dataMax + 1"]} width={36} />
+              <YAxis {...axisProps} domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} allowDecimals={false} width={36} />
               <Tooltip
                 contentStyle={tooltipStyle}
                 labelFormatter={(l) => formatDate(String(l))}

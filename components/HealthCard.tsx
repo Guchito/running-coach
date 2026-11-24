@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui";
 import type { HealthMetric } from "@/lib/types";
+import { formatDate } from "@/lib/parseRun";
 
 // Daily health snapshot from the synced HealthFit sheet: latest value per
 // metric plus a 7-day-vs-previous-7-day trend. Server-rendered; hidden
@@ -63,7 +64,7 @@ export function HealthCard({
   href?: string;
 }) {
   if (!metrics.length) return null;
-  const latestDate = metrics[0].date;
+  const latestDate = formatDate(metrics[0].date);
 
   const rows = METRICS.map((def) => {
     const latest = metrics.map(def.get).find((v) => v != null) ?? null;
@@ -76,11 +77,11 @@ export function HealthCard({
   if (!rows.length) return null;
 
   return (
-    <Card className="p-5 mb-6">
+    <Card className="p-5 mb-2 md:mb-6">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-medium">{title}</h2>
         {href ? (
-          <Link href={href} className="text-sm text-accent">
+          <Link href={href} className="tap text-sm text-accent">
             All data →
           </Link>
         ) : (
@@ -98,7 +99,7 @@ export function HealthCard({
                 {def.fmt(latest!)}
               </div>
               {show && (
-                <div className={`text-xs mt-1.5 ${improving ? "text-emerald-600" : "text-rose-600"}`}>
+                <div className={`text-xs mt-1.5 ${improving ? "text-good" : "text-rose-600"}`}>
                   {delta! > 0 ? "↑" : "↓"} {def.fmt(Math.abs(delta!))} vs prev week
                 </div>
               )}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   title: "Gunna · AI Running Coach",
   description: "Upload your runs and train with an AI coach.",
 };
+
+// viewport-fit=cover makes env(safe-area-inset-*) real on iPhone, so the
+// bottom tab bar clears the home indicator (without it env() is always 0).
+export const viewport: Viewport = { viewportFit: "cover" };
 
 export default async function RootLayout({
   children,

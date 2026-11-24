@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button, cardClass } from "@/components/ui";
 import { parseRaceTime, formatDuration } from "@/lib/parseRun";
 import { splitRows, splitsMatchDuration } from "@/lib/splits";
 
@@ -90,7 +90,7 @@ export function AddSplitsCard({
   if (rows.length === 0) return null;
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <div className={`${cardClass} p-5`}>
       <div className="flex items-center justify-between mb-1 gap-3">
         <h2 className="font-medium">Splits</h2>
         {open && (

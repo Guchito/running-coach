@@ -117,7 +117,7 @@ export function TrimRunButton({
         type="button"
         onClick={openModal}
         title={trim ? "Edit the trim on this run" : "Trim extra distance off this run"}
-        className={`rounded-md px-2 py-1 text-sm transition-colors duration-150 ${
+        className={`tap rounded-md px-2 py-1 text-sm transition-colors duration-150 ${
           trim ? "text-accent hover:text-accent-strong" : "text-muted hover:text-foreground"
         }`}
       >

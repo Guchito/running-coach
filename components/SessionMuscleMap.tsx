@@ -37,7 +37,7 @@ export function SessionMuscleMap({
     `&secondary=${encodeURIComponent(secondary.join(","))}&gender=${gender}`;
 
   return (
-    <Card className="p-5 mt-4">
+    <Card className="p-5 mt-2 md:mt-4">
       <div className="flex items-baseline justify-between gap-3 mb-3">
         <h2 className="font-medium">Muscles trained</h2>
         <div className="flex rounded-lg border border-border overflow-hidden text-xs">

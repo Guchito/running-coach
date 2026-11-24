@@ -152,7 +152,7 @@ export function HealthLogSection({ initialMetrics }: { initialMetrics: HealthMet
                 <button
                   onClick={() => call(`/api/health-metrics/${m.date}`, "DELETE")}
                   disabled={busy}
-                  className="text-xs text-muted hover:text-red-600 shrink-0"
+                  className="tap text-xs text-muted hover:text-red-600 shrink-0"
                   title="Clears resting HR, weight and note for this day; sheet-synced values return on the next sync"
                   aria-label="Clear entry"
                 >

@@ -77,7 +77,7 @@ export function RunNameEditor({ id, name }: { id: number; name: string }) {
         onClick={() => setEditing(true)}
         aria-label="Rename run"
         title="Rename run"
-        className="text-muted hover:text-accent"
+        className="text-muted hover:text-accent p-3 -m-3"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
           <path

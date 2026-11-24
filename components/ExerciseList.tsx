@@ -32,7 +32,7 @@ function SetBars({ sets }: { sets: GymSet[] }) {
         const isTop = i === topIdx;
         return (
           <div key={i} className="flex flex-col items-center gap-1 shrink-0">
-            <span className="font-mono text-[10px] leading-none tabular-nums text-foreground/80">
+            <span className="font-mono text-[11px] leading-none tabular-nums text-foreground/80">
               {s.weightKg != null
                 ? formatKg(s.weightKg)
                 : s.durationSec != null
@@ -43,7 +43,7 @@ function SetBars({ sets }: { sets: GymSet[] }) {
               className={`w-7 rounded-t-[3px] bar-grow ${isTop ? "bg-accent" : "bg-accent-soft"}`}
               style={{ height: h, animationDelay: `${i * 50}ms` }}
             />
-            <span className="font-mono text-[10px] leading-none tabular-nums text-muted">
+            <span className="font-mono text-[11px] leading-none tabular-nums text-muted">
               {s.durationSec != null ? "hold" : `×${s.reps}`}
             </span>
           </div>
@@ -134,7 +134,7 @@ export function ExerciseList({
   const totalVolume = Math.round(exercises.reduce((t, ex) => t + volumeOf(ex.sets), 0));
 
   return (
-    <Card className="p-5 mt-4">
+    <Card className="p-5 mt-2 md:mt-4">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-medium">Exercises</h2>
         <div className="font-mono text-xs tabular-nums text-muted">
@@ -206,7 +206,7 @@ export function ExerciseList({
           href={session.strongLink}
           target="_blank"
           rel="noreferrer"
-          className="inline-block mt-2 text-xs text-muted hover:text-foreground underline underline-offset-2"
+          className="tap inline-block mt-2 text-xs text-muted hover:text-foreground underline underline-offset-2"
         >
           {/* The share link may come from any lifting app (Strong, Hevy, …). */}
           View in {session.strongLink.includes("hevy.com") ? "Hevy" : "Strong"}

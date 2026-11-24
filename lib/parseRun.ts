@@ -441,16 +441,19 @@ function downsample(rows: Row[], target: number): SeriesPoint[] {
 
 export function formatPace(secPerKm: number | null | undefined): string {
   if (!secPerKm || !Number.isFinite(secPerKm) || secPerKm <= 0) return "—";
-  const m = Math.floor(secPerKm / 60);
-  const s = Math.round(secPerKm % 60);
+  // Round once up front: rounding only the seconds turned 359.7 into "5:60".
+  const total = Math.round(secPerKm);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   return `${m}:${s.toString().padStart(2, "0")}/km`;
 }
 
-export function formatDuration(sec: number | null | undefined): string {
-  if (!sec || !Number.isFinite(sec) || sec < 0) return "—";
+export function formatDuration(rawSec: number | null | undefined): string {
+  if (!rawSec || !Number.isFinite(rawSec) || rawSec < 0) return "—";
+  const sec = Math.round(rawSec);
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  const s = Math.round(sec % 60);
+  const s = sec % 60;
   if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
@@ -462,20 +465,31 @@ export function formatDistance(m: number | null | undefined): string {
 
 // Day-first display date: "dd-mm-yy". Reformats an ISO / YYYY-MM-DD string by
 // string surgery (no timezone math) so it matches the stored calendar day.
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// One display format app-wide: "22 Nov" this year, "9 May 2027" otherwise.
+// (dd-mm-yy read as ambiguous — 09-05-27 could be three different dates.)
+function shortDate(y: string, m: string, d: string): string {
+  const mon = MONTHS[Number(m) - 1];
+  if (!mon) return `${d}-${m}-${y}`;
+  const sameYear = Number(y) === new Date().getFullYear();
+  return `${Number(d)} ${mon}${sameYear ? "" : ` ${y}`}`;
+}
+
 export function formatDate(input: string | null | undefined): string {
   if (!input) return "—";
   const [y, m, d] = input.slice(0, 10).split("-");
   if (!y || !m || !d) return input;
-  return `${d}-${m}-${y.slice(2)}`;
+  return shortDate(y, m, d);
 }
 
-// Rewrite any ISO date (YYYY-MM-DD) embedded in a display string to dd-mm-yy.
-// Used for session names that had the date baked in at import time.
+// Display form of a session name. Rewrites embedded ISO dates (baked in at
+// import time) to the app's date format, and turns HealthFit file stamps
+// ("2026-10-16-131455-Strength Training-Hevy") into just the activity.
 export function formatDatesInText(text: string): string {
-  return text.replace(
-    /(\d{4})-(\d{2})-(\d{2})/g,
-    (_m, y, mo, d) => `${d}-${mo}-${y.slice(2)}`
-  );
+  const stamp = text.match(/^\d{4}-\d{2}-\d{2}-\d{6}-(.+?)(?:-[A-Za-z]+)?$/);
+  if (stamp) return stamp[1];
+  return text.replace(/(\d{4})-(\d{2})-(\d{2})/g, (_m, y, mo, d) => shortDate(y, mo, d));
 }
 
 // Parse a finish time into seconds. Accepts a clock string ("H:MM:SS", "MM:SS")

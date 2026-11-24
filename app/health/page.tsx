@@ -32,12 +32,12 @@ export default async function HealthPage() {
       title="Health"
       subtitle="Daily recovery, sleep, and body data — synced from Apple Health."
       action={
-        <Link href="/profile" className="text-sm text-accent shrink-0">
+        <Link href="/profile" className="tap text-sm text-accent shrink-0">
           Log a value →
         </Link>
       }
     >
-      <div className="mb-6">
+      <div className="mb-2 md:mb-6">
         <HealthCard metrics={metrics} title="Latest" />
       </div>
 
@@ -54,8 +54,11 @@ const fmtSleep = (min: number) =>
 function RecentDaysTable({ metrics }: { metrics: HealthMetric[] }) {
   const dash = <span className="text-muted/50">—</span>;
   return (
-    <Card className="p-5 mt-4">
-      <h2 className="font-medium mb-3">Last 14 days</h2>
+    <Card className="p-5 mt-2 md:mt-4">
+      <div className="flex items-baseline justify-between gap-3 mb-3">
+        <h2 className="font-medium">Last 14 days</h2>
+        <span className="md:hidden text-xs text-muted">swipe for more →</span>
+      </div>
       <div className="overflow-x-auto -mx-5 px-5">
         <table className="w-full text-sm whitespace-nowrap">
           <thead>

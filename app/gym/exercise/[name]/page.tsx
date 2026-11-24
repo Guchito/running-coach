@@ -142,7 +142,7 @@ export default async function ExercisePage({
 
       <ExerciseGuide name={hist.name} media={media} />
 
-      <Card className="p-5 mt-4">
+      <Card className="p-5 mt-2 md:mt-4">
         <div className="flex items-baseline justify-between gap-3 mb-2">
           <h2 className="font-medium">Top set over time</h2>
           <span className="font-mono text-xs text-muted">{unit}</span>
@@ -151,7 +151,7 @@ export default async function ExercisePage({
       </Card>
 
       <RevealOnView threshold={0.15}>
-        <Card className="p-5 mt-4">
+        <Card className="p-5 mt-2 md:mt-4">
           <h2 className="font-medium mb-2">Every session</h2>
           <ul className="divide-y divide-border stagger-in">
             {[...entries].reverse().map((e, i) => {
@@ -179,7 +179,7 @@ export default async function ExercisePage({
                     </div>
                     <div className="flex items-baseline gap-3 shrink-0">
                       {prSessionIds.has(e.sessionId) && (
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                        <span className="font-mono text-[11px] uppercase tracking-wider text-accent">
                           new best
                         </span>
                       )}

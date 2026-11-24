@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/components/ui";
 import { HoldConfirmButton } from "@/components/HoldDeleteButton";
-import { formatDuration, formatDistance, formatDate } from "@/lib/parseRun";
+import { formatDuration, formatDistance, formatDate, formatDatesInText } from "@/lib/parseRun";
 import { daysUntil } from "@/lib/stats";
 import type { Goal, GoalStatus } from "@/lib/types";
 
@@ -101,7 +101,7 @@ export function GoalsManager({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 md:space-y-4">
       {initial.map((g) =>
         editing !== null && editing !== "new" && editing.id === g.id ? (
           <GoalForm
@@ -233,7 +233,7 @@ export function GoalsManager({
                   </option>
                   {runs.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {formatDate(r.startedAt)} · {r.name} ·{" "}
+                      {formatDate(r.startedAt)} · {formatDatesInText(r.name)} ·{" "}
                       {formatDistance(r.distanceM)} ·{" "}
                       {formatDuration(r.durationSec)}
                     </option>
@@ -250,7 +250,7 @@ export function GoalsManager({
               runs.length > 0 && (
                 <button
                   onClick={() => setMarking(g.id)}
-                  className="mt-4 text-sm text-accent hover:underline"
+                  className="tap mt-4 text-sm text-accent hover:underline"
                 >
                   Mark as race result
                 </button>

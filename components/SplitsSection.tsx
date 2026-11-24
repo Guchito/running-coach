@@ -1,5 +1,6 @@
 "use client";
 
+import { cardClass } from "@/components/ui";
 import { useState } from "react";
 import type { Split, LapSplit } from "@/lib/types";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
@@ -28,7 +29,7 @@ export function SplitsSection({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <div className={`${cardClass} p-5`}>
       <div className="flex items-center justify-between mb-3 gap-3">
         <h2 className="font-medium">Splits</h2>
         {hasIntervals && (

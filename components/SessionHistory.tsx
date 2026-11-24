@@ -85,7 +85,7 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
   }, [sessions, type, isRun, minKm, maxKm, minPace, maxPace]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       <SessionCalendar sessions={sessions} />
 
       {/* Filters */}
@@ -184,7 +184,7 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
       </div>
 
       {/* List */}
-      <Card className="divide-y divide-border">
+      <Card className="divide-y divide-border max-md:px-0!">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-muted">
             No sessions match these filters.
@@ -193,7 +193,7 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
           filtered.map((s) => (
             <div
               key={s.kind + s.id}
-              className="flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-black/4 first:rounded-t-2xl last:rounded-b-2xl"
+              className="flex items-center gap-3 px-4 max-md:px-5 py-3 transition-colors duration-150 hover:bg-black/4 md:first:rounded-t-2xl md:last:rounded-b-2xl"
             >
               <SessionBadge s={s} />
               <Link
@@ -217,11 +217,11 @@ export function SessionHistory({ sessions }: { sessions: SessionLite[] }) {
                   </div>
                 </div>
               </Link>
-              {s.kind === "run" ? (
-                <DeleteRunButton id={s.id} />
-              ) : (
-                <DeleteGymButton id={s.id} />
-              )}
+              {/* Not on phones: a destructive control on every row of a list
+                  you scroll with your thumb. Delete lives on the session page. */}
+              <span className="max-md:hidden">
+                {s.kind === "run" ? <DeleteRunButton id={s.id} /> : <DeleteGymButton id={s.id} />}
+              </span>
             </div>
           ))
         )}

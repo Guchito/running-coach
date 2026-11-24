@@ -220,7 +220,7 @@ export function LthrTestSection({
                   <button
                     onClick={() => call(`/api/lthr-tests/${t.id}`, "DELETE")}
                     disabled={busy}
-                    className="text-xs text-muted hover:text-red-600 shrink-0"
+                    className="tap text-xs text-muted hover:text-red-600 shrink-0"
                     aria-label="Delete test"
                   >
                     Delete

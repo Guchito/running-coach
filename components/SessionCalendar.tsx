@@ -173,7 +173,7 @@ export function SessionCalendar({ sessions }: { sessions: SessionLite[] }) {
                     <SessionBadge key={s.kind + s.id} s={s} size="md" />
                   ))}
                   {items.length > 2 && (
-                    <span className="text-[10px] text-muted self-center">
+                    <span className="text-[11px] text-muted self-center">
                       +{items.length - 2}
                     </span>
                   )}

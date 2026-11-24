@@ -90,9 +90,28 @@ export function intensityColor(label: string): string {
 
 function paceTick(v: number) {
   if (!v || !Number.isFinite(v)) return "";
-  const m = Math.floor(v / 60);
-  const s = Math.round(v % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  const t = Math.round(v);
+  return `${Math.floor(t / 60)}:${(t % 60).toString().padStart(2, "0")}`;
+}
+
+// Pace axes land on round paces (5:30, 6:00…) instead of whatever recharts
+// interpolates (5:26, 6:31…). Returns a snapped domain plus its ticks.
+export function paceAxis(paces: number[], pad = 20): { domain: [number, number]; ticks: number[] } {
+  const v = paces.filter((p) => p > 0 && Number.isFinite(p));
+  if (!v.length) return { domain: [240, 480], ticks: [240, 300, 360, 420, 480] };
+  const lo0 = Math.min(...v) - pad, hi0 = Math.max(...v) + pad;
+  const span = hi0 - lo0;
+  const step = span <= 150 ? 30 : span <= 360 ? 60 : 120;
+  const lo = Math.floor(lo0 / step) * step, hi = Math.ceil(hi0 / step) * step;
+  const ticks: number[] = [];
+  for (let t = lo; t <= hi; t += step) ticks.push(t);
+  return { domain: [lo, hi], ticks };
+}
+
+// Same, for bar charts that plot speed (3600 / pace) so faster = taller.
+function speedAxis(paces: number[]) {
+  const { domain, ticks } = paceAxis(paces, 10);
+  return { domain: [3600 / domain[1], 3600 / domain[0]] as [number, number], ticks: ticks.map((t) => 3600 / t) };
 }
 
 // ---- Run detail: all metrics on one chart, each line toggleable ----
@@ -183,6 +202,7 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
     }
   };
   const isOn = (k: MetricKey) => visible[k] && available.some((m) => m.key === k);
+  const paceAx = paceAxis(data.map((d) => d.pace ?? 0));
   // A series renders while on OR while wiping out.
   const showSeries = (k: MetricKey) => isOn(k) || !!exiting[k];
   const seriesCls = (k: MetricKey) => `metric-layer-${k}`;
@@ -250,7 +270,9 @@ export function CombinedChart({ series }: { series: SeriesPoint[] }) {
                 orientation={side === "right" ? "right" : "left"}
                 hide={!side}
                 reversed={m.key === "pace"}
-                domain={m.domain}
+                domain={m.key === "pace" ? paceAx.domain : m.domain}
+                ticks={m.key === "pace" ? paceAx.ticks : undefined}
+                interval={0}
                 width={side ? 44 : 0}
                 fontSize={11}
                 stroke={m.color}
@@ -353,6 +375,7 @@ export function SplitsChart({
     pace: Math.round(s.paceSecPerKm),
     speed: s.paceSecPerKm > 0 ? 3600 / s.paceSecPerKm : 0,
   }));
+  const ax = speedAxis(data.map((d) => d.pace));
   return (
     <InViewChart height={180}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
@@ -372,7 +395,10 @@ export function SplitsChart({
           tick={{ fill: "#9ca3af" }}
           tickLine={false}
           axisLine={false}
-          domain={["dataMin - 0.8", "dataMax + 0.8"]}
+          domain={ax.domain}
+          ticks={ax.ticks}
+          interval={0}
+          allowDataOverflow
           width={44}
         />
         <Tooltip
@@ -415,6 +441,7 @@ export function LapsChart({ laps }: { laps: LapSplit[] }) {
       durationSec: l.durationSec,
       color: intensityColor(l.intensity),
     }));
+  const ax = speedAxis(data.map((d) => d.pace));
   return (
     <InViewChart height={200}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
@@ -434,7 +461,10 @@ export function LapsChart({ laps }: { laps: LapSplit[] }) {
           tick={{ fill: "#9ca3af" }}
           tickLine={false}
           axisLine={false}
-          domain={["dataMin - 0.8", "dataMax + 0.8"]}
+          domain={ax.domain}
+          ticks={ax.ticks}
+          interval={0}
+          allowDataOverflow
           width={44}
         />
         <Tooltip
@@ -478,8 +508,9 @@ type TrendPoint = { date: string; km: number; paceSecPerKm: number };
 
 // Day-month tick for the trend X axes (data key is a YYYY-MM-DD string).
 function dayMonthTick(d: string): string {
+  // "22 Nov": a dd-mm tick (22-11) reads like a score, not a date.
   const [, m, day] = d.split("-");
-  return `${day}-${m}`;
+  return `${Number(day)} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][Number(m) - 1] ?? m}`;
 }
 
 // Shared tooltip: always shows BOTH the run's pace and its distance, whichever
@@ -516,6 +547,7 @@ export function PaceTrendChart({ trend }: { trend: TrendPoint[] }) {
       </div>
     );
   }
+  const ax = paceAxis(trend.map((t) => t.paceSecPerKm));
   return (
     <InViewChart height={220}>
       <LineChart
@@ -540,7 +572,9 @@ export function PaceTrendChart({ trend }: { trend: TrendPoint[] }) {
           tickLine={false}
           axisLine={false}
           reversed
-          domain={["dataMin - 20", "dataMax + 20"]}
+          domain={ax.domain}
+          ticks={ax.ticks}
+          interval={0}
           width={44}
         />
         <Tooltip content={<TrendTooltip />} />
@@ -725,7 +759,7 @@ const RANGES = [
 ];
 
 function monthTick(d: string): string {
-  return new Date(d + "T12:00:00").toLocaleString("en-GB", { month: "long" });
+  return new Date(d + "T12:00:00").toLocaleString("en-GB", { month: "short" });
 }
 
 function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
@@ -736,7 +770,7 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
       aria-checked={on}
       aria-label={`Show ${label} line`}
       onClick={() => onChange(!on)}
-      className={`relative w-9 h-5 rounded-full transition-colors ${on ? "bg-foreground" : "bg-black/10"}`}
+      className={`tap w-9 h-5 rounded-full transition-colors ${on ? "bg-foreground" : "bg-black/10"}`}
     >
       <span
         className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-card shadow transition-transform ${on ? "translate-x-4" : ""}`}
@@ -862,7 +896,7 @@ export function FitnessPanel({ days }: { days: Omit<FitnessPoint, "projected">[]
       <div className="flex flex-wrap items-end gap-x-10 gap-y-4 mb-6">
         <Headline value={today.fitness ?? 0} label="Fitness" color={ACCENT}>
           <span
-            className={`text-xs tabular-nums ${delta < 0 ? "text-rose-600" : delta > 0 ? "text-emerald-600" : "text-muted"}`}
+            className={`text-xs tabular-nums ${delta < 0 ? "text-rose-600" : delta > 0 ? "text-good" : "text-muted"}`}
             title="Change over the last 7 days"
           >
             {delta > 0 ? "+" : ""}

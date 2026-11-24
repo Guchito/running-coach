@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDatesInText } from "@/lib/parseRun";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import type { EffortVerdict, FitnessChange, WeeklyEffort as WeeklyEffortData } from "@/lib/fitness";
@@ -15,7 +16,8 @@ const fmtDay = (d: string, opts: Intl.DateTimeFormatOptions) =>
 const BANDS = [
   { key: "higher", label: "Higher than average", color: "#e11d48" },
   { key: "average", label: "Your 3-week average", color: "#2563eb" },
-  { key: "lower", label: "Lower than average", color: "#60a5fa" },
+  // Light band → ink text: white on #60a5fa is 2.5:1.
+  { key: "lower", label: "Lower than average", color: "#60a5fa", ink: true },
 ] as const;
 
 // One session's Relative Effort with a verdict against your 3-week average.
@@ -38,7 +40,7 @@ export function RelativeEffortScore({ effort, verdict }: { effort: number; verdi
       {verdict.band && (
         <div className="relative mt-4 rounded-xl overflow-hidden text-sm font-medium text-white max-md:-mx-5 max-md:rounded-none">
           {BANDS.map((b) => (
-            <div key={b.key} className="flex items-center justify-between px-4 py-2.5" style={{ backgroundColor: b.color }}>
+            <div key={b.key} className={`flex items-center justify-between px-4 max-md:px-5 py-2.5 ${"ink" in b ? "text-ink" : ""}`} style={{ backgroundColor: b.color }}>
               {b.label}
               {b.key === verdict.band && (
                 <span className="w-5 h-5 rounded-full bg-white/40 grid place-items-center" aria-label="This session">
@@ -139,14 +141,15 @@ export function WeeklyEffort({
               <div
                 key={i}
                 className="w-3.5 bg-foreground/80 max-md:bg-white max-md:w-5 rounded-t-sm transition-[height,opacity] duration-300 ease-out motion-reduce:transition-none"
-                style={{ height: `${v ? Math.max(6, (v / max) * 100) : 4}%`, opacity: v ? 1 : 0.15 }}
+                // Rest days keep a visible stub so an empty week still reads as a chart.
+                style={{ height: `${v ? Math.max(6, (v / max) * 100) : 5}%`, opacity: v ? 1 : 0.35 }}
                 title={`${v}`}
               />
             ))}
           </div>
           <div className="flex gap-1.5 mt-1">
             {"MTWTFSS".split("").map((d, i) => (
-              <span key={i} className="w-3.5 max-md:w-5 text-center text-[10px] text-muted max-md:text-white/80">
+              <span key={i} className="w-3.5 max-md:w-5 text-center text-[11px] text-muted max-md:text-white/80">
                 {d}
               </span>
             ))}
@@ -165,12 +168,12 @@ export function WeeklyEffort({
       </div>
 
       <div className="md:hidden flex items-center justify-between mt-4 text-sm text-white/90">
-        <button type="button" onClick={() => step(-1)} disabled={shown === 0} aria-label="Previous week" className="px-2 py-1 disabled:opacity-30">
-          ‹
+        <button type="button" onClick={() => step(-1)} disabled={shown === 0} aria-label="Previous week" className="min-w-11 min-h-11 -ml-3 grid place-items-center disabled:opacity-30">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
         </button>
         Swipe to see past weeks
-        <button type="button" onClick={() => step(1)} disabled={shown === last} aria-label="Next week" className="px-2 py-1 disabled:opacity-30">
-          ›
+        <button type="button" onClick={() => step(1)} disabled={shown === last} aria-label="Next week" className="min-w-11 min-h-11 -mr-3 grid place-items-center disabled:opacity-30">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
         </button>
       </div>
       </div>
@@ -192,7 +195,7 @@ export function WeeklyEffort({
               <>
                 <SessionGlyph kind={s.kind} type={s.type} className="w-4 h-4 text-muted shrink-0" />
                 <span className="w-24 text-muted shrink-0">{fmtDay(s.startedAt, { weekday: "short", day: "numeric", month: "numeric" })}</span>
-                <span className={`flex-1 truncate ${here ? "font-medium" : "text-accent"}`}>{s.name}</span>
+                <span className={`flex-1 truncate ${here ? "font-medium" : "text-accent"}`}>{formatDatesInText(s.name)}</span>
                 <span className="text-muted tabular-nums hidden sm:inline">{formatDuration(s.durationSec)}</span>
                 <span className="w-10 text-right font-mono font-medium tabular-nums">{s.effort}</span>
               </>
