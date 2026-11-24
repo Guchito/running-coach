@@ -13,7 +13,7 @@
   --accent-soft: #dbeafe;
   --accent-pop: #60a5fa;
   --ink: #16161a;
-  --good: #059669;
+  --good: #047857; /* emerald-700: 5.5:1 on white (600 was 3.8:1) */
   --warn: #d97706;
 
   /* Tinted (not gray) shadow, barely there: cards rely on borders, shadows
@@ -194,4 +194,15 @@ select:focus-visible:not(.no-ring) {
 @keyframes fade-only {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* Grows a small link/button's touch area to ~44px with an invisible
+   pseudo-element, so text-sized controls stay text-sized visually. */
+@utility tap {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -12px -8px;
+  }
 }

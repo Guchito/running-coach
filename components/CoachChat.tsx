@@ -180,14 +180,14 @@ export function CoachChat({
   const empty = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-var(--kb,0px))] md:h-[calc(100vh-1rem)] max-w-3xl mx-auto px-4 md:px-6 pt-16 md:pt-4 pb-[max(0.5rem,calc(5rem-var(--kb,0px)))] md:pb-4">
+    <div className="flex flex-col h-[calc(100dvh-var(--kb,0px))] md:h-[calc(100vh-1rem)] max-w-3xl mx-auto px-4 md:px-6 pt-[calc(4rem+env(safe-area-inset-top))] md:pt-4 pb-[max(0.5rem,calc(5rem+env(safe-area-inset-bottom)-var(--kb,0px)))] md:pb-4">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="" className="w-9 h-9 rounded-full object-contain bg-accent-soft" />
           <div>
-            <div className="font-semibold leading-tight">Coach</div>
+            <h1 className="font-semibold leading-tight">Coach</h1>
             <div className="mt-0.5">
               <CoachModelPicker
                 initialModel={model}

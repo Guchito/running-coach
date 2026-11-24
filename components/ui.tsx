@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { CountUp } from "@/components/CountUp";
 
+// Below md a card becomes a full-bleed band: edge to edge, no radius, no side
+// borders — sections stack like a feed instead of floating boxes on a phone.
+// The -mx-5 cancels PageShell's px-5 gutter, and px-5 keeps the content on it.
+export const cardClass =
+  "bg-card border border-border rounded-2xl max-md:-mx-5 max-md:px-5 max-md:rounded-none max-md:border-x-0";
+
 export function Card({
   children,
   className = "",
@@ -8,9 +14,7 @@ export function Card({
   children: React.ReactNode;
   className?: string;
 }) {
-  return (
-    <div className={`bg-card border border-border rounded-2xl ${className}`}>{children}</div>
-  );
+  return <div className={`${cardClass} ${className}`}>{children}</div>;
 }
 
 // Gap between stats in the left-to-right count-up sequence.
@@ -58,9 +62,10 @@ export function PageShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="max-w-5xl mx-auto px-5 md:px-8 py-8 pt-20 md:pt-8 pb-24 md:pb-8">
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
+    <div className="max-w-5xl mx-auto px-5 md:px-8 py-8 pt-[calc(5rem+env(safe-area-inset-top))] md:pt-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
+      {/* Wraps: an action marked max-md:w-full drops under the title on phones. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3 mb-6">
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           {subtitle && <p className="text-muted mt-1 text-sm">{subtitle}</p>}
         </div>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getRun, getUserById, listRuns, listCrossTraining, listGymSessions } from "@/lib/db";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
-import { PageShell, Card, Stat } from "@/components/ui";
+import { PageShell, Card, Stat, cardClass } from "@/components/ui";
 import { CombinedChart } from "@/components/Charts";
 import { RouteMap } from "@/components/RouteMap";
 import { trackOf } from "@/lib/sessionMeta";
@@ -74,7 +74,7 @@ export default async function RunDetail({
         minute: "2-digit",
       })}
       action={
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 max-md:w-full max-md:justify-end">
           <TrimRunButton runId={run.id} original={s.untrimmed ?? s} trim={s.trim ?? null} />
           {/* On mobile the delete action moves to the bottom of the page. */}
           <span className="hidden md:block">
@@ -105,7 +105,7 @@ export default async function RunDetail({
       </div>
 
       {/* All metrics on one chart, each line toggleable */}
-      <Card className="p-5 mb-6">
+      <Card className="p-5 mb-2 md:mb-6">
         <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
           <h2 className="font-medium">Metrics</h2>
           <span className="text-xs text-muted tabular-nums">
@@ -124,7 +124,7 @@ export default async function RunDetail({
 
       {/* Splits — kilometers or workout intervals. A run without any (manual
           entry, bulk CSV import) gets an editor to add them after the fact. */}
-      <div className="mb-6">
+      <div className="mb-2 md:mb-6">
         {s.splits.length === 0 && (s.laps ?? []).length === 0 ? (
           <AddSplitsCard
             runId={run.id}
@@ -154,7 +154,7 @@ export default async function RunDetail({
           {/* Mobile: just the Relative Effort; tap for weekly effort and details. */}
           <Link
             href={`/runs/${run.id}/effort`}
-            className="md:hidden block mb-6 bg-card border border-border rounded-2xl p-5 overflow-hidden active:bg-black/3"
+            className={`md:hidden block mb-2 md:mb-6 ${cardClass} p-5 overflow-hidden active:bg-black/3`}
           >
             <RelativeEffortScore effort={self.effort} verdict={verdict!} />
             <div className="text-sm text-accent text-right mt-3">View weekly effort ›</div>
@@ -163,14 +163,14 @@ export default async function RunDetail({
       )}
 
       {trackOf(s.series).length > 1 && (
-        <Card className="p-5 mb-6">
+        <Card className="p-5 mb-2 md:mb-6">
           <h2 className="font-medium mb-3">Route</h2>
           <RouteMap tracks={[trackOf(s.series)]} />
         </Card>
       )}
 
       {/* Form metrics + effort */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-2 md:gap-6">
         <Card className="p-5">
           <h2 className="font-medium mb-3">Running form</h2>
           <dl className="grid grid-cols-2 gap-y-3 text-sm">

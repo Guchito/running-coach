@@ -32,7 +32,7 @@ export default async function RacesPage() {
           action={<Button href="/goals">View goals</Button>}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-2 md:gap-4 md:grid-cols-2">
           {races.map((g) => {
             const beat =
               g.targetTimeSec != null ? g.resultTimeSec! <= g.targetTimeSec : null;
@@ -71,7 +71,7 @@ export default async function RacesPage() {
                 {g.resultRunId != null && (
                   <Link
                     href={`/runs/${g.resultRunId}`}
-                    className="mt-3 inline-block text-sm text-accent hover:underline"
+                    className="tap mt-3 inline-block text-sm text-accent hover:underline"
                   >
                     View race run →
                   </Link>

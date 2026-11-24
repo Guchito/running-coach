@@ -9,16 +9,13 @@ const links = [
     href: "/",
     label: "Dashboard",
     icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6m-6 0v-5a1 1 0 011-1h4a1 1 0 011 1v5",
-    // Reached via the logo in the mobile top bar, so it's dropped from the
-    // crowded bottom bar.
-    hideOnMobile: true,
+    short: "Home",
   },
   {
     href: "/upload",
     label: "Upload session",
     icon: "M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10",
-    // Reached from the Dashboard and History pages instead.
-    hideOnMobile: true,
+    short: "Upload",
   },
   {
     href: "/runs",
@@ -49,24 +46,23 @@ const links = [
     href: "/profile",
     label: "Profile",
     icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
-    // Grouped with Settings behind the "You" popover on mobile.
-    hideOnMobile: true,
   },
   {
     href: "/settings",
     label: "Settings",
     icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
-    hideOnMobile: true,
   },
 ];
+
+// Phone bottom bar: the post-workout loop (check, log, review, ask, plan).
+// Everything else lives in the top bar's menu.
+const MOBILE_TABS = ["/", "/runs", "/upload", "/coach", "/plan"];
 
 export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
   // Settings is the owner's API keys and integrations — no link for the demo.
   const navLinks = demo ? links.filter((l) => l.href !== "/settings") : links;
-  // The links the mobile "You" popover groups together.
-  const youLinks = navLinks.filter(
-    (l) => l.href === "/profile" || l.href === "/settings"
-  );
+  // The links the mobile top-bar menu groups together.
+  const youLinks = navLinks.filter((l) => !MOBILE_TABS.includes(l.href));
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -118,7 +114,7 @@ export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
       {/* Mobile top bar: the logo is the home/dashboard link, kept visible while
           scrolling so Dashboard can drop off the crowded bottom bar. */}
       <header
-        className={`md:hidden fixed top-0 inset-x-0 z-20 h-14 border-b border-border bg-card/90 backdrop-blur flex items-center justify-between px-4 transition-transform duration-300 ${
+        className={`md:hidden fixed top-0 inset-x-0 z-20 h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-border bg-card/90 backdrop-blur flex items-center justify-between px-4 transition-transform duration-300 ${
           barsHidden ? "-translate-y-full" : "translate-y-0"
         }`}
       >
@@ -137,9 +133,9 @@ export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
           onClick={() => setYouOpen((o) => !o)}
           aria-expanded={youOpen}
           aria-haspopup="menu"
-          aria-label="Profile and settings"
-          className={`p-2 -mr-2 rounded-lg transition-[color,background-color,transform] duration-150 ease-out active:scale-95 ${
-            youOpen || pathname.startsWith("/profile") || pathname.startsWith("/settings")
+          aria-label="Goals, races, profile and settings"
+          className={`p-2.5 -mr-2.5 rounded-lg transition-[color,background-color,transform] duration-150 ease-out active:scale-95 ${
+            youOpen || youLinks.some((l) => pathname.startsWith(l.href))
               ? "text-accent"
               : "text-foreground/70"
           }`}
@@ -163,7 +159,7 @@ export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
           <div
             role="menu"
             onClick={(e) => e.stopPropagation()}
-            className="absolute top-16 right-3 w-44 rounded-xl border border-border bg-card p-1.5 animate-menu-in"
+            className="absolute top-[calc(4rem+env(safe-area-inset-top))] right-3 w-44 rounded-xl border border-border bg-card p-1.5 animate-menu-in"
             style={{ boxShadow: "var(--shadow-lift)" }}
           >
             {youLinks.map((l) => {
@@ -191,12 +187,11 @@ export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
       )}
 
       <nav
-        className={`md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-border bg-card flex justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-transform duration-300 ease-out ${
+        className={`md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-border bg-card flex px-1 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-transform duration-300 ease-out ${
           barsHidden ? "translate-y-full" : "translate-y-0"
         }`}
       >
-        {navLinks
-          .filter((l) => !l.hideOnMobile)
+        {MOBILE_TABS.map((href) => navLinks.find((l) => l.href === href)!)
           .map((l) => {
             const active =
               l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
@@ -204,7 +199,8 @@ export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`flex flex-col items-center gap-0.5 px-2 text-[10px] transition-[color,transform] duration-150 ease-out active:scale-95 ${active ? "text-accent" : "text-muted"}`}
+                aria-current={active ? "page" : undefined}
+                className={`flex-1 min-h-11 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-[color,transform] duration-150 ease-out active:scale-95 ${active ? "text-accent" : "text-muted"}`}
               >
                 <svg
                   className="w-5 h-5"
@@ -219,7 +215,7 @@ export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
                     d={l.icon}
                   />
                 </svg>
-                {l.label.split(" ")[0]}
+                {l.short ?? l.label}
               </Link>
             );
           })}

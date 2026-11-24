@@ -3,7 +3,7 @@
 // Shapes roughly match the common page anatomy (title, stat strip, cards).
 export default function Loading() {
   return (
-    <div className="max-w-5xl mx-auto px-5 md:px-8 py-8 pt-20 md:pt-8 pb-24 md:pb-8">
+    <div className="max-w-5xl mx-auto px-5 md:px-8 py-8 pt-[calc(5rem+env(safe-area-inset-top))] md:pt-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
       <div className="animate-pulse">
         <div className="h-7 w-44 rounded-lg bg-black/6" />
         <div className="h-4 w-64 rounded-lg bg-black/4 mt-3" />

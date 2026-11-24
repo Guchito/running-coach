@@ -66,7 +66,7 @@ export function PasteWorkoutForm() {
   }
 
   return (
-    <Card className="p-5 mt-6 animate-in">
+    <Card className="p-5 mt-2 md:mt-6 animate-in">
       <div className="flex items-center justify-between gap-3 mb-1">
         <h2 className="font-medium">Paste a gym workout</h2>
         <button

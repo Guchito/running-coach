@@ -1,3 +1,4 @@
+import { formatDatesInText } from "@/lib/parseRun";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRun, getUserById, listRuns, listCrossTraining, listGymSessions } from "@/lib/db";
@@ -29,9 +30,9 @@ export default async function RunEffort({ params }: { params: Promise<{ id: stri
   return (
     <PageShell
       title="Weekly effort"
-      subtitle={run.name}
+      subtitle={formatDatesInText(run.name)}
       action={
-        <Link href={`/runs/${run.id}`} className="text-sm text-accent whitespace-nowrap">
+        <Link href={`/runs/${run.id}`} className="tap text-sm text-accent whitespace-nowrap">
           ← Back to run
         </Link>
       }

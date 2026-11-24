@@ -55,7 +55,7 @@ function DayHeader({ d, done }: { d: PlanDay; done: boolean }) {
         </span>
         {d.distanceKm ? <span>{d.distanceKm} km</span> : null}
       </div>
-      {d.detail && <div className="text-sm text-muted/90 mt-1">{d.detail}</div>}
+      {d.detail && <div className="text-sm text-muted mt-1">{d.detail}</div>}
     </div>
   );
 }
@@ -69,7 +69,7 @@ type Suggestion = {
 };
 
 const NO_ROUTE = new Set(["rest", "cross", "strength"]);
-const linkBtn = "text-xs font-medium text-accent hover:underline cursor-pointer disabled:opacity-50";
+const linkBtn = "tap text-xs font-medium text-accent hover:underline cursor-pointer disabled:opacity-50";
 
 // "Route" on a running day: a past run of about that distance, or a new loop
 // from the usual start (see app/api/route-suggest). "Another" asks for a

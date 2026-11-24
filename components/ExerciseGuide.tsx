@@ -51,7 +51,7 @@ export function ExerciseGuide({ name, media }: { name: string; media: Media }) {
     media.instructions.length > 0;
 
   return (
-    <Card className="p-5 mt-4">
+    <Card className="p-5 mt-2 md:mt-4">
       <div className="flex items-baseline justify-between gap-3 mb-3">
         <h2 className="font-medium">How to do it</h2>
         <ExerciseMatchFixer name={name} matchedName={media.matchedName} />

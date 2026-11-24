@@ -2,9 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Card, Button } from "@/components/ui";
-
-const cardCls = "bg-card border border-border rounded-2xl";
+import { Card, Button, cardClass as cardCls } from "@/components/ui";
 
 export function UploadForm() {
   const router = useRouter();

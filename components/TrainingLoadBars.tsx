@@ -123,7 +123,7 @@ function WeekModal({
           </button>
         </div>
         {delta != null && (
-          <p className={`text-xs mb-4 ${delta >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+          <p className={`text-xs mb-4 ${delta >= 0 ? "text-good" : "text-rose-600"}`}>
             {delta >= 0 ? "↑" : "↓"} {Math.abs(delta)}% vs previous week ({prev!.km} km)
           </p>
         )}

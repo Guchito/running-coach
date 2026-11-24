@@ -35,7 +35,7 @@ import { PaceTrendChart, DistanceTrendChart, FitnessPanel } from "@/components/C
 import { requireUserId } from "@/lib/auth";
 import { RouteMap } from "@/components/RouteMap";
 import { trackOf } from "@/lib/sessionMeta";
-import type { Goal, RunRow } from "@/lib/types";
+import type { Goal, RunRow, WeeklyPlan } from "@/lib/types";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -76,21 +76,16 @@ export default async function Dashboard() {
     >
       {/* Goals */}
       {dashboardGoals.length > 0 ? (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-medium">Your goals</h2>
-            <Link href="/goals" className="text-sm text-accent">
-              Manage →
-            </Link>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
+        <div className="mb-2 md:mb-6">
+          <SectionHead title="Your goals" href="/goals" link="Manage →" />
+          <div className="grid gap-2 md:gap-4 md:grid-cols-2">
             {dashboardGoals.map((g) => (
               <GoalCard key={g.id} goal={g} runs={runs} />
             ))}
           </div>
         </div>
       ) : (
-        <Card className="p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <Card className="p-6 mb-2 md:mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="text-lg font-medium">No goals set yet</div>
             <p className="text-muted text-sm mt-1">
@@ -99,29 +94,6 @@ export default async function Dashboard() {
             </p>
           </div>
           <Button href="/goals">Set a goal</Button>
-        </Card>
-      )}
-
-      {/* This week's plan summary */}
-      {plan.weekly && (
-        <Card className="p-5 mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-medium">This week</h2>
-            <Link href="/plan" className="text-sm text-accent">
-              Full plan →
-            </Link>
-          </div>
-          <p className="text-sm text-muted mb-3">{plan.weekly.summary}</p>
-          <div className="flex flex-wrap gap-2">
-            {plan.weekly.days.map((d, i) => (
-              <span
-                key={i}
-                className="text-xs px-2 py-1 rounded-lg bg-black/4 text-muted"
-              >
-                <strong className="text-foreground">{d.day}</strong> {d.title}
-              </span>
-            ))}
-          </div>
         </Card>
       )}
 
@@ -134,7 +106,7 @@ export default async function Dashboard() {
       ) : (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 mb-2 md:mb-6">
             <Stat
               label="Total runs"
               value={stats.totalRuns}
@@ -161,15 +133,38 @@ export default async function Dashboard() {
             />
           </div>
 
+          {/* Plan and progress first; the history-ish material (fitness,
+              effort, health, recent runs) closes the page, newest runs last. */}
+
+          {/* Recent form: last 5 runs vs last 20 */}
+          <RecentFormCard stats={stats} />
+
+          {plan.weekly && <ThisWeekCard weekly={plan.weekly} />}
+
           {/* Training load + personal records */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
+          <div className="grid md:grid-cols-2 gap-2 md:gap-4 mb-2 md:mb-6">
             <TrainingLoadCard runs={runs} />
             <RecordsCard runs={runs} />
           </div>
 
+          {/* Trend */}
+          <Card className="p-5 mb-2 md:mb-6">
+            <SectionHead title="Pace trend" note="avg pace per run · higher is faster" />
+            <PaceTrendChart trend={stats.trend} />
+          </Card>
+
+          {/* Distance trend */}
+          <Card className="p-5 mb-2 md:mb-6">
+            <SectionHead title="Distance trend" note="distance per run" />
+            <DistanceTrendChart trend={stats.trend} />
+          </Card>
+
+          {/* Heat map: every run's route stacked, darker where they overlap */}
+          <HeatMapCard runs={runs} />
+
           <FitnessCard days={fitness} />
           {efforts.length > 0 && (
-            <Card className="p-5 mb-6">
+            <Card className="p-5 mb-2 md:mb-6">
               <WeeklyEffort data={weeklyEffort(efforts)} />
             </Card>
           )}
@@ -177,73 +172,88 @@ export default async function Dashboard() {
           {/* Daily health (only once the HealthFit sheet has synced) */}
           <HealthCard metrics={healthMetrics} href="/health" />
 
-          {/* Recent form: last 5 runs vs last 20 */}
-          <RecentFormCard stats={stats} />
-
-          {/* Trend */}
-          <Card className="p-5 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-medium">Pace trend</h2>
-              <span className="text-xs text-muted">
-                avg pace per run · higher is faster
-              </span>
-            </div>
-            <PaceTrendChart trend={stats.trend} />
-          </Card>
-
-          {/* Distance trend */}
-          <Card className="p-5 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-medium">Distance trend</h2>
-              <span className="text-xs text-muted">distance per run</span>
-            </div>
-            <DistanceTrendChart trend={stats.trend} />
-          </Card>
-
-          {/* Heat map: every run's route stacked, darker where they overlap */}
-          <HeatMapCard runs={runs} />
-
-          {/* Recent runs */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-medium">Recent runs</h2>
-              <Link href="/runs" className="text-sm text-accent">
-                View all →
-              </Link>
-            </div>
-            <div className="divide-y divide-border">
-              {runs.slice(0, 5).map((r) => (
-                <Link
-                  key={r.id}
-                  href={`/runs/${r.id}`}
-                  className={`flex items-center justify-between py-3 -mx-2 px-2 rounded-lg ${interactiveRow}`}
-                >
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">
-                      {formatDatesInText(r.name)}
-                    </div>
-                    <div className="text-xs text-muted">
-                      {formatDate(r.startedAt)}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-5 text-sm font-mono tabular-nums">
-                    <span className="font-medium">
-                      {formatDistance(r.distanceM)}
-                    </span>
-                    <span className="text-muted hidden sm:inline">
-                      {formatDuration(r.durationSec)}
-                    </span>
-                    <span className="text-accent w-20 text-right">
-                      {formatPace(r.avgPaceSecPerKm)}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </Card>
+          <RecentRunsCard runs={runs} />
         </>
       )}
     </PageShell>
+  );
+}
+
+// Section header shared by the dashboard cards: title left, one link right.
+// The link gets a 44px-tall hit area without changing how it looks.
+function SectionHead({
+  title,
+  href,
+  link,
+  note,
+}: {
+  title: string;
+  href?: string;
+  link?: string;
+  note?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 mb-3 min-h-11">
+      <h2 className="font-medium">{title}</h2>
+      {href && link ? (
+        <Link href={href} className="text-sm text-accent py-3 -my-3 pl-3 shrink-0">
+          {link}
+        </Link>
+      ) : note ? (
+        <span className="text-xs text-muted text-right">{note}</span>
+      ) : null}
+    </div>
+  );
+}
+
+function ThisWeekCard({
+  weekly,
+}: {
+  weekly: WeeklyPlan;
+}) {
+  return (
+    <Card className="p-5 mb-2 md:mb-6">
+      <SectionHead title="This week" href="/plan" link="Full plan →" />
+      <p className="text-sm text-muted mb-3">{weekly.summary}</p>
+      <div className="flex flex-wrap gap-2">
+        {weekly.days.map((d, i) => (
+          <span key={i} className="text-xs px-2 py-1 rounded-lg bg-black/4 text-muted">
+            <strong className="text-foreground">{d.day}</strong> {d.title}
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function RecentRunsCard({ runs }: { runs: RunRow[] }) {
+  return (
+    <Card className="p-5 mb-2 md:mb-6">
+      <SectionHead title="Recent runs" href="/runs" link="View all →" />
+      <div className="divide-y divide-border">
+        {runs.slice(0, 5).map((r) => (
+          <Link
+            key={r.id}
+            href={`/runs/${r.id}`}
+            className={`flex items-center justify-between gap-3 py-3 -mx-2 px-2 rounded-lg ${interactiveRow}`}
+          >
+            <div className="min-w-0">
+              <div className="font-medium truncate">{formatDatesInText(r.name)}</div>
+              <div className="text-xs text-muted">{formatDate(r.startedAt)}</div>
+            </div>
+            <div className="flex items-center gap-3 sm:gap-5 text-sm font-mono tabular-nums whitespace-nowrap shrink-0">
+              <span className="font-medium">{formatDistance(r.distanceM)}</span>
+              <span className="text-muted hidden sm:inline">
+                {formatDuration(r.durationSec)}
+              </span>
+              <span className="text-accent sm:w-20 text-right">
+                {formatPace(r.avgPaceSecPerKm)}
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </Card>
   );
 }
 
@@ -251,7 +261,7 @@ export default async function Dashboard() {
 function FitnessCard({ days }: { days: ReturnType<typeof fitnessFreshness> }) {
   if (days.length < 2) return null;
   return (
-    <Card className="p-5 mb-6">
+    <Card className="p-5 mb-2 md:mb-6">
       <h2 className="font-medium mb-4">Fitness &amp; freshness</h2>
       <FitnessPanel days={days} />
     </Card>
@@ -276,27 +286,25 @@ function RecentFormCard({ stats }: { stats: DashboardStats }) {
   const kmDiff = form.km5 - form.km20; // + → recent runs longer
 
   return (
-    <Card className="p-5 mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-medium">Recent form</h2>
-        <span className="text-xs text-muted">
-          avg per run · last 5 vs last {Math.min(totalRuns, 20)} runs
-        </span>
-      </div>
+    <Card className="p-5 mb-2 md:mb-6">
+      <SectionHead
+        title="Recent form"
+        note={`avg per run · last 5 vs last ${Math.min(totalRuns, 20)} runs`}
+      />
       <div className="grid grid-cols-2 gap-4">
         <div>
           <div className="text-xs text-muted mb-1">Pace</div>
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums leading-none">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums leading-none whitespace-nowrap">
               {formatPace(form.pace5)}
             </span>
-            <span className="text-sm text-muted tabular-nums">
+            <span className="text-sm text-muted tabular-nums whitespace-nowrap">
               vs {formatPace(form.pace20)}
             </span>
           </div>
           {comparable && paceDiff !== 0 && (
             <div
-              className={`text-xs mt-1.5 ${paceDiff > 0 ? "text-emerald-600" : "text-rose-600"}`}
+              className={`text-xs mt-1.5 ${paceDiff > 0 ? "text-good" : "text-rose-600"}`}
             >
               {paceDiff > 0
                 ? `↑ ${paceDiff}s/km faster than usual`
@@ -306,17 +314,17 @@ function RecentFormCard({ stats }: { stats: DashboardStats }) {
         </div>
         <div>
           <div className="text-xs text-muted mb-1">Distance</div>
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums leading-none">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums leading-none whitespace-nowrap">
               {form.km5.toFixed(1)} km
             </span>
-            <span className="text-sm text-muted tabular-nums">
+            <span className="text-sm text-muted tabular-nums whitespace-nowrap">
               vs {form.km20.toFixed(1)} km
             </span>
           </div>
           {comparable && Math.abs(kmDiff) >= 0.05 && (
             <div
-              className={`text-xs mt-1.5 ${kmDiff > 0 ? "text-emerald-600" : "text-rose-600"}`}
+              className={`text-xs mt-1.5 ${kmDiff > 0 ? "text-good" : "text-rose-600"}`}
             >
               {kmDiff > 0
                 ? `↑ ${kmDiff.toFixed(1)} km longer than usual`
@@ -333,12 +341,7 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
   const load = trainingLoad(runs);
   return (
     <Card className="p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-medium">Training load</h2>
-        <Link href="/coach" className="text-sm text-accent">
-          Ask coach →
-        </Link>
-      </div>
+      <SectionHead title="Training load" href="/coach" link="Ask coach →" />
       {load.ratio == null ? (
         <p className="text-sm text-muted">
           Log a few weeks of runs to see your acute:chronic load ratio.
@@ -361,8 +364,8 @@ function TrainingLoadCard({ runs }: { runs: RunRow[] }) {
             0.8–1.3 · sweet spot 1.0–1.1
           </div>
           <TrainingLoadBars weeks={load.weeks} />
-          <div className="text-[10px] text-muted mt-1 text-right">
-            last 6 weeks → now · click a week for details
+          <div className="text-[11px] text-muted mt-1 text-right">
+            last 6 weeks → now · tap a week for details
           </div>
         </>
       )}
@@ -437,7 +440,8 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
   return (
     // Plain div, not <Card>: Card's bg-card (white) conflicts with the ink
     // background at the utility layer.
-    <div className="rounded-2xl p-5 bg-ink text-white">
+    // Full-bleed band on phones, like every other card.
+    <div className="rounded-2xl p-5 bg-ink text-white max-md:-mx-5 max-md:rounded-none">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-lg font-semibold truncate">{goal.title}</div>
@@ -454,7 +458,7 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
             <div className="font-mono text-3xl font-semibold tabular-nums leading-none text-accent-pop">
               {days}
             </div>
-            <div className="font-mono text-[10px] uppercase tracking-wider text-white/50 mt-1">
+            <div className="font-mono text-[11px] uppercase tracking-wider text-white/60 mt-1">
               days to go
             </div>
           </div>
@@ -517,9 +521,11 @@ function GoalCard({ goal, runs }: { goal: Goal; runs: RunRow[] }) {
                 }`}
               >
                 {onTrack
-                  ? `On track for ${formatDuration(goal.targetTimeSec)} · ${formatDuration(
-                      Math.abs(ref - goal.targetTimeSec),
-                    )} to spare`
+                  ? ref === goal.targetTimeSec
+                    ? `On track for ${formatDuration(goal.targetTimeSec)} · right on target`
+                    : `On track for ${formatDuration(goal.targetTimeSec)} · ${formatDuration(
+                        goal.targetTimeSec - ref,
+                      )} to spare`
                   : `${formatDuration(
                       Math.abs(ref - goal.targetTimeSec),
                     )} off your ${formatDuration(goal.targetTimeSec)} target · keep building`}
@@ -536,13 +542,11 @@ function HeatMapCard({ runs }: { runs: RunRow[] }) {
   const tracks = runs.map((r) => trackOf(r.summary.series)).filter((t) => t.length > 1);
   if (tracks.length === 0) return null;
   return (
-    <Card className="p-5 mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-medium">Where you run</h2>
-        <span className="text-xs text-muted">
-          {tracks.length} run{tracks.length === 1 ? "" : "s"} · darker = more often
-        </span>
-      </div>
+    <Card className="p-5 mb-2 md:mb-6">
+      <SectionHead
+        title="Where you run"
+        note={`${tracks.length} run${tracks.length === 1 ? "" : "s"} · darker = more often`}
+      />
       <RouteMap tracks={tracks} heat />
     </Card>
   );

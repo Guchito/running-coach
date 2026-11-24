@@ -49,9 +49,8 @@ export function AutoNameRunsToggle({ initial }: { initial: boolean }) {
           on ? "bg-accent" : "bg-black/15"
         }`}
       >
-        {/* Slight overshoot on the thumb so the flip feels physical. */}
         <span
-          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-out ${
             on ? "translate-x-5" : "translate-x-0"
           }`}
         />
