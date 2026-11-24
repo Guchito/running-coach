@@ -291,6 +291,8 @@ export function HealthCharts({ metrics }: { metrics: HealthMetric[] }) {
           chart's rendered svg width dictate the column width and overflow
           the viewport on mobile. */}
       <div className="grid gap-2 md:gap-4 md:grid-cols-2 *:min-w-0">
+        {/* An odd number of half-width charts would strand the last one
+            beside an empty cell, so it takes the full row instead. */}
         {has((m) => m.sleepMin) && (
           <ChartCard
             title="Sleep"
@@ -375,7 +377,16 @@ export function HealthCharts({ metrics }: { metrics: HealthMetric[] }) {
         )}
 
         {has((m) => m.vo2Max) && (
-          <ChartCard title="VO₂ max" caption="aerobic ceiling — the long game">
+          <ChartCard
+            title="VO₂ max"
+            caption="aerobic ceiling — the long game"
+            className={
+              [(m: HealthMetric) => m.restingHr, (m: HealthMetric) => m.weightKg, (m: HealthMetric) => m.steps]
+                .filter((f) => has(f)).length % 2 === 0
+                ? "md:col-span-2"
+                : ""
+            }
+          >
             <ComposedChart data={data} margin={{ top: 8, right: 0, left: -8, bottom: 0 }}>
               <CartesianGrid stroke={GRID} vertical={false} />
               <XAxis dataKey="date" {...axisProps} tickFormatter={dayMonthTick} minTickGap={24} />

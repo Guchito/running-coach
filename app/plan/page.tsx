@@ -27,15 +27,21 @@ export default async function PlanPage() {
 
   return (
     <PageShell
+      wide
       title="Training plan"
       subtitle="Built and maintained by your coach around all your goals."
       action={<Button href="/coach">Talk to coach</Button>}
     >
-      {/* Flex column (not space-y) so phones can lift "This week" to the top. */}
-      <div className="flex flex-col gap-2 md:gap-6">
-        <PlanInstructions initial={plan.macro?.instructions ?? null} />
+      {/* Phones: one flex column with "This week" lifted to the top.
+          Desktop: the plan in a wide column, the standing instructions in a
+          sticky side column beside it. */}
+      <div className="flex flex-col gap-2 md:gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:sticky lg:top-8">
+          <PlanInstructions initial={plan.macro?.instructions ?? null} />
+        </div>
 
         {!hasPlan ? (
+          <div className="lg:col-start-1 lg:row-start-1">
           <EmptyState
             title="No plan yet"
             body={
@@ -53,18 +59,19 @@ export default async function PlanPage() {
               )
             }
           />
+          </div>
         ) : (
           <>
             {/* Macro plan */}
             {hasMacro && plan.macro && (
-              <Card className="p-6">
+              <Card className="p-6 lg:col-start-1 lg:row-start-2">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="font-semibold text-lg">Macro plan</h2>
                   <span className="text-xs text-muted">
                     updated {formatDate(plan.macro.updatedAt)}
                   </span>
                 </div>
-                <p className="text-sm text-muted mb-5">{plan.macro.summary}</p>
+                <p className="text-sm text-muted mb-5 max-w-prose">{plan.macro.summary}</p>
 
                 <div className="relative pl-5">
                   <div className="absolute left-1.5 top-1 bottom-1 w-px bg-border" />
@@ -80,7 +87,7 @@ export default async function PlanPage() {
                       </div>
                       <div className="text-sm text-muted">{p.focus}</div>
                       {p.notes && (
-                        <div className="text-sm text-muted/80 mt-0.5">
+                        <div className="text-sm text-muted mt-0.5">
                           {p.notes}
                         </div>
                       )}
@@ -92,7 +99,7 @@ export default async function PlanPage() {
 
             {/* Weekly plan */}
             {plan.weekly && (
-              <Card className="p-6 max-md:order-first">
+              <Card className="p-6 max-lg:order-first lg:col-start-1 lg:row-start-1">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="font-semibold text-lg">This week</h2>
                   <div className="flex items-center gap-2">
@@ -120,7 +127,7 @@ export default async function PlanPage() {
                     </span>
                   </div>
                 </div>
-                <p className="text-sm text-muted mb-5">{plan.weekly.summary}</p>
+                <p className="text-sm text-muted mb-5 max-w-prose">{plan.weekly.summary}</p>
 
                 <WeeklyPlanDays
                   days={plan.weekly.days}
@@ -131,7 +138,7 @@ export default async function PlanPage() {
               </Card>
             )}
 
-            <p className="text-sm text-muted">
+            <p className="text-sm text-muted lg:col-start-1 lg:row-start-3">
               Want changes?{" "}
               <Link href="/coach" className="text-accent">
                 Tell your coach

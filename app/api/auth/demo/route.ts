@@ -20,8 +20,12 @@ export async function POST() {
     return NextResponse.json({ error: "The demo account no longer exists." }, { status: 404 });
   }
 
-  const res = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name } });
-  const cookie = await createSessionCookie({ userId: user.id, email: user.email, demo: true });
+  // The demo account is the owner's real account: keep its address out of
+  // the public response and the (readable) session token. Nothing reads the
+  // session email except for display.
+  const PUBLIC_EMAIL = "demo@example.com";
+  const res = NextResponse.json({ user: { id: user.id, email: PUBLIC_EMAIL, name: user.name } });
+  const cookie = await createSessionCookie({ userId: user.id, email: PUBLIC_EMAIL, demo: true });
   res.cookies.set(cookie.name, cookie.value, cookie.options);
   return res;
 }

@@ -220,7 +220,7 @@ export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
             );
           })}
       </nav>
-      <aside className="w-60 shrink-0 border-r border-border bg-card/60 backdrop-blur px-4 py-6 hidden md:flex flex-col gap-1 sticky top-0 h-screen">
+      <aside className="w-60 shrink-0 border-r border-border bg-card px-4 py-6 hidden md:flex flex-col gap-1 sticky top-0 h-screen">
         <Link href="/" className="flex items-center gap-2 px-2 mb-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -233,7 +233,20 @@ export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
             <div className="text-xs text-muted">AI Running Coach</div>
           </div>
         </Link>
-        {navLinks.map((l) => {
+        {/* Logging a session is the app's main action: one ink button, not a
+            list item. Page headers no longer repeat it. */}
+        {!demo && (
+          <Link
+            href="/upload"
+            className="mb-4 flex items-center justify-center gap-2 rounded-lg bg-ink px-3 py-2.5 text-sm font-medium text-white transition-[transform,background-color] duration-150 ease-out hover:bg-black active:scale-[0.98]"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2} aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+            </svg>
+            Upload session
+          </Link>
+        )}
+        {navLinks.filter((l) => demo || l.href !== "/upload").map((l) => {
           const active =
             l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
           return (
@@ -260,12 +273,14 @@ export function Nav({ email, demo }: { email: string | null; demo?: boolean }) {
           );
         })}
         <div className="mt-auto pt-4 border-t border-border">
-          {email && (
+          {/* The demo session belongs to the owner's account — never show its
+              real email to public visitors. */}
+          {(demo || email) && (
             <div
               className="px-3 py-1 text-xs text-muted truncate"
-              title={email}
+              title={demo ? undefined : email ?? undefined}
             >
-              {email}
+              {demo ? "Demo account · read-only" : email}
             </div>
           )}
           <button

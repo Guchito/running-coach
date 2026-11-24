@@ -69,7 +69,6 @@ export default async function RunsPage() {
     <PageShell
       title="History"
       subtitle={`${sessions.length} session${sessions.length === 1 ? "" : "s"} logged.`}
-      action={<Button href="/upload">+ Upload session</Button>}
     >
       {sessions.length === 0 ? (
         <EmptyState
