@@ -14,7 +14,9 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  ReferenceLine,
 } from "recharts";
+import { useRouter } from "next/navigation";
 import type { SeriesPoint, LapSplit } from "@/lib/types";
 import { formatPace, formatDuration, formatDistance, formatDate } from "@/lib/parseRun";
 
@@ -698,6 +700,318 @@ export function DistanceTrendChart({ trend }: { trend: TrendPoint[] }) {
           dot={{ r: 3, fill: INK }}
         />
       </LineChart>
+    </InViewChart>
+  );
+}
+
+type FitnessPoint = {
+  date: string;
+  fitness?: number;
+  fatigue?: number;
+  form?: number;
+  effort: number;
+  sessionHref: string | null;
+  sessionName: string | null;
+  projected?: number;
+};
+
+const FATIGUE = "#9ca3af";
+const FORM = "#0f766e";
+const PROJECT_DAYS = 14;
+const RANGES = [
+  { days: 91, label: "Last 3 months" },
+  { days: 182, label: "Last 6 months" },
+  { days: 365, label: "Last year" },
+];
+
+function monthTick(d: string): string {
+  return new Date(d + "T12:00:00").toLocaleString("en-GB", { month: "long" });
+}
+
+function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={`Show ${label} line`}
+      onClick={() => onChange(!on)}
+      className={`relative w-9 h-5 rounded-full transition-colors ${on ? "bg-foreground" : "bg-black/10"}`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-card shadow transition-transform ${on ? "translate-x-4" : ""}`}
+      />
+    </button>
+  );
+}
+
+function Headline({
+  value,
+  label,
+  color,
+  children,
+}: {
+  value: number;
+  label: string;
+  color: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="font-mono text-5xl md:text-6xl font-semibold tracking-tight tabular-nums leading-none">
+        {value}
+      </span>
+      <div className="pt-1">
+        <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+          {label}
+        </div>
+        <div className="mt-1.5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function FitnessTooltip({
+  active,
+  payload,
+  label,
+  showFatigue,
+  showForm,
+}: {
+  active?: boolean;
+  payload?: { payload: FitnessPoint }[];
+  label?: string;
+  showFatigue: boolean;
+  showForm: boolean;
+}) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  const row = (name: string, v: number | undefined, color: string) =>
+    v != null && (
+      <div className="flex items-center gap-1.5">
+        <span className="w-3 h-0.5" style={{ backgroundColor: color }} />
+        <strong className="tabular-nums">{v}</strong> <span className="text-muted">{name}</span>
+      </div>
+    );
+  return (
+    <div className="rounded-[10px] border border-border bg-card text-xs px-2.5 py-2 shadow-sm">
+      <div className="text-muted mb-1">
+        {new Date((label ?? "") + "T12:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+      </div>
+      {row("Fitness", p.fitness, ACCENT)}
+      {p.fitness == null && row("Projected fitness", p.projected, ACCENT)}
+      {showFatigue && row("Fatigue", p.fatigue, FATIGUE)}
+      {showForm && row("Form", p.form, FORM)}
+    </div>
+  );
+}
+
+function EffortTooltip({ active, payload }: { active?: boolean; payload?: { payload: FitnessPoint }[] }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  if (!p.effort) return null;
+  return (
+    <div className="rounded-[10px] border border-border bg-card text-xs px-2.5 py-2 shadow-sm">
+      <div>
+        Relative Effort <strong className="tabular-nums">{p.effort}</strong>
+      </div>
+      {p.sessionName && <div className="text-accent">{p.sessionName}</div>}
+    </div>
+  );
+}
+
+// Strava-style Fitness & Freshness: headline numbers, Fitness area with a
+// dashed "today" level and a no-training projection, and a synced strip of
+// daily Relative Effort below (click a bar to open that session).
+export function FitnessPanel({ days }: { days: Omit<FitnessPoint, "projected">[] }) {
+  const router = useRouter();
+  const [range, setRange] = useState(182);
+  const [showFatigue, setShowFatigue] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  const today = days[days.length - 1];
+  const weekAgo = days[Math.max(0, days.length - 8)];
+  const delta = (today.fitness ?? 0) - (weekAgo.fitness ?? 0);
+
+  // No-training decay of fitness for the next two weeks, joined at today.
+  const data: FitnessPoint[] = days.slice(-range).map((d) => ({ ...d }));
+  data[data.length - 1].projected = today.fitness;
+  const base = new Date(today.date + "T12:00:00");
+  for (let n = 1; n <= PROJECT_DAYS; n++) {
+    const d = new Date(base.getTime() + n * 86400000);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    data.push({
+      date: key,
+      effort: 0,
+      sessionHref: null,
+      sessionName: null,
+      projected: Math.round((today.fitness ?? 0) * Math.pow(41 / 42, n)),
+    });
+  }
+  const monthStarts = data.filter((d) => d.date.endsWith("-01")).map((d) => d.date);
+  const axis = {
+    fontSize: 11,
+    stroke: "#9ca3af",
+    tick: { fill: "#9ca3af" },
+    tickLine: false,
+  } as const;
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-end gap-x-10 gap-y-4 mb-6">
+        <Headline value={today.fitness ?? 0} label="Fitness" color={ACCENT}>
+          <span
+            className={`text-xs tabular-nums ${delta < 0 ? "text-rose-600" : delta > 0 ? "text-emerald-600" : "text-muted"}`}
+            title="Change over the last 7 days"
+          >
+            {delta > 0 ? "+" : ""}
+            {delta}
+          </span>
+        </Headline>
+        <Headline value={today.fatigue ?? 0} label="Fatigue" color={FATIGUE}>
+          <Toggle on={showFatigue} onChange={setShowFatigue} label="fatigue" />
+        </Headline>
+        <Headline value={today.form ?? 0} label="Form" color={FORM}>
+          <Toggle on={showForm} onChange={setShowForm} label="form" />
+        </Headline>
+        <select
+          value={range}
+          onChange={(e) => setRange(Number(e.target.value))}
+          aria-label="Date range"
+          className="ml-auto text-sm bg-transparent border border-border rounded-lg px-2 py-1"
+        >
+          {RANGES.map((r) => (
+            <option key={r.days} value={r.days}>
+              {r.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <InViewChart height={260}>
+        <ComposedChart data={data} syncId="fitness" margin={{ top: 16, right: 28, left: -8, bottom: 0 }}>
+          <CartesianGrid stroke={GRID} vertical={false} />
+          <XAxis dataKey="date" hide />
+          <YAxis {...axis} axisLine={false} width={44} allowDecimals={false} />
+          <Tooltip
+            cursor={{ stroke: INK, strokeWidth: 1 }}
+            content={<FitnessTooltip showFatigue={showFatigue} showForm={showForm} />}
+          />
+          <ReferenceLine
+            y={today.fitness}
+            stroke="#cbd5e1"
+            strokeDasharray="6 4"
+            label={{ value: today.fitness, position: "right", fontSize: 12, fill: INK }}
+          />
+          <Area
+            type="linear"
+            dataKey="fitness"
+            stroke={ACCENT}
+            strokeWidth={2}
+            fill={ACCENT}
+            fillOpacity={0.07}
+            dot={false}
+            activeDot={{ r: 4 }}
+          />
+          <Line type="linear" dataKey="projected" stroke={ACCENT} strokeWidth={2} strokeDasharray="5 4" dot={false} activeDot={false} />
+          {showFatigue && <Line type="linear" dataKey="fatigue" stroke={FATIGUE} strokeWidth={1.5} dot={false} />}
+          {showForm && <Line type="linear" dataKey="form" stroke={FORM} strokeWidth={1.5} dot={false} />}
+        </ComposedChart>
+      </InViewChart>
+
+      <InViewChart height={110}>
+        <BarChart data={data} syncId="fitness" margin={{ top: 8, right: 28, left: -8, bottom: 0 }}>
+          <XAxis dataKey="date" {...axis} ticks={monthStarts} tickFormatter={monthTick} interval={0} />
+          {/* Same width as the chart above so bars sit under their day. */}
+          <YAxis width={44} tick={false} axisLine={false} />
+          <Tooltip cursor={{ fill: "transparent" }} content={<EffortTooltip />} />
+          <ReferenceLine x={today.date} stroke="#cbd5e1" />
+          <Bar
+            dataKey="effort"
+            fill="#d1d5db"
+            activeBar={{ fill: ACCENT }}
+            cursor="pointer"
+            onClick={(d: { payload?: FitnessPoint }) => d.payload?.sessionHref && router.push(d.payload.sessionHref)}
+          />
+        </BarChart>
+      </InViewChart>
+    </div>
+  );
+}
+
+type WeekPoint = { weekStart: string; total: number; low: number | null; high: number | null };
+
+const shortDay = (d: string) =>
+  new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+// Weekly Relative Effort totals (dots) over the recommended range (band).
+// `home` (the run's own week, or this week) is marked in ink; `shown` in
+// accent. Hovering or clicking a week picks it (the card resets on leave).
+export function WeeklyEffortChart({
+  weeks,
+  home,
+  shown,
+  shownColor = ACCENT,
+  onPick,
+}: {
+  weeks: WeekPoint[];
+  home: number;
+  shown: number;
+  shownColor?: string; // the shown week's status color
+  onPick: (i: number) => void;
+}) {
+  const data = weeks.map((w) => ({ ...w, range: w.low != null ? [w.low, w.high] : null }));
+  const shownKey = weeks[shown]?.weekStart;
+  const homeKey = weeks[home]?.weekStart;
+  const pick = (st: { activeTooltipIndex?: number | string | null }) => {
+    const i = st?.activeTooltipIndex;
+    if (i != null) onPick(Number(i));
+  };
+  return (
+    <InViewChart height={200}>
+      <ComposedChart
+        data={data}
+        margin={{ top: 12, right: 4, left: 8, bottom: 0 }}
+        onMouseMove={pick}
+        onClick={pick}
+        accessibilityLayer={false}
+        style={{ cursor: "pointer" }}
+      >
+        <CartesianGrid stroke={GRID} horizontal={false} />
+        <XAxis dataKey="weekStart" fontSize={11} stroke="#9ca3af" tick={{ fill: "#9ca3af" }} tickLine={false} axisLine={false} tickFormatter={shortDay} interval="preserveStartEnd" />
+        <YAxis orientation="right" fontSize={11} stroke="#9ca3af" tick={{ fill: "#9ca3af" }} tickLine={false} axisLine={false} width={40} allowDecimals={false} />
+        {/* Tooltip only drives hover tracking; the card header shows the week. */}
+        <Tooltip content={() => null} cursor={false} />
+        {homeKey && homeKey !== shownKey && <ReferenceLine x={homeKey} stroke={INK} />}
+        {shownKey && <ReferenceLine x={shownKey} stroke={shownColor} />}
+        <Area type="linear" dataKey="range" stroke="none" fill="#9ca3af" fillOpacity={0.18} connectNulls isAnimationActive={false} activeDot={false} />
+        <Line
+          type="linear"
+          dataKey="total"
+          stroke="none"
+          isAnimationActive={false}
+          activeDot={false}
+          dot={(p: { cx?: number; cy?: number; payload?: WeekPoint }) => {
+            const k = p.payload?.weekStart;
+            const hot = k === shownKey;
+            const sel = k === homeKey;
+            return (
+              <g key={k}>
+                {hot && <circle cx={p.cx} cy={p.cy} r={11} fill={shownColor} fillOpacity={0.15} />}
+                <circle
+                  cx={p.cx}
+                  cy={p.cy}
+                  r={hot || sel ? 6 : 4}
+                  fill={hot ? shownColor : sel ? INK : "var(--color-card, #fff)"}
+                  stroke={hot ? shownColor : INK}
+                  strokeWidth={1.5}
+                />
+              </g>
+            );
+          }}
+        />
+      </ComposedChart>
     </InViewChart>
   );
 }

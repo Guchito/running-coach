@@ -1,4 +1,7 @@
-import { listRuns, listGoals, getPlan, listHealthMetrics } from "@/lib/db";
+import { listRuns, listGoals, getPlan, listHealthMetrics, listCrossTraining, getUserById, listGymSessions } from "@/lib/db";
+import { effortSessions, fitnessFreshness, weeklyEffort } from "@/lib/fitness";
+import { WeeklyEffort } from "@/components/EffortCards";
+import { resolveZones } from "@/lib/hr";
 import {
   computeStats,
   daysUntil,
@@ -28,7 +31,7 @@ import {
 } from "@/components/ui";
 import { TrainingLoadBars } from "@/components/TrainingLoadBars";
 import { HealthCard } from "@/components/HealthCard";
-import { PaceTrendChart, DistanceTrendChart } from "@/components/Charts";
+import { PaceTrendChart, DistanceTrendChart, FitnessPanel } from "@/components/Charts";
 import { requireUserId } from "@/lib/auth";
 import { RouteMap } from "@/components/RouteMap";
 import { trackOf } from "@/lib/sessionMeta";
@@ -39,12 +42,22 @@ export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
   const userId = await requireUserId();
-  const [runs, goals, plan, healthMetrics] = await Promise.all([
+  const [runs, goals, plan, healthMetrics, crossTraining, user, gym] = await Promise.all([
     listRuns(userId),
     listGoals(userId),
     getPlan(userId),
     listHealthMetrics(userId, 14),
+    listCrossTraining(userId),
+    getUserById(userId),
+    listGymSessions(userId),
   ]);
+  // Every HR-tracked session counts toward effort and fitness, not just runs.
+  const efforts = effortSessions(
+    [...runs, ...crossTraining],
+    gym,
+    resolveZones(user?.maxHr ?? null, user?.hrZones ?? null),
+  );
+  const fitness = fitnessFreshness(efforts, 365);
   const stats = computeStats(runs);
   // Show active goals plus any raced in the last 30 days, so a fresh race result
   // stays on the dashboard for a while before it lives only on the Races page.
@@ -154,6 +167,13 @@ export default async function Dashboard() {
             <RecordsCard runs={runs} />
           </div>
 
+          <FitnessCard days={fitness} />
+          {efforts.length > 0 && (
+            <Card className="p-5 mb-6">
+              <WeeklyEffort data={weeklyEffort(efforts)} />
+            </Card>
+          )}
+
           {/* Daily health (only once the HealthFit sheet has synced) */}
           <HealthCard metrics={healthMetrics} href="/health" />
 
@@ -224,6 +244,17 @@ export default async function Dashboard() {
         </>
       )}
     </PageShell>
+  );
+}
+
+// Strava-style Fitness & Freshness from HR-based Relative Effort.
+function FitnessCard({ days }: { days: ReturnType<typeof fitnessFreshness> }) {
+  if (days.length < 2) return null;
+  return (
+    <Card className="p-5 mb-6">
+      <h2 className="font-medium mb-4">Fitness &amp; freshness</h2>
+      <FitnessPanel days={days} />
+    </Card>
   );
 }
 

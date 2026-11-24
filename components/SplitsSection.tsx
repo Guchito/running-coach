@@ -9,9 +9,11 @@ import { hasRealIntervals } from "@/lib/splits";
 export function SplitsSection({
   splits,
   laps,
+  gaps,
 }: {
   splits: Split[];
   laps: LapSplit[];
+  gaps?: (number | null)[]; // grade adjusted pace per km, aligned with splits
 }) {
   // Only offer the Intervals view for real workout laps — not a single lap,
   // no laps, or watch auto-laps that just repeat the km splits.
@@ -57,7 +59,7 @@ export function SplitsSection({
           <div className={`mt-3 text-sm ${expanded ? "" : "max-h-56 overflow-auto"}`}>
             <table className="w-full">
               <tbody className="divide-y divide-border">
-                {splits.map((sp) => (
+                {splits.map((sp, i) => (
                   <tr key={sp.km} className="tabular-nums">
                     <td className="py-1.5 text-muted">
                       Km {sp.km}
@@ -66,6 +68,11 @@ export function SplitsSection({
                     <td className="py-1.5 font-medium">
                       {formatPace(sp.paceSecPerKm)}
                     </td>
+                    {gaps && (
+                      <td className="py-1.5 text-muted whitespace-nowrap" title="Grade adjusted pace">
+                        {gaps[i] ? `GAP ${formatPace(gaps[i])}` : "—"}
+                      </td>
+                    )}
                     <td className="py-1.5 text-muted whitespace-nowrap">
                       {sp.avgCadence ? `${Math.round(sp.avgCadence * 2)} spm` : "—"}
                     </td>

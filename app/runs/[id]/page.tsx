@@ -1,4 +1,5 @@
-import { getRun, getUserById } from "@/lib/db";
+import Link from "next/link";
+import { getRun, getUserById, listRuns, listCrossTraining, listGymSessions } from "@/lib/db";
 import { formatPace, formatDuration, formatDistance } from "@/lib/parseRun";
 import { PageShell, Card, Stat } from "@/components/ui";
 import { CombinedChart } from "@/components/Charts";
@@ -14,6 +15,8 @@ import { RunNameEditor } from "@/components/RunNameEditor";
 import { AnalyzeRunButton } from "@/components/AnalyzeRunButton";
 import { requireUserId } from "@/lib/auth";
 import { resolveZones } from "@/lib/hr";
+import { effortSessions, effortVerdict, fitnessChange, runGap, splitGaps, weeklyEffort } from "@/lib/fitness";
+import { FitnessChangeBlock, RelativeEffortScore, WeeklyEffort } from "@/components/EffortCards";
 import { RevealOnView } from "@/components/RevealOnView";
 import { notFound } from "next/navigation";
 
@@ -29,14 +32,25 @@ export default async function RunDetail({
   const userId = await requireUserId();
   const { id } = await params;
   const { new: isNew } = await searchParams;
-  const [run, user] = await Promise.all([
+  const [run, user, runs, cross, gym] = await Promise.all([
     getRun(userId, Number(id)),
     getUserById(userId),
+    listRuns(userId),
+    listCrossTraining(userId),
+    listGymSessions(userId),
   ]);
   if (!run) notFound();
   const s = run.summary;
   const zones = resolveZones(user?.maxHr ?? null, user?.hrZones ?? null);
   const hrCustomized = !!(user?.maxHr || user?.hrZones);
+  const efforts = effortSessions([...runs, ...cross], gym, zones);
+  const self = efforts.find((e) => e.kind === "run" && e.id === run.id);
+  const effort = self?.effort ?? null;
+  const fitChange = self ? fitnessChange(efforts, Date.parse(run.startedAt)) : null;
+  const verdict = self ? effortVerdict(self.effort, efforts, self) : null;
+  // GAP only when the route actually climbs; on flat runs it just repeats pace.
+  const hilly = s.elevGainM + s.elevLossM >= 20;
+  const gap = hilly ? runGap(s.series) : null;
 
   const ask = encodeURIComponent(
     `Please analyze my run "${run.name}" — ${formatDistance(run.distanceM)} in ${formatDuration(
@@ -79,23 +93,16 @@ export default async function RunDetail({
         <Stat
           label="Avg pace"
           value={formatPace(run.avgPaceSecPerKm)}
-          sub={`moving ${formatPace(s.avgMovingPaceSecPerKm)}`}
+          sub={`moving ${formatPace(s.avgMovingPaceSecPerKm)}${gap ? ` · GAP ${formatPace(gap)}` : ""}`}
           appear={2}
         />
         <Stat
           label="Avg / max HR"
           value={`${s.avgHr ? Math.round(s.avgHr) : "—"} / ${s.maxHr ? Math.round(s.maxHr) : "—"}`}
-          sub="bpm"
+          sub={effort != null ? `bpm · Relative Effort ${effort}` : "bpm"}
           appear={3}
         />
       </div>
-
-      {trackOf(s.series).length > 1 && (
-        <Card className="p-5 mb-6">
-          <h2 className="font-medium mb-3">Route</h2>
-          <RouteMap tracks={[trackOf(s.series)]} />
-        </Card>
-      )}
 
       {/* All metrics on one chart, each line toggleable */}
       <Card className="p-5 mb-6">
@@ -126,9 +133,41 @@ export default async function RunDetail({
             avgHr={s.avgHr}
           />
         ) : (
-          <SplitsSection splits={s.splits} laps={s.laps ?? []} />
+          <SplitsSection
+            splits={s.splits}
+            laps={s.laps ?? []}
+            gaps={hilly ? splitGaps(s.series, s.splits) : undefined}
+          />
         )}
       </div>
+
+      {self && (
+        <>
+          {/* Desktop: everything side by side. */}
+          <Card className="p-5 mb-6 max-md:hidden grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-8">
+            <div className="space-y-8">
+              {fitChange && <FitnessChangeBlock change={fitChange} />}
+              <RelativeEffortScore effort={self.effort} verdict={verdict!} />
+            </div>
+            <WeeklyEffort data={weeklyEffort(efforts, Date.parse(run.startedAt))} currentHref={self.href} />
+          </Card>
+          {/* Mobile: just the Relative Effort; tap for weekly effort and details. */}
+          <Link
+            href={`/runs/${run.id}/effort`}
+            className="md:hidden block mb-6 bg-card border border-border rounded-2xl p-5 overflow-hidden active:bg-black/3"
+          >
+            <RelativeEffortScore effort={self.effort} verdict={verdict!} />
+            <div className="text-sm text-accent text-right mt-3">View weekly effort ›</div>
+          </Link>
+        </>
+      )}
+
+      {trackOf(s.series).length > 1 && (
+        <Card className="p-5 mb-6">
+          <h2 className="font-medium mb-3">Route</h2>
+          <RouteMap tracks={[trackOf(s.series)]} />
+        </Card>
+      )}
 
       {/* Form metrics + effort */}
       <div className="grid md:grid-cols-2 gap-6">
